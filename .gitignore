@@ -30,3 +30,24 @@
 *.exe
 *.out
 *.app
+
+# Visual studio
+.vs/
+*.sln
+bin/
+Debug
+*.vcxproj
+*.filters
+*.user
+test/Debug
+test/**/*.sln
+test/**/*.vcxproj
+test/**/*.filters
+test/**/*.user
+test/**/*.tlog
+test/**/*.idb
+test/**/*.pdb
+
+# Engine
+*.log
+
