@@ -51,3 +51,6 @@ test/**/*.pdb
 # Engine
 *.log
 
+# Misc
+packages.config
+packages
