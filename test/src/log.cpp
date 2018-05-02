@@ -4,7 +4,6 @@
 
 #include "src/log.hpp"
 
-#include <iostream>
 TEST(log, error)
 {
     auto *ss = new std::stringstream();
@@ -41,4 +40,26 @@ TEST(log, info)
     auto str = ss->str();
     auto got = str.c_str();
     EXPECT_STREQ(got, "|TEST_INFO| - |INFO| - test\n");
+}
+
+
+TEST(log, constructor)
+{
+    auto *ss = new std::stringstream();
+    Log first("FIRST_TEST", ss);
+    Log second("SECOND_TEST");
+    first.info("first");
+    second.info("second");
+    auto str = ss->str();
+    auto got = str.c_str();
+    EXPECT_STREQ(got, "|SECOND_TEST| - |INFO| - first\n|SECOND_TEST| - |INFO| - second\n");
+
+    auto *last = new std::stringstream();
+    Log third("THIRD_TEST", last);
+    third.info("third");
+    str = last->str();
+    got = str.c_str();
+    EXPECT_STREQ(got, "|THIRD_TEST| - |INFO| - third\n");
+
+
 }
