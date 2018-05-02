@@ -1,26 +1,30 @@
 #pragma once
 
-#include <fstream>
-#include <iostream>
 #include <string>
-#include <windows.h>
-using namespace std;
-
-#pragma warning(disable : 4996)
+#include <memory>
+#include <unordered_map>
 
 class Log {
+
 private:
-    Log();
-    ~Log();
 
-    static Log* instanta;
+    enum class level{error, info, warning};
 
-    string fname;
+    std::unordered_map<level, const std::string> m_prefix = 
+    {
+        {level::error, "ERROR"},
+        {level::warning, "WARNING"},
+        {level::info, "INFO"},
+    };
+
+    const std::string& context;
 
 public:
-    static Log* GetInstance();
-    void DestroyInstance();
-    void DebugMsg(const char* format, ...);
-    void ChangeLogName(const char* log);
-    void RemovePrevious();
+
+    Log(const std::string& ctx, std::ostream* os = nullptr);
+    ~Log() = default;
+
+    void error(const std::string& message) const noexcept;
+    void warning(const std::string& message) const noexcept;
+    void info(const std::string& message) const noexcept;
 };

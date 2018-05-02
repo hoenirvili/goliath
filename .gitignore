@@ -54,3 +54,5 @@ test/**/*.pdb
 # Misc
 packages.config
 packages
+Makefile
+main

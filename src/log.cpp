@@ -1,54 +1,68 @@
 #include "log.hpp"
 
-Log* Log::instanta = 0;
+#include <fstream>
+#include <unordered_map>
 
-Log::Log()
-{
-    fname = "";
-}
+using namespace std;
 
-Log::~Log()
-{
-    fname = "";
-    delete instanta;
-}
+using unique_writer = unique_ptr<ostream>;
 
-void Log::DestroyInstance()
-{
-    delete instanta;
-}
+static unique_writer w = nullptr;
 
-Log* Log::GetInstance()
+Log::Log(const string& ctx, ostream *os)
+    : context(ctx)
 {
-    if (!instanta)
-        instanta = new Log();
-    return instanta;
-}
-
-void Log::DebugMsg(const char* format, ...)
-{
-    if (!fname.empty()) {
-        char dest[1024];
-        va_list argptr;
-        va_start(argptr, format);
-        vsprintf(dest, format, argptr);
-        va_end(argptr);
-        fstream fout;
-        fout.open(fname, fstream::out | fstream::app);
-        fout << dest;
-        fout.close();
+    if ((!w) && (os)) {
+        //TODO(hoenir): Find a way to remove this extra alloc/free
+        w = make_unique<fstream>("");
+        w.reset(os);
+        return;
     }
+         
+    if ((!w) && (!os)) {
+        w = make_unique<fstream>("log.txt");
+        return;
+    }
+    
+    if ((w) && (os))
+        w.reset(os);
+    
 }
 
-void Log::ChangeLogName(const char* log)
+void Log::error(const string& message) const noexcept
 {
-    char temp[MAX_PATH];
-    GetFullPathName(log, MAX_PATH, temp, NULL);
-    fname = temp;
+    if (!w) return;
+
+    auto prefix = m_prefix.at(level::error);
+    (*w) << "|" + this->context + "|"
+         << " - " 
+         << "|" + prefix+ "|"
+         << " - "
+         << message
+         <<'\n';
 }
 
-void Log::RemovePrevious()
+void Log::warning(const string& message) const noexcept
 {
-    if (!fname.empty())
-        DeleteFile(fname.c_str());
+    if (!w) return;
+
+    auto prefix = m_prefix.at(level::warning);
+    (*w) << "|" + this->context + "|"
+         << " - " 
+         << "|" + prefix+ "|"
+         << " - "
+         << message
+         <<'\n';
+}
+
+void Log::info(const string& message) const noexcept
+{
+    if (!w) return;
+    auto prefix = m_prefix.at(level::info);
+    (*w) << "|" + this->context + "|"
+         << " - " 
+         << "|" + prefix+ "|"
+         << " - "
+         << message
+         <<'\n';
 }
