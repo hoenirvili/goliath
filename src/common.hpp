@@ -114,12 +114,14 @@ struct CUSTOM_PARAMS {
 };
 
 extern "C" {
+    
 DLL_API size_t GetLayer();
 DLL_API BOOL DBTInit();
 DLL_API PluginReport* DBTFinish();
 DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
 DLL_API PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers);
 DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
+
 }
 
 extern void StackTrace(ExecutionContext* ctx, char* content);

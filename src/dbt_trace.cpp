@@ -3,13 +3,20 @@
 #include "common.hpp"
 #include "log.hpp"
 
+using namespace std;
 
-shared_log logger;
+shared_ptr<Log>logger;
 
 size_t GetLayer()
 {
 	return PLUGIN_LAYER;
 }
+
+/**
+ * engine_share_buffptr start of shared mem
+ * from the engine with the plugin
+ */
+BYTE* engine_share_buff; 
 
 BOOL DBTInit()
 {
@@ -17,26 +24,27 @@ BOOL DBTInit()
 	if (map)
 		return FALSE;
 
-    BYTE* shared_mem = (BYTE*) MapViewOfFile(map, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
-    if (!shared_mem) {
+    engine_share_buff = (BYTE*) MapViewOfFile(map, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
+    if (!engine_share_buff) {
         return FALSE;
     }
 
-	std::string name = "";
+	string name = "";
 	// retrieve the shared log file location name
 	if (shared_mem[0]) {
-		const char *logname = LOGNAME_BUFFER(shared_mem);
-		name = (!logname) ? std::string() : std::string(logname);
+		const char *logname = LOGNAME_BUFFER(engine_share_buff);
+		name = (!logname) ? string() : string(logname);
 	}
     
 	logger = Log::instance(name);
-	logger->info("DBTInit is called succesfully");
+	logger->info("DBTInit is called");
 	return TRUE;
 }
 
 PluginReport* DBTBranching(void* custom_params, PluginLayer** layers)
 {
-    return (PluginReport*) VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
+    return (PluginReport*) 
+        VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 }
 
 PluginReport* DBTBeforeExecute(CUSTOM_PARAMS* custom_params, PluginLayer** layers)
@@ -100,5 +108,6 @@ PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers)
 
 PluginReport* DBTFinish()
 {
+    logger->info("DBTFinish is called");
     return (PluginReport*) VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 }

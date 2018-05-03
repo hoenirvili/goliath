@@ -6,7 +6,6 @@
 #include <ostream>
 
 
-
 class Log {
 
 private:
@@ -37,4 +36,3 @@ public:
 };
 
 
-using shared_log = std::shared_ptr<Log>;

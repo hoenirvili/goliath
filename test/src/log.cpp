@@ -1,9 +1,8 @@
 #include <sstream>
 
 #include <gtest/gtest.h>
+
 #include "src/log.hpp"
-
-
 
 TEST(log, instance)
 {
@@ -25,7 +24,6 @@ TEST(log, instance)
 
 	expected = (logger1 == logger3);
 	EXPECT_TRUE(expected);
-	
 }
 
 TEST(log, error)
@@ -43,25 +41,25 @@ TEST(log, error)
 TEST(log, warning)
 {
     auto *ss = new std::stringstream();
-
     auto log = Log::instance(ss);
     log->warning("test");
-
-    auto got = ss->str().c_str();
+    
+    auto str = ss->str();
+    auto got = str.c_str();
     EXPECT_STREQ(got, "|WARNING| - test\n");
 }
 
 TEST(log, info)
 {
     auto *ss = new std::stringstream();
-    
+
 	auto log = Log::instance(ss);
     log->info("test");
 
-	auto got = ss->str().c_str();
+	auto str = ss->str();
+    auto got = str.c_str();
     EXPECT_STREQ(got, "|INFO| - test\n");
 }
-
 
 TEST(log, redirect)
 {
@@ -69,12 +67,14 @@ TEST(log, redirect)
 	auto *ss = new std::stringstream();
 	auto log = Log::instance(ss);
 	log->info("test");
-	auto got = ss->str().c_str();
+	auto str = ss->str();
+    auto got = str.c_str();
 	EXPECT_STREQ(got, "|INFO| - test\n");
 
 	auto *nss = new std::stringstream();
 	log->redirect(nss);
 	log->info("test");
-	got = nss->str().c_str();
+	str = nss->str();
+    got = str.c_str();
 	EXPECT_STREQ(got, "|INFO| - test\n");
 }

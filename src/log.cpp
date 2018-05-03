@@ -5,6 +5,9 @@
 
 using namespace std;
 
+using shared_log = shared_ptr<Log>;
+
+
 static shared_log l;
 
 shared_log Log::instance(ostream* os) noexcept
@@ -38,31 +41,28 @@ shared_log Log::instance(const std::string& name) noexcept
 
 void Log::redirect(ostream *os) noexcept
 {
-	if (!l) return;
-	if (!l->w) return;
+    if (!l || !l->w) return;
 
 	l->w.reset(os);
 }
 
 void Log::error(const string& message) const noexcept
 {
-	if (!l) return;
-    if (!l->w) return;
+    if (!l || !l->w) return;
 
     auto prefix = m_prefix.at(level::error);
-    (*l->w)  << "|" + prefix+ "|"
-         << " - "
-         << message
-         <<'\n';
+    *(l->w) << "|" + prefix+ "|"
+            << " - "
+            << message
+            <<'\n';
 }
 
 void Log::warning(const string& message) const noexcept
 {
-	if (!l) return;
-    if (!w) return;
+    if (!l || !l->w) return;
 
     auto prefix = m_prefix.at(level::warning);
-	(*l->w) << "|" + prefix + "|"
+	*(l->w) << "|" + prefix + "|"
 		<< " - "
 		<< message
 		<< '\n';
@@ -70,11 +70,10 @@ void Log::warning(const string& message) const noexcept
 
 void Log::info(const string& message) const noexcept
 {
-	if (!l) return;
-    if (!l->w) return;
+    if (!l || !l->w) return;
 
     auto prefix = m_prefix.at(level::info);
-	(*l->w) << "|" + prefix + "|"
+    *(l->w) << "|" + prefix + "|"
 		<< " - "
 		<< message
 		<< '\n';
