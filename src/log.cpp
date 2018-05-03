@@ -5,38 +5,52 @@
 
 using namespace std;
 
-using unique_writer = unique_ptr<ostream>;
+static shared_log l;
 
-static unique_writer w = nullptr;
-
-Log::Log(const string& ctx, ostream *os)
-    : context(ctx)
+shared_log Log::instance(ostream* os) noexcept
 {
-    if ((!w) && (os)) {
-        //TODO(hoenir): Find a way to remove this extra alloc/free
-        w = make_unique<fstream>("");
-        w.reset(os);
-        return;
-    }
-         
-    if ((!w) && (!os)) {
-        w = make_unique<fstream>("log.txt");
-        return;
-    }
-    
-    if ((w) && (os))
-        w.reset(os);
-    
+	if (!l)
+		l = make_unique<Log>();
+	
+	if ((!l->w) && (os)) {
+		l->w = unique_ptr<ostream>(os);
+		return l;
+	}
+
+	if ((!l->w) && (!os)) {
+		l->w = make_unique<fstream>();
+		return l;
+	}
+
+	if ((l->w) && (os))
+		l->w.reset(os);
+	
+	return l;
+}
+
+shared_log Log::instance(const std::string& name) noexcept
+{
+	fstream *file = nullptr;
+	if (!name.empty())
+		file = new fstream(name);
+	return Log::instance(file);
+}
+
+void Log::redirect(ostream *os) noexcept
+{
+	if (!l) return;
+	if (!l->w) return;
+
+	l->w.reset(os);
 }
 
 void Log::error(const string& message) const noexcept
 {
-    if (!w) return;
+	if (!l) return;
+    if (!l->w) return;
 
     auto prefix = m_prefix.at(level::error);
-    (*w) << "|" + this->context + "|"
-         << " - " 
-         << "|" + prefix+ "|"
+    (*l->w)  << "|" + prefix+ "|"
          << " - "
          << message
          <<'\n';
@@ -44,25 +58,24 @@ void Log::error(const string& message) const noexcept
 
 void Log::warning(const string& message) const noexcept
 {
+	if (!l) return;
     if (!w) return;
 
     auto prefix = m_prefix.at(level::warning);
-    (*w) << "|" + this->context + "|"
-         << " - " 
-         << "|" + prefix+ "|"
-         << " - "
-         << message
-         <<'\n';
+	(*l->w) << "|" + prefix + "|"
+		<< " - "
+		<< message
+		<< '\n';
 }
 
 void Log::info(const string& message) const noexcept
 {
-    if (!w) return;
+	if (!l) return;
+    if (!l->w) return;
+
     auto prefix = m_prefix.at(level::info);
-    (*w) << "|" + this->context + "|"
-         << " - " 
-         << "|" + prefix+ "|"
-         << " - "
-         << message
-         <<'\n';
+	(*l->w) << "|" + prefix + "|"
+		<< " - "
+		<< message
+		<< '\n';
 }

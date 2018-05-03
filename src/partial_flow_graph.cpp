@@ -3,11 +3,16 @@
 #include "log.hpp"
 #include "types.hpp"
 
+#include <fstream>
 #include <assert.h>
+
+using namespace std;
 
 static size_t start_instr;
 
-static std::vector<NodeMap> storage;
+static vector<NodeMap> storage;
+
+//static Log logger("PartialFlowGraph");
 
 // _merge iterates in *from* and if the element exists in *into*
 // increment the occurences fiels or move the element in *into*
@@ -33,7 +38,7 @@ NodeMap PartialFlowGraph::merge()
 {
     assert(storage.empty());
     auto into = storage[0];
-    std::vector<int>::size_type i = 1;
+    vector<int>::size_type i = 1;
     for (; i != storage.size(); i++)
         _merge(storage[i], into);
 
@@ -98,9 +103,7 @@ std::string PartialFlowGraph::graphviz()
 
 void PartialFlowGraph::generate(std::string content, std::string fname)
 {
-    auto logger = Log::GetInstance();
     if (content.empty()) {
-        logger->DebugMsg("Cannot generate dot file, content is empty");
         return;
     }
 
@@ -108,15 +111,14 @@ void PartialFlowGraph::generate(std::string content, std::string fname)
     if (fname.empty())
         fname = std::to_string(this->start);
 
-    auto file = ofstream();
-    file.open(fname + prefix);
+    auto file = fstream(fname+prefix);
     file << content;
     file.close();
 
     const std::string cmd = "dot -Tpng " + fname + prefix + " -o" + fname + ".png";
     auto n = std::system(cmd.c_str());
-    if (!n)
-        logger->DebugMsg("Cannot execute dot command to generate the partial flow graph");
+	//if (!n)
+		//logger.error("cannot generate partial flow graph");
 }
 
 static inline bool is_branch(unsigned t)

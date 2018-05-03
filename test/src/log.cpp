@@ -1,19 +1,42 @@
 #include <sstream>
 
 #include <gtest/gtest.h>
-
 #include "src/log.hpp"
+
+
+
+TEST(log, instance)
+{
+	auto *ss = new std::stringstream();
+	auto logger1 = Log::instance(ss);
+	bool expected = (logger1 != nullptr);
+	EXPECT_TRUE(expected);
+
+	auto logger2 = Log::instance();
+	expected = (logger2 != nullptr);
+	EXPECT_TRUE(expected);
+
+	expected = (logger1 == logger2);
+	EXPECT_TRUE(expected);
+
+	auto logger3 = Log::instance("");
+	expected = (logger3 != nullptr);
+	EXPECT_TRUE(expected);
+
+	expected = (logger1 == logger3);
+	EXPECT_TRUE(expected);
+	
+}
 
 TEST(log, error)
 {
     auto *ss = new std::stringstream();
 
-    Log log("TEST_ERROR", ss);
-    log.error("test");
+    auto log = Log::instance(ss);
+    log->error("test");
 
-    auto str = ss->str();
-    auto got = str.c_str();
-    EXPECT_STREQ(got, "|TEST_ERROR| - |ERROR| - test\n");
+	auto got = ss->str().c_str();
+    EXPECT_STREQ(got, "|ERROR| - test\n");
 }
 
 
@@ -21,45 +44,37 @@ TEST(log, warning)
 {
     auto *ss = new std::stringstream();
 
-    Log log("TEST_WARNING", ss);
-    log.warning("test");
+    auto log = Log::instance(ss);
+    log->warning("test");
 
-    auto str = ss->str();
-    auto got = str.c_str();
-    EXPECT_STREQ(got, "|TEST_WARNING| - |WARNING| - test\n");
+    auto got = ss->str().c_str();
+    EXPECT_STREQ(got, "|WARNING| - test\n");
 }
-
 
 TEST(log, info)
 {
     auto *ss = new std::stringstream();
+    
+	auto log = Log::instance(ss);
+    log->info("test");
 
-    Log log("TEST_INFO", ss);
-    log.info("test");
-
-    auto str = ss->str();
-    auto got = str.c_str();
-    EXPECT_STREQ(got, "|TEST_INFO| - |INFO| - test\n");
+	auto got = ss->str().c_str();
+    EXPECT_STREQ(got, "|INFO| - test\n");
 }
 
 
-TEST(log, constructor)
+TEST(log, redirect)
 {
-    auto *ss = new std::stringstream();
-    Log first("FIRST_TEST", ss);
-    Log second("SECOND_TEST");
-    first.info("first");
-    second.info("second");
-    auto str = ss->str();
-    auto got = str.c_str();
-    EXPECT_STREQ(got, "|SECOND_TEST| - |INFO| - first\n|SECOND_TEST| - |INFO| - second\n");
 
-    auto *last = new std::stringstream();
-    Log third("THIRD_TEST", last);
-    third.info("third");
-    str = last->str();
-    got = str.c_str();
-    EXPECT_STREQ(got, "|THIRD_TEST| - |INFO| - third\n");
+	auto *ss = new std::stringstream();
+	auto log = Log::instance(ss);
+	log->info("test");
+	auto got = ss->str().c_str();
+	EXPECT_STREQ(got, "|INFO| - test\n");
 
-
+	auto *nss = new std::stringstream();
+	log->redirect(nss);
+	log->info("test");
+	got = nss->str().c_str();
+	EXPECT_STREQ(got, "|INFO| - test\n");
 }
