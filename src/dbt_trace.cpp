@@ -5,8 +5,6 @@
 
 using namespace std;
 
-shared_ptr<Log>logger;
-
 size_t GetLayer()
 {
 	return PLUGIN_LAYER;
@@ -21,23 +19,19 @@ BYTE* engine_share_buff;
 BOOL DBTInit()
 {
     HANDLE map = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
-	if (map)
+	if (!map)
 		return FALSE;
 
     engine_share_buff = (BYTE*) MapViewOfFile(map, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
-    if (!engine_share_buff) {
+    if (!engine_share_buff)
         return FALSE;
-    }
 
-	string name = "";
-	// retrieve the shared log file location name
-	if (shared_mem[0]) {
-		const char *logname = LOGNAME_BUFFER(engine_share_buff);
-		name = (!logname) ? string() : string(logname);
-	}
+	const char *logname = LOGNAME_BUFFER(engine_share_buff);
+	string name = (!logname) ? string() : string(logname);
     
-	logger = Log::instance(name);
-	logger->info("DBTInit is called");
+	auto logger = Log::instance(name);
+	logger->info("[DBTITrace] Init is called");
+
 	return TRUE;
 }
 
@@ -47,17 +41,17 @@ PluginReport* DBTBranching(void* custom_params, PluginLayer** layers)
         VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 }
 
-PluginReport* DBTBeforeExecute(CUSTOM_PARAMS* custom_params, PluginLayer** layers)
+PluginReport *DBTBeforeExecute(void *custom_params, PluginLayer **layers)
 {
-
-    DISASM* MyDisasm = custom_params->MyDisasm;
-    TranslatorShellData* tdata = custom_params->tdata;
-    size_t stack_trace = custom_params->stack_trace;
+	CUSTOM_PARAMS* params = (CUSTOM_PARAMS *)custom_params;
+    DISASM* MyDisasm = params->MyDisasm;
+    TranslatorShellData* tdata = params->tdata;
+    size_t stack_trace = params->stack_trace;
 
     char instr_bytes[100];
     char temp[MAX_PATH];
     size_t i;
-    size_t len = custom_params->instrlen;
+    size_t len = params->instrlen;
     PluginReport* report = (PluginReport*) VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 	if (!report)
 		return nullptr;
@@ -103,11 +97,15 @@ PluginReport* DBTBeforeExecute(CUSTOM_PARAMS* custom_params, PluginLayer** layer
 
 PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers)
 {
-    return (PluginReport*) VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
+    return (PluginReport*) 
+		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 }
 
 PluginReport* DBTFinish()
 {
-    logger->info("DBTFinish is called");
-    return (PluginReport*) VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
+	auto logger = Log::instance();
+	logger->info("[DBTITrace] Finish is called");
+
+    return (PluginReport*) 
+		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 }

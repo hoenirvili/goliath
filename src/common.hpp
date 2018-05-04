@@ -1,10 +1,12 @@
 #pragma once
 
+#include <memory>
+#include <cstdio>
+#include <string>
+
 #include <Windows.h>
 
 #include "types.hpp"
-
-#pragma warning(disable : 4996)
 
 #define DLL_API __declspec(dllexport)
 
@@ -23,7 +25,7 @@
 #define PEB_PARAM 0x60
 #endif
 
-// how many machime-words to trace on stack?
+// STACK_TRACE_SIZE how many machime-words to trace on stack
 #define STACK_TRACE_SIZE 10
 
 struct FPUState {
@@ -113,19 +115,6 @@ struct CUSTOM_PARAMS {
     size_t instrlen;
 };
 
-extern "C" {
-    
-DLL_API size_t GetLayer();
-DLL_API BOOL DBTInit();
-DLL_API PluginReport* DBTFinish();
-DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
-DLL_API PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers);
-DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
-
-}
-
-extern void StackTrace(ExecutionContext* ctx, char* content);
-
 #define CONDITION_PATH(buf) ((char*) buf + CONDITION_PATH_OFFSET)
 
 #define LOGNAME_OFFSET 0x0000
@@ -149,4 +138,28 @@ extern void StackTrace(ExecutionContext* ctx, char* content);
 #define memsharedname "Local\\VDCApiLog"
 #define BUFFER_SIZE 0x100000
 
-extern BYTE* shared_mem;
+
+
+extern "C" {
+
+	DLL_API size_t GetLayer();
+	DLL_API BOOL DBTInit();
+	DLL_API PluginReport* DBTFinish();
+	DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
+	DLL_API PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer **layers);
+	DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
+
+}
+
+extern BYTE* engine_share_buff;
+
+extern void StackTrace(ExecutionContext* ctx, char* content);
+
+template<typename ... Args>
+std::string string_format(const std::string& format, Args ... args)
+{
+	std::size_t size = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1;
+	std::unique_ptr<char[]> buf(new char[size]);
+	std::snprintf(buf.get(), size, format.c_str(), args ...);
+	return string(buf.get(), buf.get() + size - 1);
+}

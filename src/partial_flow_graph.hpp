@@ -5,12 +5,6 @@
 #include "node.hpp"
 
 /**
- * NodeList type holds a table of nodes
- * alongside with their first instruction
- */
-typedef std::map<size_t, Node*> NodeMap;
-
-/**
  * Instruction type holds all context
  * of the next instruction
  */
@@ -25,9 +19,9 @@ struct Instruction {
 class PartialFlowGraph {
 
 private:
-    size_t start = 0; /*start of the first instruction in graph*/
-    size_t next_instr = 0; /*start of the next node in graph*/
-    NodeMap nl; /*global node map*/
+    size_t start = 0; 
+    size_t next_instr = 0;
+	std::map<size_t, Node*> node_map; 
 
     /**
      * generate generates the .dot file in the current directory
@@ -43,7 +37,7 @@ private:
     /**
      * merge returns the result of merging all partial flow graphs
      */
-    NodeMap merge(void);
+	std::map<size_t, Node*> merge(void);
 
 public:
     PartialFlowGraph() = default;

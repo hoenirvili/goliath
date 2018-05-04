@@ -3,19 +3,52 @@
 #include <vector>
 
 /**
- * Node type is a single node in
- * the partial flow graph
+ * Node object represents a single node in a
+ * partial flow graph
  */
-typedef struct Node {
-    size_t si; /*start eip instruction*/
-    std::vector<std::string> block; /*all instructions of node*/
-    size_t tb; /*true branch*/
-    size_t fb; /*false branch*/
-    unsigned int occurences = 1; /*at least one occurence*/
+class Node {
 
 public:
-    /*graphviz_definition returns the node in graphviz definition format*/
-    std::string graphviz_definition(void);
-    /*graphviz_realtion return the raltion of the node in graphviz format */
-    std::string graphviz_realtion(void);
-} Node;
+	/**
+	* start_address is the first
+	* start instuction assembly block code
+	*/
+	size_t start_address = 0;
+    
+	/**
+	* block holds a list of 
+	* every assembly block instruction in node
+	*/
+	std::vector<std::string> block;
+    
+	/**
+	* true_branch_address stores the next address if the
+	* assembly branch evaluates to true
+	*/
+	size_t true_branch_address = 0;
+	
+	/**
+	* false_branch_address stores the next address if the
+	* assembly branch evaluates to false
+	*/
+	size_t false_branch_address = 0;
+    
+	/**
+	* occurences the number of times a execution
+	* had passed trough this node
+	*/
+	unsigned int occurences = 1;
+	
+	/**
+	* graphviz_definition the definitions 
+	* of the node in graphviz format
+	*/
+	std::string graphviz_definition() const;
+	
+	/**
+	* graphviz_relation return the node relation
+	*/
+	std::string graphviz_relation() const;
+};
+
+

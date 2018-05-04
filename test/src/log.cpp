@@ -33,7 +33,8 @@ TEST(log, error)
     auto log = Log::instance(ss);
     log->error("test");
 
-	auto got = ss->str().c_str();
+	auto str = ss->str();
+	auto got = str.c_str();
     EXPECT_STREQ(got, "|ERROR| - test\n");
 }
 
@@ -78,3 +79,4 @@ TEST(log, redirect)
     got = str.c_str();
 	EXPECT_STREQ(got, "|INFO| - test\n");
 }
+

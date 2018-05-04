@@ -7,7 +7,6 @@ using namespace std;
 
 using shared_log = shared_ptr<Log>;
 
-
 static shared_log l;
 
 shared_log Log::instance(ostream* os) noexcept
@@ -35,7 +34,8 @@ shared_log Log::instance(const std::string& name) noexcept
 {
 	fstream *file = nullptr;
 	if (!name.empty())
-		file = new fstream(name);
+		file = new fstream(name, fstream::out | fstream::app);
+	
 	return Log::instance(file);
 }
 
