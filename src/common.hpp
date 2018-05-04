@@ -138,8 +138,6 @@ struct CUSTOM_PARAMS {
 #define memsharedname "Local\\VDCApiLog"
 #define BUFFER_SIZE 0x100000
 
-
-
 extern "C" {
 
 	DLL_API size_t GetLayer();

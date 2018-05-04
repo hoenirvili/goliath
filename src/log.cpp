@@ -5,11 +5,10 @@
 
 using namespace std;
 
-using shared_log = shared_ptr<Log>;
 
-static shared_log l;
+static shared_ptr<Log> l;
 
-shared_log Log::instance(ostream* os) noexcept
+shared_ptr<Log> Log::instance(ostream* os) noexcept
 {
 	if (!l)
 		l = make_unique<Log>();
@@ -30,7 +29,7 @@ shared_log Log::instance(ostream* os) noexcept
 	return l;
 }
 
-shared_log Log::instance(const std::string& name) noexcept
+shared_ptr<Log> Log::instance(const std::string& name) noexcept
 {
 	fstream *file = nullptr;
 	if (!name.empty())

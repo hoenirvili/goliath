@@ -2,54 +2,59 @@
 
 #include <map>
 
+#include "types.hpp"
 #include "node.hpp"
+#include "log.hpp"
 
 /**
  * Instruction type holds all context
  * of the next instruction
  */
-struct Instruction {
-    size_t eip; /*instrction pointer*/
-    const char* content; /*complete instruction*/
-    unsigned int branch_type; /*no branching = 0*/
-    size_t len; /*instruction lenght*/
-    size_t argument_value; /*instruction argument*/
+class Instruction {
+
+public:
+
+	size_t eip;					/* instrction pointer */
+    const char* content;		/* complete instruction */
+    Int32 branch_type;			/* no branch = 0 */
+    size_t len;					/* instruction lenght */
+    size_t argument_value;		/* instruction argument */
+
+	bool validate() const;
+	bool is_branch() const noexcept;
+	size_t true_branch() const noexcept;
+	size_t false_branch() const noexcept;
 };
 
 class PartialFlowGraph {
 
 private:
     size_t start = 0; 
-    size_t next_instr = 0;
-	std::map<size_t, Node*> node_map; 
-
-    /**
-     * generate generates the .dot file in the current directory
-     * and runs the dot command on it generating a png file for the graph
-     */
-    void generate(std::string content, std::string fname = "");
-
-    /**
-     * generate the graphviz .dot code from the node list
-     */
-    std::string graphviz(void);
-
-    /**
-     * merge returns the result of merging all partial flow graphs
-     */
-	std::map<size_t, Node*> merge(void);
+    
+	size_t next_instr = 0;
+	
+	std::map<size_t, std::unique_ptr<Node>> node_map; 
+	
+	std::shared_ptr<Log> logger = nullptr;
+	
+	void info(const std::string& message) const noexcept;
+	void error(const std::string& message) const noexcept;
+	void warning(const std::string& message) const noexcept;
 
 public:
-    PartialFlowGraph() = default;
 
-    /**
-     * Always at the end of the execution put
-     * the partial flow graph generated into a storage
-     */
-    ~PartialFlowGraph();
+    void generate(std::string content, std::string fname = "");
 
-    /**
-     * add_instruction append next instrction in our partial flow graph
-     */
-    void add_instruction(Instruction instr);
+    std::string graphviz(void);
+
+	std::map<size_t, Node*> merge(void);
+
+	void serialise(BYTE* mem);
+
+	BYTE* deserialize(BYTE* mem);
+
+	PartialFlowGraph(std::shared_ptr<Log> logger = nullptr) :logger(logger) {}
+	~PartialFlowGraph() = default;
+
+	void add(Instruction instr) noexcept;
 };

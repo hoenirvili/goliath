@@ -8,11 +8,8 @@
 #include <assert.h>
 
 using namespace std;
-using NodeMap = map<size_t, Node*>;
 
-static size_t start_instr;
-
-static vector<NodeMap> storage;
+using NodeMap = std::map<size_t, std::unique_ptr<Node>>;
 
 //// _merge iterates in *from* and if the element exists in *into*
 //// increment the occurences fiels or move the element in *into*
@@ -46,19 +43,19 @@ static vector<NodeMap> storage;
 //}
 //
 //// digraph_prefix template
-//constexpr const char* digraph_prefix = R"(
-//digraph ControlFlowGraph {
-//	node [
-//		shape = box 
-//		color = black
-//		arrowhead = diamond
-//		colorscheme = blues9
-//		style = filled
-//		fontname="Source Code Pro"
-//		fillcolor=1
-//	]
-//}	
-//)";
+constexpr const char* digraph_prefix = R"(
+digraph ControlFlowGraph {
+	node [
+		shape = box 
+		color = black
+		arrowhead = diamond
+		colorscheme = blues9
+		style = filled
+		fontname="Source Code Pro"
+		fillcolor=1
+	]
+}	
+)";
 //
 //PartialFlowGraph::~PartialFlowGraph()
 //{
@@ -121,39 +118,12 @@ static vector<NodeMap> storage;
 //		//logger.error("cannot generate partial flow graph");
 //}
 //
-//static inline bool is_branch(unsigned t)
-//{
-//    BRANCH_TYPE bt = (BRANCH_TYPE) t;
-//
-//    switch (bt) {
-//    case JO:
-//    case JC:
-//    case JE:
-//    case JA:
-//    case JS:
-//    case JP:
-//    case JL:
-//    case JG:
-//    case JB:
-//    case JECXZ:
-//    case JmpType:
-//    case CallType:
-//    case RetType:
-//    case JNO:
-//    case JNC:
-//    case JNE:
-//    case JNA:
-//    case JNS:
-//    case JNP:
-//    case JNL:
-//    case JNG:
-//    case JNB:
-//        return true;
-//    }
-//
-//    return false;
-//}
-//
+
+static inline bool is_branch(BRANCH_TYPE t)
+{
+    
+}
+
 //void PartialFlowGraph::add_instruction(Instruction instruction)
 //{
 //    if (this->start == instruction.eip) {
@@ -206,3 +176,86 @@ static vector<NodeMap> storage;
 //
 //    node->block.push_back(instruction.content);
 //}
+
+bool Instruction::is_branch() const noexcept
+{
+	switch (this->branch_type) {
+	case JO:
+	case JC:
+	case JE:
+	case JA:
+	case JS:
+	case JP:
+	case JL:
+	case JG:
+	case JB:
+	case JECXZ:
+	case JmpType:
+	case CallType:
+	case RetType:
+	case JNO:
+	case JNC:
+	case JNE:
+	case JNA:
+	case JNS:
+	case JNP:
+	case JNL:
+	case JNG:
+	case JNB:
+		return true;
+	}
+
+	return false;
+}
+
+size_t Instruction::true_branch() const noexcept
+{
+	return this->argument_value;
+}
+
+size_t Instruction::false_branch() const noexcept
+{
+	return this->eip + this->len;
+}
+
+bool Instruction::validate() const
+{
+	if (this->content == nullptr)
+		return false;
+
+	if (this->branch_type < 0)
+		return false;
+
+	return true;
+}
+
+void PartialFlowGraph::info(const std::string & message) const noexcept
+{
+	if (!this->logger)
+		return
+	this->logger->info(message);
+}
+
+void PartialFlowGraph::error(const std::string & message) const noexcept
+{
+	if (!this->logger)
+		return
+	this->logger->error(message);
+}
+
+void PartialFlowGraph::warning(const std::string & message) const noexcept
+{
+	if (!this->logger)
+		return
+	this->logger->warning(message);
+}
+
+void PartialFlowGraph::add(Instruction instruction) noexcept
+{
+	auto valid = instruction.validate();
+	if (!valid) {
+		this->error("Invalid instruction passed");
+		return;
+	}
+
+}

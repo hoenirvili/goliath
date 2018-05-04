@@ -1,7 +1,8 @@
-#include <fstream>
+#include <memory>
 
 #include "common.hpp"
 #include "log.hpp"
+#include "partial_flow_graph.hpp"
 
 using namespace std;
 
@@ -16,6 +17,16 @@ size_t GetLayer()
  */
 BYTE* engine_share_buff; 
 
+/**
+*
+*/
+static shared_ptr<Log> logger;
+
+/**
+*
+*/
+static unique_ptr<PartialFlowGraph> pfg;
+
 BOOL DBTInit()
 {
     HANDLE map = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
@@ -29,8 +40,11 @@ BOOL DBTInit()
 	const char *logname = LOGNAME_BUFFER(engine_share_buff);
 	string name = (!logname) ? string() : string(logname);
     
-	auto logger = Log::instance(name);
+	logger = Log::instance(name);
+	
 	logger->info("[DBTITrace] Init is called");
+	
+	pfg = make_unique<PartialFlowGraph>(logger);
 
 	return TRUE;
 }
@@ -77,15 +91,18 @@ PluginReport *DBTBeforeExecute(void *custom_params, PluginLayer **layers)
     sprintf(temp, "%-*s : %s", 45, instr_bytes, MyDisasm->CompleteInstr);
     strcat(content, temp);
 
-    //Instruction param = {
-    //    MyDisasm->EIP,
-    //    MyDisasm->CompleteInstr,
-    //    (unsigned int) MyDisasm->Instruction.BranchType,
-    //    len, /*the length of the current instruction*/
-    //    (size_t) MyDisasm->Instruction.AddrValue /*the addr on which the instruction could jump*/
-    //};
 
-    //partialFlowGraph.add_instruction(param);
+	//TODO(hoenir): Deserialize from mem shared
+	//TODO(hoenir): Keep adding nodes
+
+    Instruction instruction = {
+        MyDisasm->EIP,
+        MyDisasm->CompleteInstr,
+        MyDisasm->Instruction.BranchType,
+        len, (size_t) MyDisasm->Instruction.AddrValue
+    };
+
+	pfg->add(instruction);
     
 	// pack the plugin response
     report->plugin_name = "DBTTrace";
@@ -103,9 +120,18 @@ PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers)
 
 PluginReport* DBTFinish()
 {
-	auto logger = Log::instance();
 	logger->info("[DBTITrace] Finish is called");
 
-    return (PluginReport*) 
+	//TODO(hoenir): Generate pfg
+	//TODO(hoenir): Merge if any
+	//TODO(hoenir): Serialise
+	//TODO(hoenir): Store serilise in mem shared aka CFG
+	//TODO(hoenir): Clean up
+
+    return (PluginReport*)
 		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 }
+
+
+//TODO(hoenir): At finish deserialize one more time and generate cfg from all pfg
+

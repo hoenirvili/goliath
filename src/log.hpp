@@ -24,6 +24,7 @@ private:
 	unique_writer w;
 
 public:
+
 	Log() = default;
     ~Log() = default;
 
@@ -34,5 +35,3 @@ public:
     void warning(const std::string& message) const noexcept;
     void info(const std::string& message) const noexcept;
 };
-
-
