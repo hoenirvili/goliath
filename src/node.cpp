@@ -86,3 +86,49 @@ string Node::graphviz_relation() const
 		relation(this->start_address, this->false_branch_address) +
 		"\\n";
 }
+
+int Node::serialize(uint8_t * mem, const size_t size) const noexcept
+{
+	if ((!mem) || (!size))
+		return EINVAL;
+
+	auto required = this->mem_size();
+	if (size < required)
+		return ENOMEM;
+
+	memcpy(mem, &this->start_address, sizeof(this->start_address));
+	mem += sizeof(this->start_address);
+	memcpy(mem, &this->occurences, sizeof(this->occurences));
+	mem += sizeof(this->occurences);
+	memcpy(mem, &this->true_branch_address, sizeof(this->true_branch_address));
+	mem += sizeof(this->true_branch_address);
+	memcpy(mem, &this->false_branch_address, sizeof(this->false_branch_address));
+	mem += sizeof(this->false_branch_address);
+	auto block_size = this->block.size();
+	memcpy(mem, &block_size, sizeof(block_size));
+	mem += sizeof(block_size);
+	for (const auto &item : this->block) {
+		auto item_size = item.size();
+		auto code = item.c_str();
+		memcpy(mem, code, sizeof(item_size));
+		mem += sizeof(item_size);
+		memcpy(mem, '\0', sizeof(char));
+		mem += sizeof(char);
+	}
+
+	return 0;
+}
+
+size_t Node::mem_size() const noexcept
+{
+	size_t size = 0;
+	size += sizeof(this->start_address);
+	size += sizeof(this->occurences);
+	size += sizeof(this->true_branch_address);
+	size += sizeof(this->false_branch_address);
+	size += sizeof(this->block.size());
+	for (const auto& item : this->block)
+		size += item.size() + 1;
+
+	return size;
+}

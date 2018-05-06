@@ -49,6 +49,14 @@ public:
 	* graphviz_relation return the node relation
 	*/
 	std::string graphviz_relation() const;
+
+	/**
+	* serialize
+	*/
+	int serialize(uint8_t *mem, const size_t size) const noexcept;
+	
+	/**
+	* mem_size returns the number of bytes that's needed for serialization
+	*/
+	size_t mem_size() const noexcept;
 };
-
-

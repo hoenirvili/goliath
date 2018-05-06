@@ -257,5 +257,74 @@ void PartialFlowGraph::add(Instruction instruction) noexcept
 		this->error("Invalid instruction passed");
 		return;
 	}
+}
 
+
+size_t PartialFlowGraph::mem_size() const noexcept
+{
+	size_t size = 0;
+	size += sizeof(this->start);
+	size += sizeof(this->node_map.size());
+	
+	for (const auto &item : this->node_map) {
+		/**
+		* serialisation on x86
+		* - first 4 bytes is the start addrs of the first node in our pfg
+		* - second 4 bytes are the number of nodes
+		* - after the 4 bytes we start in pairs:
+		*	- first 4 bytes are the number of occurences
+		*	- second 4 bytes true branch address
+		*	- third 4 bytes false branch address
+		*	- foruth 4 bytes is the size of the node block
+		*	- 4 bytes the key/addres of the node
+		*	- the hole block, every block is separated by "\0"
+		* - we end with the random value 0x5
+		*/
+		const auto address = item.first;
+		const auto node = item.second;
+
+		size += sizeof(address);
+		
+		size_t n_blocks = node->block.size();
+	}
+	
+	return size;
+}
+bool PartialFlowGraph::it_fits(size_t into) const noexcept
+{
+	auto n = this->mem_size();
+	return (n <= into);
+}
+
+void PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
+{
+	if (!mem) {
+		this->error("invalid shared block of memory provided");
+		return;
+	}
+
+	if (!this->it_fits(size)) {
+		this->error("serialise buffer can't fit into the given size");
+		return;
+	}
+	
+	memset(mem, 0, size);
+	/**
+	* serialisation on x86
+	* - first 4 bytes is the start addrs of the first node node_map
+	* - second 4 bytes are the number of nodes
+	* - after the 4 bytes we start in pairs:
+	*	- first 4 bytes are the start_addr of the node
+	*	- second 4 bytes are the number of occurences
+	*	- third 4 bytes true branch address
+	*	- forth 4 bytes false branch address
+	*	- fifth 4 bytes is the size of the node block
+	*	- the last is the hole block as strings, every string  is separated by "\0"
+	*	so we don't need to include his size also
+	* - we end with the random guard value of 0x7 
+	*/
+	auto n = this->node_map.size();
+	for (const auto &item : this->node_map) {
+		//TODO(): finish this loop
+	}
 }

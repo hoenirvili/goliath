@@ -1,14 +1,11 @@
-#include <gtest/gtest.h>
-
 #include <cstdio>
-
+#include <gtest/gtest.h>
 #include "src/node.hpp"
-
 
 
 TEST(Node, Constructor)
 {
-	auto node = Node();
+	EXPECT_NO_THROW(Node());
 }
 
 constexpr const char* def = R"(
@@ -99,3 +96,94 @@ TEST(Node, graphviz_relation)
 	got = relations.c_str();
 	EXPECT_STREQ(got, expected);
 }
+
+
+static inline size_t empty_node_size()
+{
+	return 5 * sizeof(size_t);
+}
+
+static inline uint8_t *empty_node_mem()
+{
+	auto node = Node();
+	size_t need = node.mem_size();
+	uint8_t *mem = new uint8_t[need];
+
+	size_t first = 0;
+	size_t second = 1;
+	memcpy(mem, &first , sizeof(first));
+	mem += sizeof(first);
+	memcpy(mem, &second, sizeof(second));
+	mem += sizeof(second);
+	memcpy(mem, &first, sizeof(first));
+	mem += sizeof(first);
+	memcpy(mem, &first, sizeof(first));
+	mem += sizeof(first);
+	auto block_size = first;
+	memcpy(mem, &block_size, sizeof(block_size));
+	mem += sizeof(block_size);
+	return mem;
+}
+
+
+TEST(Node, mem_size)
+{
+	auto expect = empty_node_size();
+	auto node = Node();
+	auto got = node.mem_size();
+	EXPECT_EQ(got, expect);
+
+	node.block.push_back("push ESP");
+	node.block.push_back("push EBP");
+	expect += strlen("push ESP") + 1;
+	expect += strlen("push EBP") + 1;
+	got = node.mem_size();
+	EXPECT_EQ(got, expect);
+}
+
+
+TEST(Node, serialize_error)
+{
+	auto node = Node();
+
+	auto err = node.serialize(nullptr, 0);
+	EXPECT_EQ(err, EINVAL);
+
+	auto size = node.mem_size();
+	auto *mem = new uint8_t[size];
+	memset(mem, 0, size);
+
+	err = node.serialize(mem, 0);
+	EXPECT_EQ(err, EINVAL);
+
+	for (size_t i = 0; i < size; i++)
+		EXPECT_EQ(mem[i], 0);
+
+	err = node.serialize(mem, size - 1);
+	EXPECT_EQ(err, ENOMEM);
+
+	for (size_t i = 0; i < size; i++)
+		EXPECT_EQ(mem[i], 0);
+
+	delete mem;
+}
+
+
+TEST(Node, serialize)
+{
+	auto node = Node();
+	auto size = node.mem_size();
+	auto *mem = new uint8_t[size];
+	//auto *expected_mem = empty_node_mem();
+	memset(mem, 0, size);
+
+	//auto err = node.serialize(mem, size);
+	//EXPECT_EQ(err, 0);
+
+	/*err = memcmp(mem, expected_mem, empty_node_size());
+	EXPECT_EQ(err, 0);*/
+
+	delete mem;
+	//delete expected_mem;
+}
+

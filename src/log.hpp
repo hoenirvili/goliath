@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <ostream>
 
-
 class Log {
 
 private:
@@ -26,7 +25,7 @@ private:
 public:
 
 	Log() = default;
-    ~Log() = default;
+	~Log() = default;
 
 	static std::shared_ptr<Log> instance(std::ostream*os = nullptr) noexcept;
 	static std::shared_ptr<Log> instance(const std::string& name) noexcept;

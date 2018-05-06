@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
-
 #include "src/types.hpp"
 #include "src/partial_flow_graph.hpp"
+#include "src/log.hpp"
+#include "src/common.hpp"
+
+using namespace std;
 
 TEST(Instruction, is_branching)
 {
@@ -73,4 +76,30 @@ TEST(Instruction, validate)
 	
 	auto got = instruction.validate();
 	EXPECT_TRUE(got);
+}
+
+TEST(PartialFlowGraph, Constructor)
+{
+	
+	EXPECT_NO_THROW(PartialFlowGraph(nullptr));
+	EXPECT_NO_THROW(PartialFlowGraph());
+	auto logger = make_shared<Log>();
+	EXPECT_NO_THROW(PartialFlowGraph(logger));
+}
+
+TEST(PartialFlowGraph, add)
+{
+	auto pfg = PartialFlowGraph();
+	Instruction instruction = {0};
+	EXPECT_NO_THROW(pfg.add(instruction));
+}
+
+TEST(PartialFlowGraph, Serialise)
+{
+	auto pfg = PartialFlowGraph();
+	size_t size = BUFFER_SIZE - SHARED_CFG;
+	auto *mem = new uint8_t[size];
+	pfg.serialize(mem, size);
+	
+	delete mem;
 }

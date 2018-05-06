@@ -1,8 +1,11 @@
 #include <sstream>
-
 #include <gtest/gtest.h>
-
 #include "src/log.hpp"
+
+TEST(log, Constructor)
+{
+	EXPECT_NO_THROW(Log());
+}
 
 TEST(log, instance)
 {
