@@ -90,16 +90,39 @@ TEST(PartialFlowGraph, Constructor)
 TEST(PartialFlowGraph, add)
 {
 	auto pfg = PartialFlowGraph();
-	Instruction instruction = {0};
-	EXPECT_NO_THROW(pfg.add(instruction));
+	Instruction instruction;
+	instruction.argument_value = 0;
+	instruction.branch_type = 0;
+	instruction.eip = 0;
+	instruction.len = 0;
+	EXPECT_NO_THROW(
+		pfg.add(instruction)
+	);
+	
 }
 
-TEST(PartialFlowGraph, Serialise)
+TEST(PartialFlowGraph, Serialise_empty)
 {
-	auto pfg = PartialFlowGraph();
+
+	auto pfg = PartialFlowGraph(nullptr);
 	size_t size = BUFFER_SIZE - SHARED_CFG;
 	auto *mem = new uint8_t[size];
-	pfg.serialize(mem, size);
-	
+	memset(mem, 0, sizeof(size));
+
+	uint8_t expected[] = {
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+	};
+
+	int n = pfg.serialize(mem, size);
+	EXPECT_EQ(n, 0);
+
+	for (size_t i = 0; i < size; i++) {
+		printf("%0x2 ", mem[i]);
+	}
+
+	//n = memcmp(mem, expected, size);
+	//EXPECT_EQ(n, 0);
+
 	delete mem;
 }

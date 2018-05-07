@@ -257,8 +257,8 @@ void PartialFlowGraph::add(Instruction instruction) noexcept
 		this->error("Invalid instruction passed");
 		return;
 	}
-}
 
+}
 
 size_t PartialFlowGraph::mem_size() const noexcept
 {
@@ -267,53 +267,41 @@ size_t PartialFlowGraph::mem_size() const noexcept
 	size += sizeof(this->node_map.size());
 	
 	for (const auto &item : this->node_map) {
-		/**
-		* serialisation on x86
-		* - first 4 bytes is the start addrs of the first node in our pfg
-		* - second 4 bytes are the number of nodes
-		* - after the 4 bytes we start in pairs:
-		*	- first 4 bytes are the number of occurences
-		*	- second 4 bytes true branch address
-		*	- third 4 bytes false branch address
-		*	- foruth 4 bytes is the size of the node block
-		*	- 4 bytes the key/addres of the node
-		*	- the hole block, every block is separated by "\0"
-		* - we end with the random value 0x5
-		*/
 		const auto address = item.first;
 		const auto node = item.second;
-
-		size += sizeof(address);
 		
-		size_t n_blocks = node->block.size();
+		size += sizeof(address);
+		size += node->mem_size();
 	}
 	
-	return size;
+	return size + sizeof(this->guard); /*with the guard value*/
 }
+
 bool PartialFlowGraph::it_fits(size_t into) const noexcept
 {
 	auto n = this->mem_size();
 	return (n <= into);
 }
 
-void PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
+int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 {
 	if (!mem) {
 		this->error("invalid shared block of memory provided");
-		return;
+		return EINVAL;
 	}
 
 	if (!this->it_fits(size)) {
 		this->error("serialise buffer can't fit into the given size");
-		return;
+		return EINVAL;
 	}
 	
 	memset(mem, 0, size);
+	this->info("prepare memory for serialization");
 	/**
 	* serialisation on x86
 	* - first 4 bytes is the start addrs of the first node node_map
 	* - second 4 bytes are the number of nodes
-	* - after the 4 bytes we start in pairs:
+	* - after we start in pairs:
 	*	- first 4 bytes are the start_addr of the node
 	*	- second 4 bytes are the number of occurences
 	*	- third 4 bytes true branch address
@@ -321,10 +309,34 @@ void PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 	*	- fifth 4 bytes is the size of the node block
 	*	- the last is the hole block as strings, every string  is separated by "\0"
 	*	so we don't need to include his size also
-	* - we end with the random guard value of 0x7 
+	* - we end with the random guard value of 0x7777
 	*/
+	memcpy(mem, &this->start, sizeof(this->start));
+	mem += sizeof(this->start);
+	
 	auto n = this->node_map.size();
+	memcpy(mem, &n, sizeof(n));
+
+	this->info("start seriliazing every node in map");
 	for (const auto &item : this->node_map) {
-		//TODO(): finish this loop
+		auto start_address = item.first;
+
+		memcpy(mem, &start_address, sizeof(start_address));
+		mem += sizeof(start_address);
+
+		auto node = item.second;
+		
+		size_t node_size = node->mem_size();
+		int n = node->serialize(mem, size);
+		if (n != 0) {
+			this->error("cannot serialise the node");
+			return n;
+		}
+		mem += node_size;
 	}
+
+	memcpy(mem, &this->guard, sizeof(this->guard));
+	this->info("serialization is finished, guard value added");
+
+	return 0;
 }

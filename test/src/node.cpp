@@ -97,34 +97,10 @@ TEST(Node, graphviz_relation)
 	EXPECT_STREQ(got, expected);
 }
 
-
 static inline size_t empty_node_size()
 {
 	return 5 * sizeof(size_t);
 }
-
-static inline uint8_t *empty_node_mem()
-{
-	auto node = Node();
-	size_t need = node.mem_size();
-	uint8_t *mem = new uint8_t[need];
-
-	size_t first = 0;
-	size_t second = 1;
-	memcpy(mem, &first , sizeof(first));
-	mem += sizeof(first);
-	memcpy(mem, &second, sizeof(second));
-	mem += sizeof(second);
-	memcpy(mem, &first, sizeof(first));
-	mem += sizeof(first);
-	memcpy(mem, &first, sizeof(first));
-	mem += sizeof(first);
-	auto block_size = first;
-	memcpy(mem, &block_size, sizeof(block_size));
-	mem += sizeof(block_size);
-	return mem;
-}
-
 
 TEST(Node, mem_size)
 {
@@ -140,7 +116,6 @@ TEST(Node, mem_size)
 	got = node.mem_size();
 	EXPECT_EQ(got, expect);
 }
-
 
 TEST(Node, serialize_error)
 {
@@ -168,22 +143,56 @@ TEST(Node, serialize_error)
 	delete[] mem;
 }
 
-
-TEST(Node, serialize)
+TEST(Node, serialize_empty)
 {
 	auto node = Node();
 	auto size = node.mem_size();
 	auto *mem = new uint8_t[size];
-	//auto *expected_mem = empty_node_mem();
 	memset(mem, 0, size);
-
-	//auto err = node.serialize(mem, size);
-	//EXPECT_EQ(err, 0);
-
-	/*err = memcmp(mem, expected_mem, empty_node_size());
-	EXPECT_EQ(err, 0);*/
-
+	const uint8_t expected[] = {
+		0x00, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+	};
+	int n = node.serialize(mem, size);
+	EXPECT_EQ(n, 0);
+	n = memcmp(mem, expected, size);
+	EXPECT_EQ(n, 0);
 	delete[] mem;
-	//delete expected_mem;
 }
 
+
+#include <cstdio>
+
+TEST(Node, serialize)
+{
+	auto node = Node();
+	node.block.push_back("test");
+	node.block.push_back("another test");
+	
+	auto size = node.mem_size();
+	auto *mem = new uint8_t[size];
+	memset(mem, 0, size);
+	const uint8_t expected[] = {
+		0x00, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x02, 0x00, 0x00, 0x00,
+		0x74, 0x65, 0x73, 0x74, 0x00,
+		0x61, 0x6e, 0x6f, 0x74, 0x68,
+		0x65, 0x72, 0x20, 0x74, 0x65,
+		0x73, 0x74, 0x00,
+	};
+
+	int n = node.serialize(mem, size);
+	EXPECT_EQ(n, 0);
+
+	n = memcmp(mem, expected, size);
+	EXPECT_EQ(n, 0);
+	
+	delete[] mem;
+}

@@ -321,5 +321,5 @@ enum SPECIAL_INFO {
 };
 
 extern "C" {
-__declspec(dllexport) int Disasm(LPDISASM pDisAsm);
+	__declspec(dllexport) int Disasm(LPDISASM pDisAsm);
 }

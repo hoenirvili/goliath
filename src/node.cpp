@@ -87,6 +87,11 @@ string Node::graphviz_relation() const
 		"\\n";
 }
 
+bool Node::it_fits(size_t size) const noexcept
+{
+	return (size < this->mem_size());
+}
+
 int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 {
 	if ((!mem) || (!size))
@@ -96,25 +101,28 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 	if (size < required)
 		return ENOMEM;
 
-    char end = '\0';
 	memcpy(mem, &this->start_address, sizeof(this->start_address));
 	mem += sizeof(this->start_address);
+	
 	memcpy(mem, &this->occurences, sizeof(this->occurences));
 	mem += sizeof(this->occurences);
+	
 	memcpy(mem, &this->true_branch_address, sizeof(this->true_branch_address));
 	mem += sizeof(this->true_branch_address);
+	
 	memcpy(mem, &this->false_branch_address, sizeof(this->false_branch_address));
 	mem += sizeof(this->false_branch_address);
+	
 	auto block_size = this->block.size();
 	memcpy(mem, &block_size, sizeof(block_size));
 	mem += sizeof(block_size);
+	
 	for (const auto &item : this->block) {
-		auto item_size = item.size();
 		auto code = item.c_str();
-		memcpy(mem, code, sizeof(item_size));
-		mem += sizeof(item_size);
-		memcpy(mem, &end, sizeof(char));
-		mem += sizeof(char);
+		size_t code_size = strlen(code) + 1;
+		
+		memcpy(mem, code, code_size);
+		mem += code_size;
 	}
 
 	return 0;

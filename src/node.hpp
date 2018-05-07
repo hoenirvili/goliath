@@ -9,6 +9,9 @@
  */
 class Node {
 
+private:
+	bool it_fits(size_t size) const noexcept;
+
 public:
 	/**
 	* start_address is the first
