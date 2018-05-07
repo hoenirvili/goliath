@@ -101,28 +101,46 @@ TEST(PartialFlowGraph, add)
 	
 }
 
-TEST(PartialFlowGraph, Serialise_empty)
-{
+#include <cstdio>
 
+TEST(PartialFlowGraph, serialise_empty)
+{
+	size_t max = BUFFER_SIZE - SHARED_CFG;
 	auto pfg = PartialFlowGraph(nullptr);
-	size_t size = BUFFER_SIZE - SHARED_CFG;
+	size_t size = pfg.mem_size();
+
 	auto *mem = new uint8_t[size];
 	memset(mem, 0, sizeof(size));
 
 	uint8_t expected[] = {
 		0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00,
+		0x77, 0x77
 	};
 
 	int n = pfg.serialize(mem, size);
 	EXPECT_EQ(n, 0);
 
-	for (size_t i = 0; i < size; i++) {
-		printf("%0x2 ", mem[i]);
-	}
-
-	//n = memcmp(mem, expected, size);
-	//EXPECT_EQ(n, 0);
+	n = memcmp(mem, expected, size);
+	EXPECT_EQ(n, 0);
 
 	delete mem;
 }
+
+
+TEST(PartialFlowGraph, serialise_with_errors)
+{
+	auto pfg = PartialFlowGraph();
+	int n = pfg.serialize(nullptr, 0);
+	EXPECT_EQ(n, EINVAL);
+	
+	auto *mem = new uint8_t[10];
+	n = pfg.serialize(mem, 0);
+	EXPECT_EQ(n, EINVAL);
+	
+	n = pfg.serialize(mem, 5);
+	EXPECT_EQ(n, EINVAL);
+	
+	delete[] mem;
+}
+

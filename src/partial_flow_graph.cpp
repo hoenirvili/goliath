@@ -232,21 +232,24 @@ bool Instruction::validate() const
 void PartialFlowGraph::info(const std::string & message) const noexcept
 {
 	if (!this->logger)
-		return
+		return;
+
 	this->logger->info(message);
 }
 
 void PartialFlowGraph::error(const std::string & message) const noexcept
 {
 	if (!this->logger)
-		return
+		return;
+
 	this->logger->error(message);
 }
 
 void PartialFlowGraph::warning(const std::string & message) const noexcept
 {
 	if (!this->logger)
-		return
+		return;
+
 	this->logger->warning(message);
 }
 
@@ -285,7 +288,7 @@ bool PartialFlowGraph::it_fits(size_t into) const noexcept
 
 int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 {
-	if (!mem) {
+	if ((!mem) || (!size)) {
 		this->error("invalid shared block of memory provided");
 		return EINVAL;
 	}
@@ -316,6 +319,7 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 	
 	auto n = this->node_map.size();
 	memcpy(mem, &n, sizeof(n));
+	mem += sizeof(n);
 
 	this->info("start seriliazing every node in map");
 	for (const auto &item : this->node_map) {

@@ -37,12 +37,11 @@ private:
 	
 	std::map<size_t, std::shared_ptr<Node>> node_map; 
 	
-	const uint32_t guard = 0x7777;
+	const uint16_t guard = 0x7777;
 	
 	std::shared_ptr<Log> logger = nullptr;
 	
 	bool it_fits(size_t into) const noexcept;
-	size_t mem_size() const noexcept;
 
 	void info(const std::string& message) const noexcept;
 	void error(const std::string& message) const noexcept;
@@ -51,6 +50,8 @@ private:
 public:
 
     void generate(std::string content, std::string fname = "");
+
+	size_t mem_size() const noexcept;
 
     std::string graphviz(void);
 
