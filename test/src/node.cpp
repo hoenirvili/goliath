@@ -165,7 +165,7 @@ TEST(Node, serialize_error)
 	for (size_t i = 0; i < size; i++)
 		EXPECT_EQ(mem[i], 0);
 
-	delete mem;
+	delete[] mem;
 }
 
 
@@ -183,7 +183,7 @@ TEST(Node, serialize)
 	/*err = memcmp(mem, expected_mem, empty_node_size());
 	EXPECT_EQ(err, 0);*/
 
-	delete mem;
+	delete[] mem;
 	//delete expected_mem;
 }
 

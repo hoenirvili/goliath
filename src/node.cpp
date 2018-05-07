@@ -1,6 +1,7 @@
 #include "node.hpp"
 #include "common.hpp"
 
+#include <cstring>
 #include <string>
 
 using namespace std;
@@ -13,8 +14,7 @@ static const unsigned int pallete[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
  * for a given number of occurences return a number
  * based on the color pallete numbers in graphviz
  */
-static string pick_color(unsigned int occurences)
-{
+static string pick_color(unsigned int occurences) {
     const unsigned int interval[] = {1, 7, 14, 28, 40, 70, 80, 100, 120};
 
     string color = "1";
@@ -45,11 +45,11 @@ static string pick_color(unsigned int occurences)
 string Node::graphviz_definition() const
 {
     constexpr int size = 4096;
-    /*
-        definitions for the node
-        1-%s name node
-        2-%s asm blocks
-        3-%s heatmap color
+    /**
+     *   definitions for the node
+     *   1-%s name node
+     *   2-%s asm blocks
+     *   3-%s heatmap color
     */
     constexpr const char* format = R"(
 	%s [
@@ -87,7 +87,7 @@ string Node::graphviz_relation() const
 		"\\n";
 }
 
-int Node::serialize(uint8_t * mem, const size_t size) const noexcept
+int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 {
 	if ((!mem) || (!size))
 		return EINVAL;
@@ -96,6 +96,7 @@ int Node::serialize(uint8_t * mem, const size_t size) const noexcept
 	if (size < required)
 		return ENOMEM;
 
+    char end = '\0';
 	memcpy(mem, &this->start_address, sizeof(this->start_address));
 	mem += sizeof(this->start_address);
 	memcpy(mem, &this->occurences, sizeof(this->occurences));
@@ -112,7 +113,7 @@ int Node::serialize(uint8_t * mem, const size_t size) const noexcept
 		auto code = item.c_str();
 		memcpy(mem, code, sizeof(item_size));
 		mem += sizeof(item_size);
-		memcpy(mem, '\0', sizeof(char));
+		memcpy(mem, &end, sizeof(char));
 		mem += sizeof(char);
 	}
 

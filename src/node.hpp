@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 /**
  * Node object represents a single node in a
