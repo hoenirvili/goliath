@@ -92,6 +92,11 @@ bool Node::it_fits(size_t size) const noexcept
 	return (size < this->mem_size());
 }
 
+void Node::deserialize(const uint8_t *mem, const size_t size) noexcept
+{
+	return 0;
+}
+
 int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 {
 	if ((!mem) || (!size))

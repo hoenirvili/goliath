@@ -9,40 +9,7 @@
 
 using namespace std;
 
-using NodeMap = std::map<size_t, std::unique_ptr<Node>>;
-
-//// _merge iterates in *from* and if the element exists in *into*
-//// increment the occurences fiels or move the element in *into*
-//static void _merge(const NodeMap from, NodeMap& into)
-//{
-//    for (auto& item : from) {
-//        auto key = item.first;
-//        auto value = item.second;
-//
-//        auto it = into.find(key);
-//        // no key found
-//        if (it == into.end()) {
-//            into[key] = value;
-//            continue;
-//        }
-//        // key found
-//        into[key]->occurences++;
-//    }
-//}
-//
-//// merge merges all NodeMaps from storage and returns it
-//NodeMap PartialFlowGraph::merge()
-//{
-//    assert(storage.empty());
-//    auto into = storage[0];
-//    vector<int>::size_type i = 1;
-//    for (; i != storage.size(); i++)
-//        _merge(storage[i], into);
-//
-//    return into;
-//}
-//
-//// digraph_prefix template
+// digraph_prefix template
 constexpr const char* digraph_prefix = R"(
 digraph ControlFlowGraph {
 	node [
@@ -56,6 +23,7 @@ digraph ControlFlowGraph {
 	]
 }	
 )";
+
 //
 //PartialFlowGraph::~PartialFlowGraph()
 //{
@@ -76,48 +44,48 @@ digraph ControlFlowGraph {
 //        for (auto& node : nodelist)
 //            delete node.second;
 //}
-//
-//std::string PartialFlowGraph::graphviz()
-//{
-//    assert(this->nl.size() != 0);
-//    assert(this->start != 0);
-//
-//    std::string definitions = "";
-//    for (auto& item : this->nl) {
-//        auto node = item.second;
-//        definitions += node->graphviz_definition();
-//    }
-//
-//    auto digraph = digraph_prefix + definitions;
-//
-//    for (auto& item : this->nl) {
-//        auto node = item.second;
-//        digraph += node->graphviz_relation();
-//    }
-//
-//    return digraph;
-//}
-//
-//void PartialFlowGraph::generate(std::string content, std::string fname)
-//{
-//    if (content.empty()) {
-//        return;
-//    }
-//
-//    const auto prefix = ".dot";
-//    if (fname.empty())
-//        fname = std::to_string(this->start);
-//
-//    auto file = fstream(fname+prefix);
-//    file << content;
-//    file.close();
-//
-//    const std::string cmd = "dot -Tpng " + fname + prefix + " -o" + fname + ".png";
-//    auto n = std::system(cmd.c_str());
-//	//if (!n)
-//		//logger.error("cannot generate partial flow graph");
-//}
-//
+
+
+std::string PartialFlowGraph::graphviz()
+{
+    std::string definitions = "";
+    for (auto& item : this->node_map) {
+        auto node = item.second;
+        definitions += node->graphviz_definition();
+    }
+
+    auto digraph = digraph_prefix + definitions;
+
+    for (auto& item : this->node_map) {
+        auto node = item.second;
+        digraph += node->graphviz_relation();
+    }
+
+    return digraph;
+}
+
+
+void PartialFlowGraph::generate(std::string content, std::string fname)
+{
+    if (content.empty()) {
+        return;
+    }
+
+    const auto prefix = ".dot";
+    if (fname.empty())
+        fname = std::to_string(this->start);
+
+    auto file = fstream(fname+prefix);
+    file << content;
+    file.close();
+
+    const std::string cmd = "dot -Tpng " + fname + prefix + " -o" + fname + ".png";
+    auto n = std::system(cmd.c_str());
+	if (!n) {
+		logger->error("cannot generate partial flow graph");
+	}
+}
+
 
 static inline bool is_branch(BRANCH_TYPE t)
 {
@@ -253,14 +221,42 @@ void PartialFlowGraph::warning(const std::string & message) const noexcept
 	this->logger->warning(message);
 }
 
-void PartialFlowGraph::add(Instruction instruction) noexcept
+int PartialFlowGraph::add(Instruction instruction) noexcept
 {
 	auto valid = instruction.validate();
 	if (!valid) {
-		this->error("Invalid instruction passed");
-		return;
+		this->error("invalid instruction passed");
+		return EINVAL;
 	}
 
+	shared_ptr<Node> node = nullptr;
+
+	if (!this->start) {
+		this->info("new partial flow graph");
+		this->start = instruction.eip;
+	}
+
+	if (this->should_alloc_node) {
+		node = make_shared<Node>();
+		node->start_address = instruction.eip;
+		this->current_node_addr = instruction.eip;
+		this->node_map[this->current_node_addr] = node;
+		this->should_alloc_node = false;
+		this->info("new partial flow graph node created");
+	}
+
+	node = this->node_map[this->current_node_addr];
+
+	if (instruction.is_branch()) {
+		this->info("partial flow graph node is branching");
+		node->true_branch_address = instruction.true_branch();
+		node->false_branch_address = instruction.false_branch();
+		this->should_alloc_node = true;
+	}
+		
+	node->block.push_back(instruction.content);
+
+	return 0;
 }
 
 size_t PartialFlowGraph::mem_size() const noexcept
@@ -343,4 +339,9 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 	this->info("serialization is finished, guard value added");
 
 	return 0;
+}
+
+uint8_t * PartialFlowGraph::deserialize(uint8_t * mem) noexcept
+{
+	return nullptr;
 }

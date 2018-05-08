@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include "src/log.hpp"
 
-TEST(log, Constructor)
+TEST(log, constructor)
 {
 	EXPECT_NO_THROW(Log());
 }

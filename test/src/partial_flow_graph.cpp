@@ -87,23 +87,41 @@ TEST(PartialFlowGraph, Constructor)
 	EXPECT_NO_THROW(PartialFlowGraph(logger));
 }
 
+TEST(PartialFlowGraph, add_with_errors)
+{
+	auto pfg = PartialFlowGraph();
+	Instruction instruction = { 0 };
+	int err = pfg.add(instruction);
+	EXPECT_EQ(err, EINVAL);
+}
+
+#define default_instructions()					\
+	{											\
+		{0x5555, "push ebp", 0, 4, 0},			\
+		{ 0x5559, "mov ebp, esp", 0, 4, 0 },	\
+		{ 0x55bb, "push 20", 0, 4, 0 },			\
+		{ 0x15bf, "call 0x63215", CallType, 2, 0 },	\
+		{ 0x4125, "add esp 4", 0, 2, 0 },		\
+		{ 0x2141, "mov DWORD PTR s[ebp], eax", 0,2,0 },\
+	}
+
+
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+
 TEST(PartialFlowGraph, add)
 {
 	auto pfg = PartialFlowGraph();
-	Instruction instruction;
-	instruction.argument_value = 0;
-	instruction.branch_type = 0;
-	instruction.eip = 0;
-	instruction.len = 0;
-	EXPECT_NO_THROW(
-		pfg.add(instruction)
-	);
-	
+	Instruction instructions[] = default_instructions();
+
+	size_t n = ARRAY_SIZE(instructions);
+	int err = 0;
+	for (size_t i = 0; i < n; i++) {
+		err = pfg.add(instructions[0]);
+		EXPECT_EQ(err, 0);
+	}
 }
 
-#include <cstdio>
-
-TEST(PartialFlowGraph, serialise_empty)
+TEST(PartialFlowGraph, serialize_empty)
 {
 	size_t max = BUFFER_SIZE - SHARED_CFG;
 	auto pfg = PartialFlowGraph(nullptr);
@@ -128,7 +146,7 @@ TEST(PartialFlowGraph, serialise_empty)
 }
 
 
-TEST(PartialFlowGraph, serialise_with_errors)
+TEST(PartialFlowGraph, serialize_with_errors)
 {
 	auto pfg = PartialFlowGraph();
 	int n = pfg.serialize(nullptr, 0);
@@ -144,3 +162,24 @@ TEST(PartialFlowGraph, serialise_with_errors)
 	delete[] mem;
 }
 
+TEST(PartialFlowGraph, serialize)
+{
+	auto pfg = PartialFlowGraph();
+	
+	Instruction instructions[] = default_instructions();
+	size_t n = ARRAY_SIZE(instructions);
+	int err = 0;
+
+	for (size_t i = 0; i < n; i++) {
+		err = pfg.add(instructions[i]);
+		EXPECT_EQ(err, 0);
+	}
+
+	auto size = pfg.mem_size();
+	auto *mem = new uint8_t[size];
+	
+	err = pfg.serialize(mem, size);
+	EXPECT_EQ(err, 0);
+
+	delete[]mem;
+}
