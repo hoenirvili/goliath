@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "src/types.hpp"
 #include "src/partial_flow_graph.hpp"
 #include "src/log.hpp"
@@ -78,7 +79,7 @@ TEST(Instruction, validate)
 	EXPECT_TRUE(got);
 }
 
-TEST(PartialFlowGraph, Constructor)
+TEST(PartialFlowGraph, constructor)
 {
 	
 	EXPECT_NO_THROW(PartialFlowGraph(nullptr));
@@ -266,4 +267,45 @@ TEST(PartialFlowGraph, deserialize)
 		got = str.c_str();
 		EXPECT_STREQ(got, "another test");
 	}
+}
+
+TEST(PartialFlowGraph, merge_with_errors)
+{
+	auto pfg = PartialFlowGraph();
+	auto from = PartialFlowGraph();
+	
+	int err = pfg.merge(from);
+	EXPECT_EQ(err, EINVAL);
+
+	from.start = 0x7231;
+
+	err = pfg.merge(from);
+	EXPECT_EQ(err, EINVAL);
+}
+
+TEST(PartialFlowGraph, merge)
+{
+	auto pfg = PartialFlowGraph();
+	auto from = PartialFlowGraph();
+	auto node1 = make_shared<Node>();
+	node1->start_address = 0x7777;
+	node1->occurences = 1;
+	auto node2 = make_shared<Node>();
+	node2->occurences = 1;
+	node2->start_address = 0x6666;
+	auto node3 = make_shared<Node>();
+	node3->occurences = 1;
+	node3->start_address = 0x7777;
+
+	pfg.node_map[0x15123] = node3;
+	from.node_map[0x15123] = node1;
+	from.node_map[0x52341] = node2;
+
+	int err = pfg.merge(from);
+	EXPECT_EQ(err, 0);
+	
+	EXPECT_EQ(pfg.node_map[0x15123]->occurences, 2);
+	EXPECT_EQ(pfg.node_map[0x15123]->start_address, 0x7777);
+	EXPECT_EQ(pfg.node_map[0x52341]->occurences, 1);
+	EXPECT_EQ(pfg.node_map[0x52341]->start_address, 0x6666);
 }

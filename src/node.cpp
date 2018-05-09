@@ -1,8 +1,8 @@
-#include "node.hpp"
-#include "common.hpp"
-
 #include <cstring>
 #include <string>
+
+#include "node.hpp"
+#include "common.hpp"
 
 using namespace std;
 

@@ -3,7 +3,6 @@
 #include <memory>
 #include <cstdio>
 #include <string>
-
 #include <Windows.h>
 
 #include "types.hpp"

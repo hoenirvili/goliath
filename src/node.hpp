@@ -10,6 +10,9 @@
 class Node {
 
 private:
+
+	// it_fits returns true if the size specified is greater or
+	// equal than the object node members
 	bool it_fits(size_t size) const noexcept;
 
 public:
@@ -55,12 +58,14 @@ public:
 	std::string graphviz_relation() const;
 
 	/**
-	* serialize
+	* serialize all contents of the node into the speicifed mem location
+	* in orider to write in that location size must be huge enough
 	*/
 	int serialize(uint8_t *mem, const size_t size) const noexcept;
 	
 	/**
-	* deserialize
+	* deserialize extract byte per byte overwiting all internal state
+	* until we consume all size bytes
 	*/
 	int deserialize(const uint8_t *mem, const size_t size) noexcept;
 	

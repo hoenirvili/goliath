@@ -1,12 +1,10 @@
 #include "partial_flow_graph.hpp"
-
 #include "common.hpp"
 #include "log.hpp"
 #include "types.hpp"
 
 #include <fstream>
 #include <cstddef>
-
 
 using namespace std;
 
@@ -25,8 +23,7 @@ digraph ControlFlowGraph {
 }	
 )";
 
-
-std::string PartialFlowGraph::graphviz()
+std::string PartialFlowGraph::graphviz() const
 {
     std::string definitions = "";
     for (auto& item : this->node_map) {
@@ -46,28 +43,48 @@ std::string PartialFlowGraph::graphviz()
 
 int PartialFlowGraph::merge(const PartialFlowGraph &from) noexcept
 {
+	if (from.node_map.empty())
+		return EINVAL;
+
+	if (this->start != from.start)
+		return EINVAL;
+
+	for (const auto &item : from.node_map) {
+		auto key = item.first;
+		auto node = item.second;
+
+		// if the key is not in the map
+		if (this->node_map.find(key) == this->node_map.end()) {
+			this->node_map[key] = node;
+			continue;
+		}
+
+		auto current = this->node_map[key];
+		current->occurences++;
+	}
+
 	return 0;
 }
 
-void PartialFlowGraph::generate(std::string content, std::string fname)
+int PartialFlowGraph::generate(const string content, ostream* out) const noexcept
 {
-    if (content.empty()) {
-        return;
-    }
+	if (content.empty())
+		return EINVAL;
 
-    const auto prefix = ".dot";
-    if (fname.empty())
-        fname = std::to_string(this->start);
+	if (!out)
+		return EINVAL;
 
-    auto file = fstream(fname+prefix);
-    file << content;
-    file.close();
+	(*out) << content;
 
-    const std::string cmd = "dot -Tpng " + fname + prefix + " -o" + fname + ".png";
-    auto n = std::system(cmd.c_str());
+	const string name = to_string(this->start);
+	const std::string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
+	auto n = std::system(cmd.c_str());
 	if (!n) {
 		logger->error("cannot generate partial flow graph");
+		return EINVAL;
 	}
+
+	return 0;
 }
 
 bool Instruction::is_branch() const noexcept
@@ -183,7 +200,6 @@ int PartialFlowGraph::add(Instruction instruction) noexcept
 
 	return 0;
 }
-
 size_t PartialFlowGraph::mem_size() const noexcept
 {
 	size_t size = 0;

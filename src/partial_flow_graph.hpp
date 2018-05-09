@@ -14,7 +14,6 @@
 class Instruction {
 
 public:
-
 	size_t eip;					/* instrction pointer */
     const char* content;		/* complete instruction */
     Int32 branch_type;			/* no branch = 0 */
@@ -47,9 +46,10 @@ public:
 	PartialFlowGraph(std::shared_ptr<Log> logger = nullptr) : logger(logger) {}
 	~PartialFlowGraph() = default;
     
-	void generate(std::string content, std::string fname = "");
+	int generate(std::string content, std::ostream *out) const noexcept;
+
 	size_t mem_size() const noexcept;
-    std::string graphviz();
+	std::string graphviz() const;
 	int merge(const PartialFlowGraph &from) noexcept;
 
 	int serialize(uint8_t* mem, size_t size) const noexcept;

@@ -1,4 +1,5 @@
 #include <memory>
+#include <fstream>
 
 #include "common.hpp"
 #include "log.hpp"
@@ -128,15 +129,19 @@ PluginReport* DBTFinish()
 		return plugin;
 	}
 
-	// generate partial flow graph graphviz
+	fstream out("partiaflowgraph.dot", ios::in);
 	auto graphviz = pfg->graphviz();
-	pfg->generate(graphviz);
+	int err = pfg->generate(graphviz, &out);
+	if (err != 0) {
+		logger->error("cannot generate partial flow graph");
+		return plugin;
+	}
 
 	BYTE *cfg_shared_mem = CFG(engine_share_buff);
 
 	auto from = PartialFlowGraph(logger);
 	size_t size = cfg_buf_size();
-	int err = from.deserialize(cfg_shared_mem, size);
+	err = from.deserialize(cfg_shared_mem, size);
 	if (err != 0) {
 		logger->error("cannot deserialise from shard buffer engine a pfg");
 		return plugin;

@@ -1,7 +1,7 @@
-#include "log.hpp"
-
 #include <fstream>
 #include <unordered_map>
+
+#include "log.hpp"
 
 using namespace std;
 

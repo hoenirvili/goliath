@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <gtest/gtest.h>
+
 #include "src/node.hpp"
 #include "src/common.hpp"
 
