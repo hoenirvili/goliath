@@ -58,8 +58,11 @@ public:
 	* serialize
 	*/
 	int serialize(uint8_t *mem, const size_t size) const noexcept;
-
-	void deserialize(const uint8_t *mem, const size_t size) noexcept
+	
+	/**
+	* deserialize
+	*/
+	int deserialize(const uint8_t *mem, const size_t size) noexcept;
 	
 	/**
 	* mem_size returns the number of bytes that's needed for serialization

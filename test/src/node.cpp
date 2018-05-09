@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <gtest/gtest.h>
 #include "src/node.hpp"
+#include "src/common.hpp"
 
 
 TEST(Node, Constructor)
@@ -164,9 +165,6 @@ TEST(Node, serialize_empty)
 	delete[] mem;
 }
 
-
-#include <cstdio>
-
 TEST(Node, serialize)
 {
 	auto node = Node();
@@ -195,4 +193,41 @@ TEST(Node, serialize)
 	EXPECT_EQ(n, 0);
 	
 	delete[] mem;
+}
+
+TEST(Node, deserialize)
+{
+	const uint8_t expected[] = {
+		0x00, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x02, 0x00, 0x00, 0x00,
+		0x74, 0x65, 0x73, 0x74, 0x00, //test\0
+		0x61, 0x6e, 0x6f, 0x74, 0x68, //another test\0
+		0x65, 0x72, 0x20, 0x74, 0x65,
+		0x73, 0x74, 0x00,
+	};
+	const size_t size = ARRAY_SIZE(expected);
+	
+	auto node = Node();
+	int err = node.deserialize(expected, size);
+	EXPECT_EQ(err, 0);
+
+	EXPECT_EQ(node.start_address, 0);
+	EXPECT_EQ(node.occurences, 1);
+	EXPECT_EQ(node.false_branch_address, 0);
+	EXPECT_EQ(node.true_branch_address, 0);
+
+	size_t n = node.block.size();
+	EXPECT_EQ(n, 2);
+
+	auto str = node.block[0];
+	auto got = str.c_str();
+	EXPECT_STREQ(got, "test");
+	
+	str = node.block[1];
+	got = str.c_str();
+	EXPECT_STREQ(got, "another test");
+	
 }

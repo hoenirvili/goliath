@@ -17,6 +17,8 @@ size_t GetLayer()
  */
 BYTE* engine_share_buff; 
 
+
+static HANDLE file_mapping;
 /**
 *
 */
@@ -29,11 +31,11 @@ static unique_ptr<PartialFlowGraph> pfg;
 
 BOOL DBTInit()
 {
-    HANDLE map = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
-	if (!map)
+	file_mapping = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
+	if (!file_mapping)
 		return FALSE;
 
-    engine_share_buff = (BYTE*) MapViewOfFile(map, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
+    engine_share_buff = (BYTE*) MapViewOfFile(file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
     if (!engine_share_buff)
         return FALSE;
 
@@ -91,10 +93,6 @@ PluginReport *DBTBeforeExecute(void *custom_params, PluginLayer **layers)
     sprintf(temp, "%-*s : %s", 45, instr_bytes, MyDisasm->CompleteInstr);
     strcat(content, temp);
 
-
-	//TODO(hoenir): Deserialize from mem shared
-	//TODO(hoenir): Keep adding nodes
-
     Instruction instruction = {
         MyDisasm->EIP,
         MyDisasm->CompleteInstr,
@@ -121,15 +119,44 @@ PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers)
 PluginReport* DBTFinish()
 {
 	logger->info("[DBTITrace] Finish is called");
-
-	//TODO(hoenir): Generate pfg
-	//TODO(hoenir): Merge if any
-	//TODO(hoenir): Serialise
-	//TODO(hoenir): Store serilise in mem shared aka CFG
-	//TODO(hoenir): Clean up
-
-    return (PluginReport*)
+	
+	auto plugin = (PluginReport*)
 		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
+	
+	if (!plugin) {
+		logger->error("Finish plugin virt alloc failed");
+		return plugin;
+	}
+
+	// generate partial flow graph graphviz
+	auto graphviz = pfg->graphviz();
+	pfg->generate(graphviz);
+
+	BYTE *cfg_shared_mem = CFG(engine_share_buff);
+
+	auto from = PartialFlowGraph(logger);
+	size_t size = cfg_buf_size();
+	int err = from.deserialize(cfg_shared_mem, size);
+	if (err != 0) {
+		logger->error("cannot deserialise from shard buffer engine a pfg");
+		return plugin;
+	}
+
+	err = pfg->merge(from);
+	if (err != 0) {
+		logger->error("cannot merge two partial flow graphs");
+		return plugin;
+	}
+
+	err = pfg->serialize(cfg_shared_mem, size);
+	if (err != 0) {
+		logger->error("cannot serilaize from pfg to shared buffer engine");
+		return plugin;
+	}
+	
+	CloseHandle(file_mapping);
+	
+	return plugin;
 }
 
 

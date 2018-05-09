@@ -106,7 +106,6 @@ TEST(PartialFlowGraph, add_with_errors)
 	}
 
 
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
 TEST(PartialFlowGraph, add)
 {
@@ -157,7 +156,7 @@ TEST(PartialFlowGraph, serialize_with_errors)
 	EXPECT_EQ(n, EINVAL);
 	
 	n = pfg.serialize(mem, 5);
-	EXPECT_EQ(n, EINVAL);
+	EXPECT_EQ(n, ENOMEM);
 	
 	delete[] mem;
 }
@@ -182,4 +181,89 @@ TEST(PartialFlowGraph, serialize)
 	EXPECT_EQ(err, 0);
 
 	delete[]mem;
+}
+
+TEST(PartialFlowGraph, deserialize_empty)
+{
+	uint8_t expected[] = {
+		0x00, 0x00, 0x00, 0x00, /*start*/
+		0x00, 0x00, 0x00, 0x00, /*node_map.size*/
+		0x77, 0x77 /*guard*/
+	};
+	size_t size = ARRAY_SIZE(expected);
+	
+	auto pfg = PartialFlowGraph();
+	
+	int err = pfg.deserialize(expected, size);
+	EXPECT_EQ(err, 0);
+
+	EXPECT_EQ(pfg.start, 0);
+	int n = pfg.node_map.size();
+	EXPECT_EQ(n, 0);
+}
+
+TEST(PartialFlowGraph, deserialize)
+{
+	uint8_t expected[] = {
+		0x05, 0x00, 0x00, 0x00, /*start*/
+		0x02, 0x00, 0x00, 0x00, /*node_map.size*/
+		0x55, 0x44, 0x33, 0x22,/*key*/
+		/*node*/
+		0x00, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x02, 0x00, 0x00, 0x00,
+		0x74, 0x65, 0x73, 0x74, 0x00, //test\0
+		0x61, 0x6e, 0x6f, 0x74, 0x68, //another test\0
+		0x65, 0x72, 0x20, 0x74, 0x65,
+		0x73, 0x74, 0x00,
+		0x99, 0x88, 0x77, 0x66, /*key*/
+		/*node*/
+		0x00, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x02, 0x00, 0x00, 0x00,
+		0x74, 0x65, 0x73, 0x74, 0x00, //test\0
+		0x61, 0x6e, 0x6f, 0x74, 0x68, //another test\0
+		0x65, 0x72, 0x20, 0x74, 0x65,
+		0x73, 0x74, 0x00,
+		0x77, 0x77 /*guard*/
+	};
+	size_t size = ARRAY_SIZE(expected);
+	auto pfg = PartialFlowGraph();
+	
+	int err = pfg.deserialize(expected, size);
+	EXPECT_EQ(err, 0);
+
+	EXPECT_EQ(pfg.start, 5);
+	int n = pfg.node_map.size();
+	EXPECT_EQ(n, 2);
+	
+	size_t nodes[] = { 0x22334455, 0x66778899 };
+	for (size_t i = 0; i < ARRAY_SIZE(nodes); i++) {
+		auto key = nodes[i];
+		EXPECT_NO_THROW(pfg.node_map.at(key));
+
+		auto node = pfg.node_map[key];
+		EXPECT_TRUE(node);
+
+		n = node->block.size();
+		EXPECT_EQ(node->start_address, 0);
+		EXPECT_EQ(node->occurences, 1);
+		EXPECT_EQ(node->false_branch_address, 0);
+		EXPECT_EQ(node->true_branch_address, 0);
+
+		n = node->block.size();
+		EXPECT_EQ(n, 2);
+
+		auto str = node->block[0];
+		auto got = str.c_str();
+		EXPECT_STREQ(got, "test");
+
+		str = node->block[1];
+		got = str.c_str();
+		EXPECT_STREQ(got, "another test");
+	}
 }

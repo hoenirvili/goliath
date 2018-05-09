@@ -89,11 +89,48 @@ string Node::graphviz_relation() const
 
 bool Node::it_fits(size_t size) const noexcept
 {
-	return (size < this->mem_size());
+	return (size >= this->mem_size());
 }
 
-void Node::deserialize(const uint8_t *mem, const size_t size) noexcept
+int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
 {
+	if ((!mem) || (!size))
+		return EINVAL;
+	
+	if (!this->it_fits(size))
+		return ENOMEM;
+
+	memcpy(&this->start_address, mem, sizeof(this->start_address));
+	mem += sizeof(this->start_address);
+
+	memcpy(&this->occurences, mem, sizeof(this->occurences));
+	mem += sizeof(this->occurences);
+
+	memcpy(&this->true_branch_address, mem, sizeof(this->true_branch_address));
+	mem += sizeof(this->true_branch_address);
+
+	memcpy(&this->false_branch_address, mem, sizeof(this->false_branch_address));
+	mem += sizeof(this->false_branch_address);
+
+	size_t block_size = 0;
+	memcpy(&block_size, mem, sizeof(block_size));
+	mem += sizeof(block_size);
+
+	this->block.clear();
+
+	char *content = NULL;
+	size_t content_length = 0;
+	
+	for (size_t i = 0; i < block_size; i++) {
+		content = (char*)mem;
+
+		this->block.push_back(content);
+
+		content_length = strlen((const char*)mem) + 1;
+		mem += content_length;
+
+	}
+
 	return 0;
 }
 
@@ -102,9 +139,18 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 	if ((!mem) || (!size))
 		return EINVAL;
 
-	auto required = this->mem_size();
-	if (size < required)
+	if (!this->it_fits(size))
 		return ENOMEM;
+	
+	/**
+	*	- first 4 bytes are the start_addr of the node
+	*	- second 4 bytes are the number of occurences
+	*	- third 4 bytes true branch address
+	*	- forth 4 bytes false branch address
+	*	- fifth 4 bytes is the size of the node block
+	*	- the last is the hole block as strings, every string  is separated by "\0"
+	*	so we don't need to include his size also
+	*/
 
 	memcpy(mem, &this->start_address, sizeof(this->start_address));
 	mem += sizeof(this->start_address);

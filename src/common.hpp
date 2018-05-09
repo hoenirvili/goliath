@@ -138,6 +138,10 @@ struct CUSTOM_PARAMS {
 #define memsharedname "Local\\VDCApiLog"
 #define BUFFER_SIZE 0x100000
 
+
+
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+
 extern "C" {
 
 	DLL_API size_t GetLayer();
@@ -160,4 +164,9 @@ std::string string_format(const std::string& format, Args ... args)
 	std::unique_ptr<char[]> buf(new char[size]);
 	std::snprintf(buf.get(), size, format.c_str(), args ...);
 	return std::string(buf.get(), buf.get() + size - 1);
+}
+
+inline size_t cfg_buf_size()
+{
+	return BUFFER_SIZE - SHARED_CFG;
 }
