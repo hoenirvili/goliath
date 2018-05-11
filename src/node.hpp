@@ -18,7 +18,7 @@ private:
 public:
 	/**
 	* start_address is the first
-	* start instuction assembly block code
+	* start instruction assembly block code
 	*/
 	size_t start_address = 0;
     
@@ -41,10 +41,10 @@ public:
 	size_t false_branch_address = 0;
     
 	/**
-	* occurences the number of times a execution
+	* occurrences the number of times a execution
 	* had passed trough this node
 	*/
-	unsigned int occurences = 1;
+	unsigned int occurrences = 1;
 	
 	/**
 	* graphviz_definition the definitions 
@@ -58,13 +58,13 @@ public:
 	std::string graphviz_relation() const;
 
 	/**
-	* serialize all contents of the node into the speicifed mem location
-	* in orider to write in that location size must be huge enough
+	* serialize all contents of the node into the specified mem location
+	* in order to write in that location size must be huge enough
 	*/
 	int serialize(uint8_t *mem, const size_t size) const noexcept;
 	
 	/**
-	* deserialize extract byte per byte overwiting all internal state
+	* deserialize extract byte per byte overwriting all internal state
 	* until we consume all size bytes
 	*/
 	int deserialize(const uint8_t *mem, const size_t size) noexcept;

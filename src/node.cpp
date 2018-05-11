@@ -6,15 +6,15 @@
 
 using namespace std;
 
-// pallete contains all the blues9 color scheme pallete
-static const unsigned int pallete[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+// pallet contains all the blues9 color scheme pallet
+static const unsigned int pallet[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
 /**
  * pick_color
- * for a given number of occurences return a number
- * based on the color pallete numbers in graphviz
+ * for a given number of occurrences return a number
+ * based on the color pallet numbers in graphviz
  */
-static string pick_color(unsigned int occurences) {
+static string pick_color(unsigned int occurrences) {
     const unsigned int interval[] = {1, 7, 14, 28, 40, 70, 80, 100, 120};
 
     string color = "1";
@@ -24,16 +24,16 @@ static string pick_color(unsigned int occurences) {
 	unsigned int i = 0;
 	unsigned int j = i + 1;
 	for (; i < n - 1 && j < n; i++, j++) {
-		if ((interval[i] >= occurences) && (interval[j] <= occurences)) {
-			di = interval[i] - occurences;
-			dj = occurences - interval[j];
+		if ((interval[i] >= occurrences) && (interval[j] <= occurrences)) {
+			di = interval[i] - occurrences;
+			dj = occurrences - interval[j];
 			bool flag = (di > dj);
 			switch (flag) {
 			case true:
-				color = std::to_string(pallete[i]);
+				color = std::to_string(pallet[i]);
 				break;
 			case false:
-				color = std::to_string(pallete[j]);
+				color = std::to_string(pallet[j]);
 				break;
 			}
 		}
@@ -48,8 +48,8 @@ string Node::graphviz_definition() const
     /**
      *   definitions for the node
      *   1-%s name node
-     *   2-%s asm blocks
-     *   3-%s heatmap color
+     *   2-%s assembly blocks
+     *   3-%s heat map color
     */
     constexpr const char* format = R"(
 	%s [
@@ -64,7 +64,7 @@ string Node::graphviz_definition() const
     for (string bl : this->block)
         block += bl + "\\n";
 
-    auto color = pick_color(this->occurences);
+    auto color = pick_color(this->occurrences);
     
 	const auto nm = name.c_str();
     const auto blk = block.c_str();
@@ -103,8 +103,8 @@ int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
 	memcpy(&this->start_address, mem, sizeof(this->start_address));
 	mem += sizeof(this->start_address);
 
-	memcpy(&this->occurences, mem, sizeof(this->occurences));
-	mem += sizeof(this->occurences);
+	memcpy(&this->occurrences, mem, sizeof(this->occurrences));
+	mem += sizeof(this->occurrences);
 
 	memcpy(&this->true_branch_address, mem, sizeof(this->true_branch_address));
 	mem += sizeof(this->true_branch_address);
@@ -144,7 +144,7 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 	
 	/**
 	*	- first 4 bytes are the start_addr of the node
-	*	- second 4 bytes are the number of occurences
+	*	- second 4 bytes are the number of occurrences
 	*	- third 4 bytes true branch address
 	*	- forth 4 bytes false branch address
 	*	- fifth 4 bytes is the size of the node block
@@ -155,8 +155,8 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 	memcpy(mem, &this->start_address, sizeof(this->start_address));
 	mem += sizeof(this->start_address);
 	
-	memcpy(mem, &this->occurences, sizeof(this->occurences));
-	mem += sizeof(this->occurences);
+	memcpy(mem, &this->occurrences, sizeof(this->occurrences));
+	mem += sizeof(this->occurrences);
 	
 	memcpy(mem, &this->true_branch_address, sizeof(this->true_branch_address));
 	mem += sizeof(this->true_branch_address);
@@ -183,7 +183,7 @@ size_t Node::mem_size() const noexcept
 {
 	size_t size = 0;
 	size += sizeof(this->start_address);
-	size += sizeof(this->occurences);
+	size += sizeof(this->occurrences);
 	size += sizeof(this->true_branch_address);
 	size += sizeof(this->false_branch_address);
 	size += sizeof(this->block.size());

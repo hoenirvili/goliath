@@ -7,27 +7,37 @@
 
 using namespace std;
 
+
+/**
+ *  GetLayer returns the type 
+ * of priority that the plugin has
+ */
 size_t GetLayer()
 {
+	// the most highest priority
 	return PLUGIN_LAYER;
 }
 
 /**
- * engine_share_buffptr start of shared mem
+ * engine_share_buff start of shared memory
  * from the engine with the plugin
  */
 BYTE* engine_share_buff; 
 
-
-static HANDLE file_mapping;
 /**
-*
-*/
+ * file_mapping handler address to a shared
+ * file location with the engine
+ */
+static HANDLE file_mapping;
+
+/**
+ * logger a shared logger across the plugin interface 
+ */
 static shared_ptr<Log> logger;
 
 /**
-*
-*/
+ * pfg holds the current partial flow graph nodes and structures
+ */
 static unique_ptr<PartialFlowGraph> pfg;
 
 BOOL DBTInit()
@@ -44,9 +54,7 @@ BOOL DBTInit()
 	string name = (!logname) ? string() : string(logname);
     
 	logger = Log::instance(name);
-	
 	logger->info("[DBTITrace] Init is called");
-	
 	pfg = make_unique<PartialFlowGraph>(logger);
 
 	return TRUE;
@@ -58,7 +66,7 @@ PluginReport* DBTBranching(void* custom_params, PluginLayer** layers)
         VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 }
 
-PluginReport *DBTBeforeExecute(void *custom_params, PluginLayer **layers)
+PluginReport* DBTBeforeExecute(void *custom_params, PluginLayer **layers)
 {
 	CUSTOM_PARAMS* params = (CUSTOM_PARAMS *)custom_params;
     DISASM* MyDisasm = params->MyDisasm;
@@ -67,7 +75,6 @@ PluginReport *DBTBeforeExecute(void *custom_params, PluginLayer **layers)
 
     char instr_bytes[100];
     char temp[MAX_PATH];
-    size_t i;
     size_t len = params->instrlen;
     PluginReport* report = (PluginReport*) VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 	if (!report)
@@ -81,6 +88,7 @@ PluginReport *DBTBeforeExecute(void *custom_params, PluginLayer **layers)
         StackTrace((ExecutionContext*) tdata->PrivateStack, content);
     else
         memset(content, 0, 0x4000);
+
 #ifndef _M_X64
     sprintf(temp, "%08X: ", (int) MyDisasm->VirtualAddr);
 #else
@@ -89,8 +97,9 @@ PluginReport *DBTBeforeExecute(void *custom_params, PluginLayer **layers)
 
     strcat(content, temp);
     memset(instr_bytes, 0, sizeof(instr_bytes));
-    for (i = 0; i < len; i++)
+	for (size_t i = 0; i < len; i++)
         sprintf(instr_bytes + i * 3, "%02X ", *(BYTE*) (MyDisasm->EIP + i));
+
     sprintf(temp, "%-*s : %s", 45, instr_bytes, MyDisasm->CompleteInstr);
     strcat(content, temp);
 
@@ -125,7 +134,7 @@ PluginReport* DBTFinish()
 		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 	
 	if (!plugin) {
-		logger->error("Finish plugin virt alloc failed");
+		logger->error("Finish plugin virtual allocation failed");
 		return plugin;
 	}
 
@@ -143,7 +152,7 @@ PluginReport* DBTFinish()
 	size_t size = cfg_buf_size();
 	err = from.deserialize(cfg_shared_mem, size);
 	if (err != 0) {
-		logger->error("cannot deserialise from shard buffer engine a pfg");
+		logger->error("cannot deserialize from shard buffer engine a pfg");
 		return plugin;
 	}
 
@@ -155,7 +164,7 @@ PluginReport* DBTFinish()
 
 	err = pfg->serialize(cfg_shared_mem, size);
 	if (err != 0) {
-		logger->error("cannot serilaize from pfg to shared buffer engine");
+		logger->error("cannot serialize from pfg to shared buffer engine");
 		return plugin;
 	}
 	
@@ -163,7 +172,3 @@ PluginReport* DBTFinish()
 	
 	return plugin;
 }
-
-
-//TODO(hoenir): At finish deserialize one more time and generate cfg from all pfg
-

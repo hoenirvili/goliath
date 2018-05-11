@@ -252,7 +252,7 @@ TEST(PartialFlowGraph, deserialize)
 
 		n = node->block.size();
 		EXPECT_EQ(node->start_address, 0);
-		EXPECT_EQ(node->occurences, 1);
+		EXPECT_EQ(node->occurrences, 1);
 		EXPECT_EQ(node->false_branch_address, 0);
 		EXPECT_EQ(node->true_branch_address, 0);
 
@@ -260,10 +260,12 @@ TEST(PartialFlowGraph, deserialize)
 		EXPECT_EQ(n, 2);
 
 		auto str = node->block[0];
+		EXPECT_FALSE(str.empty());
 		auto got = str.c_str();
 		EXPECT_STREQ(got, "test");
 
 		str = node->block[1];
+		EXPECT_FALSE(str.empty());
 		got = str.c_str();
 		EXPECT_STREQ(got, "another test");
 	}
@@ -289,12 +291,12 @@ TEST(PartialFlowGraph, merge)
 	auto from = PartialFlowGraph();
 	auto node1 = make_shared<Node>();
 	node1->start_address = 0x7777;
-	node1->occurences = 1;
+	node1->occurrences = 1;
 	auto node2 = make_shared<Node>();
-	node2->occurences = 1;
+	node2->occurrences = 1;
 	node2->start_address = 0x6666;
 	auto node3 = make_shared<Node>();
-	node3->occurences = 1;
+	node3->occurrences = 1;
 	node3->start_address = 0x7777;
 
 	pfg.node_map[0x15123] = node3;
@@ -304,8 +306,83 @@ TEST(PartialFlowGraph, merge)
 	int err = pfg.merge(from);
 	EXPECT_EQ(err, 0);
 	
-	EXPECT_EQ(pfg.node_map[0x15123]->occurences, 2);
+	EXPECT_EQ(pfg.node_map[0x15123]->occurrences, 2);
 	EXPECT_EQ(pfg.node_map[0x15123]->start_address, 0x7777);
-	EXPECT_EQ(pfg.node_map[0x52341]->occurences, 1);
+	EXPECT_EQ(pfg.node_map[0x52341]->occurrences, 1);
 	EXPECT_EQ(pfg.node_map[0x52341]->start_address, 0x6666);
+}
+
+constexpr const char* digraph_prefix_expected = R"(
+digraph ControlFlowGraph {
+	node [
+		shape = box 
+		color = black
+		arrowhead = diamond
+		colorscheme = blues9
+		style = filled
+		fontname="Source Code Pro"
+		fillcolor=1
+	]
+}	
+)";
+
+constexpr const char* graphviz_expected = R"(
+digraph ControlFlowGraph {
+	node [
+		shape = box 
+		color = black
+		arrowhead = diamond
+		colorscheme = blues9
+		style = filled
+		fontname="Source Code Pro"
+		fillcolor=1
+	]
+}	
+
+	node135954 [
+		label = "SUB EBS, 20\n"
+		color = "1"
+	]
+
+	node201299 [
+		label = "PUSH ESP\nPUSH EBP\nSUB EBS, 20\nJP 0x21312\n"
+		color = "1"
+	]
+node135954 -> node139810\nnode135954 -> node12578\nnode201299 -> node135954\nnode201299 -> node4338706\n)";
+
+
+TEST(PartialFlowGraph, graphviz_empty)
+{
+	auto pfg = PartialFlowGraph();
+	auto definitions = pfg.graphviz();
+	EXPECT_FALSE(definitions.empty());
+	auto str = definitions.c_str();
+	EXPECT_STREQ(str, digraph_prefix_expected);
+}
+
+TEST(PartialFlowGraph, graphviz)
+{
+	auto pfg = PartialFlowGraph();
+	auto node = make_shared<Node>();
+	node->start_address = 0x31253;
+	node->block.push_back("PUSH ESP");
+	node->block.push_back("PUSH EBP");
+	node->block.push_back("SUB EBS, 20");
+	node->block.push_back("JP 0x21312");
+	node->false_branch_address = 0x423412;
+	node->true_branch_address = 0x21312;
+	pfg.node_map[0x31253] = node;
+
+	node = make_shared<Node>();
+	node->start_address = 0x21312;
+	node->block.push_back("SUB EBS, 20");
+	node->false_branch_address = 0x03122;
+	node->true_branch_address = 0x22222;
+	pfg.node_map[0x21312] = node;
+
+	auto definitions = pfg.graphviz();
+	EXPECT_FALSE(definitions.empty());
+	auto str = definitions.c_str();
+	EXPECT_FALSE(definitions.empty());
+	EXPECT_STREQ(str, graphviz_expected);
 }

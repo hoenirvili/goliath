@@ -320,6 +320,7 @@ enum SPECIAL_INFO {
     ShowSegmentRegs = 0x01000000
 };
 
+//TODO(hoenir): this should be removed
 extern "C" {
 	__declspec(dllexport) int Disasm(LPDISASM pDisAsm);
 }

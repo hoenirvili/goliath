@@ -17,19 +17,16 @@ constexpr const char* def = R"(
 	]
 )";
 
-static inline std::string generate_definition(
-	const char* name, 
-	const char* label, 
-	const char* color)
+static inline std::string 
+generate_definition(const char* name, const char* label, const char* color)
 {
 	char buff[200] = { 0 };
 	std::snprintf(buff, 200, def, name, label, color);
 	return std::string(buff);
 }
 
-static inline std::string generate_relation(
-	const size_t start, 
-	const size_t end)
+static inline std::string
+generate_relation(const size_t start, const size_t end)
 {
 	char buff[200] = { 0 };
 	std::snprintf(buff, 200, "node%lu -> node%lu\\n", start, end);
@@ -44,6 +41,7 @@ TEST(Node, graphiz_definition)
 	
 	auto node = Node();
 	auto definitions = node.graphviz_definition();
+	EXPECT_FALSE(definitions.empty());
 	auto got = definitions.c_str();
 	EXPECT_STREQ(got, expected);
 
@@ -66,11 +64,13 @@ TEST(Node, graphiz_definition)
 	node.block.push_back("cmp EZ, 2");
 	node.block.push_back("jp 0x2523");
 	definitions = node.graphviz_definition();
+	EXPECT_FALSE(definitions.empty());
 	got = definitions.c_str();
 	EXPECT_STREQ(got, expected);
 
-	node.occurences = 5;
+	node.occurrences = 5;
 	definitions = node.graphviz_definition();
+	EXPECT_FALSE(definitions.empty());
 	got = definitions.c_str();
 	EXPECT_STREQ(got, expected);
 }
@@ -95,6 +95,7 @@ TEST(Node, graphviz_relation)
 	node.false_branch_address = 0x7777;
 
 	relations = node.graphviz_relation();
+	EXPECT_FALSE(relations.empty());
 	got = relations.c_str();
 	EXPECT_STREQ(got, expected);
 }
@@ -216,7 +217,7 @@ TEST(Node, deserialize)
 	EXPECT_EQ(err, 0);
 
 	EXPECT_EQ(node.start_address, 0);
-	EXPECT_EQ(node.occurences, 1);
+	EXPECT_EQ(node.occurrences, 1);
 	EXPECT_EQ(node.false_branch_address, 0);
 	EXPECT_EQ(node.true_branch_address, 0);
 
@@ -224,6 +225,7 @@ TEST(Node, deserialize)
 	EXPECT_EQ(n, 2);
 
 	auto str = node.block[0];
+	EXPECT_FALSE(str.empty());
 	auto got = str.c_str();
 	EXPECT_STREQ(got, "test");
 	

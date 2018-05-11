@@ -60,7 +60,7 @@ int PartialFlowGraph::merge(const PartialFlowGraph &from) noexcept
 		}
 
 		auto current = this->node_map[key];
-		current->occurences++;
+		current->occurrences++;
 	}
 
 	return 0;
@@ -291,7 +291,7 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 	memset(mem, 0, size);
 
 	/**
-	* serialisation on x86
+	* serialization on x86
 	* - first 4 bytes is the start addrs of the first node node_map
 	* - second 4 bytes are the number of nodes
 	* - after we start in pairs: (addr, node)

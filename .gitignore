@@ -56,3 +56,4 @@ packages.config
 packages
 Makefile
 main
+.vscode/
