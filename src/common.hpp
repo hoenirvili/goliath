@@ -7,8 +7,6 @@
 
 #include "types.hpp"
 
-#define DLL_API __declspec(dllexport)
-
 // registry specific numbers
 #ifndef _M_X64
 #define SSE_REGS 8    // 8 sse regs xmm0-xmm7
@@ -137,19 +135,15 @@ struct CUSTOM_PARAMS {
 #define memsharedname "Local\\VDCApiLog"
 #define BUFFER_SIZE 0x100000
 
-
-
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
 extern "C" {
-
 	DLL_API size_t GetLayer();
 	DLL_API BOOL DBTInit();
 	DLL_API PluginReport* DBTFinish();
-	DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
-	DLL_API PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer **layers);
-	DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
-
+	//DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
+	DLL_API PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers);
+	//DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
 }
 
 extern BYTE* engine_share_buff;

@@ -1,5 +1,7 @@
 #pragma once
 
+#define DLL_API __declspec(dllexport)
+
 typedef signed char Int8;
 typedef unsigned char UInt8;
 typedef signed short Int16;
@@ -322,5 +324,5 @@ enum SPECIAL_INFO {
 
 //TODO(hoenir): this should be removed
 extern "C" {
-	__declspec(dllexport) int Disasm(LPDISASM pDisAsm);
+	DLL_API int Disasm(LPDISASM pDisAsm);
 }
