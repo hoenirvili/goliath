@@ -15,7 +15,7 @@ static const unsigned int pallet[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
  * based on the color pallet numbers in graphviz
  */
 static string pick_color(unsigned int occurrences) {
-    const unsigned int interval[] = {1, 7, 14, 28, 40, 70, 80, 100, 120};
+    const unsigned int interval[] = {1, 2, 3, 5, 6, 7, 8, 9, 10};
 
     string color = "1";
     size_t n = sizeof(interval) / sizeof(interval[0]);
@@ -30,10 +30,10 @@ static string pick_color(unsigned int occurrences) {
 			bool flag = (di > dj);
 			switch (flag) {
 			case true:
-				color = std::to_string(pallet[i]);
+				color = to_string(pallet[i]);
 				break;
 			case false:
-				color = std::to_string(pallet[j]);
+				color = to_string(pallet[j]);
 				break;
 			}
 		}
@@ -44,25 +44,23 @@ static string pick_color(unsigned int occurrences) {
 
 string Node::graphviz_definition() const
 {
-    constexpr int size = 4096;
-    /**
-     *   definitions for the node
-     *   1-%s name node
-     *   2-%s assembly blocks
-     *   3-%s heat map color
-    */
-    constexpr const char* format = R"(
-	%s [
+	constexpr const char* format = R"(
+	"%s" [
 		label = "%s"
 		color = "%s"
 	]
 )";
 
-    auto name = "node" + std::to_string(this->start_address);
-    
-	string block = "";
-    for (string bl : this->block)
-        block += bl + "\\n";
+	auto name = string_format("0x%08x", this->start_address);
+
+	string block = name + "\\n";
+
+	auto n = this->block.size();
+	if (n)
+		block += "\\n";
+
+	for (const auto &bl : this->block)
+		block += bl + "\\n";
 
     auto color = pick_color(this->occurrences);
     
@@ -75,16 +73,17 @@ string Node::graphviz_definition() const
 
 static string relation(const size_t start, const size_t end)
 {
-	return string_format("node%lu -> node%lu", start, end);
+	return string_format("\"0x%08x\" -> \"0x%08x\"", start, end);
 }
 
 string Node::graphviz_relation() const
 {
-	return
-		relation(this->start_address, this->true_branch_address) +
-		"\\n" +
-		relation(this->start_address, this->false_branch_address) +
-		"\\n";
+	string str = "";
+	if (this->true_branch_address)
+		str += relation(this->start_address, this->true_branch_address) + "\n";
+	if (this->false_branch_address)
+		str += relation(this->start_address, this->false_branch_address) + "\n";
+	return str;
 }
 
 bool Node::it_fits(size_t size) const noexcept

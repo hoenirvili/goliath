@@ -1,79 +1,64 @@
+#include <string>
 #include <fstream>
+#include <memory>
 #include <unordered_map>
+#include <cstdarg>
 
 #include "log.hpp"
 
 using namespace std;
 
+namespace Log {
 
-static shared_ptr<Log> l;
-
-shared_ptr<Log> Log::instance(ostream* os) noexcept
+/**
+* m_prefix list of level and their string representation
+*/
+static unordered_map<level, string> prefix =
 {
-	if (!l)
-		l = make_unique<Log>();
-	
-	if ((!l->w) && (os)) {
-		l->w = unique_ptr<ostream>(os);
-		return l;
-	}
+	{ level::error, "ERROR" },
+	{ level::warning, "WARNING" },
+	{ level::info, "INFO" },
+};
 
-	if ((!l->w) && (!os)) {
-		l->w = make_unique<fstream>();
-		return l;
-	}
+static unique_ptr<ostream> out;
 
-	if ((l->w) && (os))
-		l->w.reset(os);
-	
-	return l;
+void init(ostream* os)
+{
+	out.reset(os);
 }
 
-shared_ptr<Log> Log::instance(const std::string& name) noexcept
+void write(
+	level l,
+	const char *file,
+	const int line,
+	const char *function,
+	const char *format,
+	...
+)
 {
-	fstream *file = nullptr;
-	if (!name.empty())
-		file = new fstream(name, fstream::out | fstream::app);
-	
-	return Log::instance(file);
+	//TODO(hoenir): It's ok to silent things?
+	if (!out)
+		return;
+
+	auto _prefix = "|" + prefix[l] + "|";
+	file = strrchr(file, '\\') ? strrchr(file, '\\') + 1 : file;
+	va_list list;
+	va_start(list, format);
+	auto len = vsnprintf(NULL, 0, format, list) + 1;
+	unique_ptr<char[]> message = make_unique<char[]>(len);
+	vsnprintf(message.get(), len, format, list);
+	va_end(list);
+	(*out)
+		<< file
+		<< ":"
+		<< line
+		<< ":"
+		<< function
+		<< " "
+		<< _prefix
+		<< " "
+		<< message.get()
+		<< std::endl;
 }
 
-void Log::redirect(ostream *os) noexcept
-{
-    if (!l || !l->w) return;
-
-	l->w.reset(os);
-}
-
-void Log::error(const string& message) const noexcept
-{
-    if (!l || !l->w) return;
-
-    auto prefix = m_prefix.at(level::error);
-    *(l->w) << "|" + prefix+ "|"
-            << " - "
-            << message
-            <<'\n';
-}
-
-void Log::warning(const string& message) const noexcept
-{
-    if (!l || !l->w) return;
-
-    auto prefix = m_prefix.at(level::warning);
-	*(l->w) << "|" + prefix + "|"
-		<< " - "
-		<< message
-		<< '\n';
-}
-
-void Log::info(const string& message) const noexcept
-{
-    if (!l || !l->w) return;
-
-    auto prefix = m_prefix.at(level::info);
-    *(l->w) << "|" + prefix + "|"
-		<< " - "
-		<< message
-		<< '\n';
-}
+};

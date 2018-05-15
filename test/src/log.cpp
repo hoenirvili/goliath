@@ -1,85 +1,65 @@
 #include <sstream>
+#include <unordered_map>
 #include <gtest/gtest.h>
+
 #include "src/log.hpp"
 
-TEST(log, constructor)
+using namespace std;
+
+TEST(Log, init)
 {
-	EXPECT_NO_THROW(Log());
+	auto* out = new stringstream();
+	EXPECT_NO_THROW(Log::init(out));
 }
 
-TEST(log, instance)
+struct write_params {
+	Log::level l;
+	const char* file;
+	const int line;
+	const char* function;
+	const char* format;
+};
+
+struct test_write {
+	write_params params;
+	const char* expected;
+};
+
+static const test_write tests[] =
+{ 
+	{
+		{ Log::level::error, "file_test", 5, "test", "test message" },
+		"file_test:5:test |ERROR| test message\n"
+	},
+	{
+		{ Log::level::warning, "file_test", 5, "test", "test message" },
+		"file_test:5:test |ERROR| test message\nfile_test:5:test |WARNING| test message\n"
+	},
+	{
+		{ Log::level::info, "file_test", 5, "test", "test message" },
+		"file_test:5:test |ERROR| test message\nfile_test:5:test |WARNING| test message\nfile_test:5:test |INFO| test message\n"
+	},
+};
+
+TEST(Log, write)
 {
-	auto *ss = new std::stringstream();
-	auto logger1 = Log::instance(ss);
-	bool expected = (logger1 != nullptr);
-	EXPECT_TRUE(expected);
+	auto* out = new stringstream();
+	EXPECT_NO_THROW(
+		Log::init(out)
+	);
 
-	auto logger2 = Log::instance();
-	expected = (logger2 != nullptr);
-	EXPECT_TRUE(expected);
+	for (const auto& test : tests) {
+		auto params = test.params;
+		auto expected = test.expected;
+		EXPECT_NO_THROW(
+			Log::write(
+				params.l, params.file, params.line, 
+				params.function, params.format
+			)
+		);
 
-	expected = (logger1 == logger2);
-	EXPECT_TRUE(expected);
-
-	auto logger3 = Log::instance("");
-	expected = (logger3 != nullptr);
-	EXPECT_TRUE(expected);
-
-	expected = (logger1 == logger3);
-	EXPECT_TRUE(expected);
+		auto str = out->str();
+		auto got = str.c_str();
+		EXPECT_STREQ(got, expected);
+	}
 }
-
-TEST(log, error)
-{
-    auto *ss = new std::stringstream();
-
-    auto log = Log::instance(ss);
-    log->error("test");
-
-	auto str = ss->str();
-	auto got = str.c_str();
-    EXPECT_STREQ(got, "|ERROR| - test\n");
-}
-
-
-TEST(log, warning)
-{
-    auto *ss = new std::stringstream();
-    auto log = Log::instance(ss);
-    log->warning("test");
-    
-    auto str = ss->str();
-    auto got = str.c_str();
-    EXPECT_STREQ(got, "|WARNING| - test\n");
-}
-
-TEST(log, info)
-{
-    auto *ss = new std::stringstream();
-
-	auto log = Log::instance(ss);
-    log->info("test");
-
-	auto str = ss->str();
-    auto got = str.c_str();
-    EXPECT_STREQ(got, "|INFO| - test\n");
-}
-
-TEST(log, redirect)
-{
-
-	auto *ss = new std::stringstream();
-	auto log = Log::instance(ss);
-	log->info("test");
-	auto str = ss->str();
-    auto got = str.c_str();
-	EXPECT_STREQ(got, "|INFO| - test\n");
-
-	auto *nss = new std::stringstream();
-	log->redirect(nss);
-	log->info("test");
-	str = nss->str();
-    got = str.c_str();
-	EXPECT_STREQ(got, "|INFO| - test\n");
-}
-

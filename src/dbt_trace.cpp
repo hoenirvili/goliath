@@ -1,12 +1,13 @@
 #include <memory>
 #include <fstream>
+#include <cerrno>
 
 #include "common.hpp"
 #include "log.hpp"
 #include "partial_flow_graph.hpp"
+#include "instruction.hpp"
 
 using namespace std;
-
 
 /**
  *  GetLayer returns the type 
@@ -31,14 +32,10 @@ BYTE* engine_share_buff;
 static HANDLE file_mapping;
 
 /**
- * logger a shared logger across the plugin interface 
- */
-static shared_ptr<Log> logger;
-
-/**
  * pfg holds the current partial flow graph nodes and structures
  */
 static unique_ptr<PartialFlowGraph> pfg;
+
 
 BOOL DBTInit()
 {
@@ -53,9 +50,14 @@ BOOL DBTInit()
 	const char *logname = LOGNAME_BUFFER(engine_share_buff);
 	string name = (!logname) ? string() : string(logname);
     
-	logger = Log::instance(name);
-	logger->info("[DBTITrace] Init is called");
-	pfg = make_unique<PartialFlowGraph>(logger);
+	auto* file = new fstream(name, ios::app);
+	if (!(*file))
+		return FALSE;
+
+	log_init(file);
+	
+	log_info("[DBTITrace] Init is called");
+	pfg = make_unique<PartialFlowGraph>();
 
 	return TRUE;
 }
@@ -128,47 +130,52 @@ PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers)
 
 PluginReport* DBTFinish()
 {
-	logger->info("[DBTITrace] Finish is called");
+	log_info("[DBTITrace] Finish is called");
 	
 	auto plugin = (PluginReport*)
 		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 	
 	if (!plugin) {
-		logger->error("Finish plugin virtual allocation failed");
+		log_error("Finish plugin virtual allocation failed");
 		return plugin;
 	}
 
-	fstream out("partiaflowgraph.dot", ios::in);
+	fstream out("partiaflowgraph.dot", fstream::out);
+	if (!out) {
+		log_error("cannot open partialflowgraph.dot : %s", strerror(errno));
+		return plugin;
+	}
+
 	auto graphviz = pfg->graphviz();
 	int err = pfg->generate(graphviz, &out);
 	if (err != 0) {
-		logger->error("cannot generate partial flow graph");
+		log_error("cannot generate partial flow graph");
 		return plugin;
 	}
 
 	BYTE *cfg_shared_mem = CFG(engine_share_buff);
+	auto from = PartialFlowGraph();
 
-	auto from = PartialFlowGraph(logger);
 	size_t size = cfg_buf_size();
 	err = from.deserialize(cfg_shared_mem, size);
 	if (err != 0) {
-		logger->error("cannot deserialize from shard buffer engine a pfg");
+		log_error("cannot deserialize from shard buffer engine a pfg");
 		return plugin;
 	}
 
 	err = pfg->merge(from);
 	if (err != 0) {
-		logger->error("cannot merge two partial flow graphs");
+		log_error("cannot merge two partial flow graphs");
 		return plugin;
 	}
 
 	err = pfg->serialize(cfg_shared_mem, size);
 	if (err != 0) {
-		logger->error("cannot serialize from pfg to shared buffer engine");
+		log_error("cannot serialize from pfg to shared buffer engine");
 		return plugin;
 	}
 	
 	CloseHandle(file_mapping);
-	
+
 	return plugin;
 }

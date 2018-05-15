@@ -1,10 +1,13 @@
+#include <fstream>
+#include <cstddef>
+#include <random>
+#include <chrono>
+#include <string>
 #include "partial_flow_graph.hpp"
 #include "common.hpp"
 #include "log.hpp"
 #include "types.hpp"
-
-#include <fstream>
-#include <cstddef>
+#include "instruction.hpp"
 
 using namespace std;
 
@@ -19,32 +22,33 @@ digraph ControlFlowGraph {
 		style = filled
 		fontname="Source Code Pro"
 		fillcolor=1
-	]
-}	
+	]	
 )";
 
-std::string PartialFlowGraph::graphviz() const
+string PartialFlowGraph::graphviz() const
 {
-    std::string definitions = "";
-    for (auto& item : this->node_map) {
+	string definitions = "";
+    for (const auto& item : this->node_map) {
         auto node = item.second;
         definitions += node->graphviz_definition();
     }
 
     auto digraph = digraph_prefix + definitions;
 
-    for (auto& item : this->node_map) {
+    for (const auto& item : this->node_map) {
         auto node = item.second;
-        digraph += node->graphviz_relation();
+		auto relation = node->graphviz_relation();
+		if (!relation.empty())
+			digraph += node->graphviz_relation();
     }
 
-    return digraph;
+	return digraph + "\n}";
 }
 
 int PartialFlowGraph::merge(const PartialFlowGraph &from) noexcept
 {
 	if (from.node_map.empty())
-		return EINVAL;
+		return 0;
 
 	if (this->start != from.start)
 		return EINVAL;
@@ -66,140 +70,109 @@ int PartialFlowGraph::merge(const PartialFlowGraph &from) noexcept
 	return 0;
 }
 
+
+static string execute_command(const string& command)
+{
+	char buffer[1024] = { 0 };
+	string str = "";
+	auto pipe = _popen(command.c_str(), "rt");
+	if (!pipe)
+		return "_popen returns an invalid file pointer";
+
+	while (fgets(buffer, 1024, pipe) != NULL)
+		str += buffer;
+
+	int err = feof(pipe);
+	if (!err)
+		return "failed to read the pipe to the end";
+	_pclose(pipe);
+
+	return str;
+}
+
+
+static string random_string()
+{
+	auto time_point = chrono::high_resolution_clock::now();
+	auto since = time_point.time_since_epoch();
+	// remove the other half, I don't care
+	unsigned int seed = (unsigned int)(since.count() & 0xFFFFFFFF);
+	mt19937 mt_rand(seed);
+	auto random = mt_rand();
+	return to_string(random);
+}
+
 int PartialFlowGraph::generate(const string content, ostream* out) const noexcept
 {
-	if (content.empty())
+	if (content.empty() || (!out))
 		return EINVAL;
 
-	if (!out)
-		return EINVAL;
+	(*out) << content << endl;
+	
+	auto name = to_string(this->start) + "_" + random_string();
 
-	(*out) << content;
-
-	const string name = to_string(this->start);
-	const std::string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
-	auto n = std::system(cmd.c_str());
-	if (!n) {
-		logger->error("cannot generate partial flow graph");
-		return EINVAL;
-	}
-
+	const string cmd = "start \"\" cmd /c dot -Tpng partiaflowgraph.dot -o" + 
+			name + ".png";
+	
+	auto from = execute_command(cmd);
+	if (!from.empty())
+		log_error(
+			"\n[DOT COMMAND OUTPUT START]\n %s \n[DOT COMMAND OUTPUT END]", 
+			from.c_str()
+		);
+	
 	return 0;
-}
-
-bool Instruction::is_branch() const noexcept
-{
-	switch (this->branch_type) {
-	case JO:
-	case JC:
-	case JE:
-	case JA:
-	case JS:
-	case JP:
-	case JL:
-	case JG:
-	case JB:
-	case JECXZ:
-	case JmpType:
-	case CallType:
-	case RetType:
-	case JNO:
-	case JNC:
-	case JNE:
-	case JNA:
-	case JNS:
-	case JNP:
-	case JNL:
-	case JNG:
-	case JNB:
-		return true;
-	}
-
-	return false;
-}
-
-size_t Instruction::true_branch() const noexcept
-{
-	return this->argument_value;
-}
-
-size_t Instruction::false_branch() const noexcept
-{
-	return this->eip + this->len;
-}
-
-bool Instruction::validate() const
-{
-	if (this->content == nullptr)
-		return false;
-
-	if (this->branch_type < 0)
-		return false;
-
-	return true;
-}
-
-void PartialFlowGraph::info(const std::string & message) const noexcept
-{
-	if (!this->logger)
-		return;
-
-	this->logger->info(message);
-}
-
-void PartialFlowGraph::error(const std::string & message) const noexcept
-{
-	if (!this->logger)
-		return;
-
-	this->logger->error(message);
-}
-
-void PartialFlowGraph::warning(const std::string & message) const noexcept
-{
-	if (!this->logger)
-		return;
-
-	this->logger->warning(message);
 }
 
 int PartialFlowGraph::add(Instruction instruction) noexcept
 {
 	auto valid = instruction.validate();
 	if (!valid) {
-		this->error("invalid instruction passed");
+		log_error("invalid instruction passed");
 		return EINVAL;
 	}
 
+	if (!this->start)
+		// init first addrs of the partial flow graph
+		this->start = instruction.eip;
+
+	// TODO(hoenir): bug
 	shared_ptr<Node> node = nullptr;
 
-	if (!this->start) {
-		this->info("new partial flow graph");
-		this->start = instruction.eip;
+	if (this->node_map.empty()) {
+		auto node = make_shared<Node>();
+		node->start_address = instruction.eip;
+		this->node_map[node->start_address] = node;
 	}
 
-	if (this->should_alloc_node) {
-		node = make_shared<Node>();
-		node->start_address = instruction.eip;
+	if (!this->current_node_addr) // mark next node
 		this->current_node_addr = instruction.eip;
-		this->node_map[this->current_node_addr] = node;
-		this->should_alloc_node = false;
-		this->info("new partial flow graph node created");
-	}
 
 	node = this->node_map[this->current_node_addr];
 
 	if (instruction.is_branch()) {
-		this->info("partial flow graph node is branching");
+		// finish with the old node
 		node->true_branch_address = instruction.true_branch();
 		node->false_branch_address = instruction.false_branch();
-		this->should_alloc_node = true;
-	}
 		
+		// create and init all branches
+		auto true_node = make_shared<Node>();
+		auto false_node = make_shared<Node>();
+		true_node->start_address = node->true_branch_address;
+		false_node->start_address = node->false_branch_address;
+
+		// stash them
+		this->node_map[node->true_branch_address] = true_node;
+		this->node_map[node->false_branch_address] = false_node;
+
+		this->current_node_addr = 0;
+	}
+	
 	node->block.push_back(instruction.content);
 
 	return 0;
 }
+
 size_t PartialFlowGraph::mem_size() const noexcept
 {
 	size_t size = 0;
@@ -214,13 +187,14 @@ size_t PartialFlowGraph::mem_size() const noexcept
 		size += node->mem_size();
 	}
 	
-	return size + sizeof(this->guard); /*with the guard value*/
+	return size;
 }
 
 bool PartialFlowGraph::it_fits(const size_t size) const noexcept
 {
 	return (size >= this->mem_size());
 }
+
 
 int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcept
 {
@@ -244,7 +218,7 @@ int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcep
 	int err = 0;
 	
 	if (!node_map_size)
-		this->info("deserialize every node from mem block");
+		log_info("deserialize every node from mem block");
 	
 	for (size_t i = 0; i < node_map_size; i++) {
 		size_t start_address = 0;
@@ -255,7 +229,7 @@ int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcep
 		ptrdiff_t has_written = mem - start; /*how many bytes are written*/
 		err = node->deserialize(mem, size-has_written);
 		if (err != 0) {
-			this->error("cannot deserialize the next node");
+			log_error("cannot deserialize the next node");
 			return err;
 		}
 
@@ -264,12 +238,7 @@ int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcep
 		mem += node->mem_size();
 	}
 
-	uint16_t guard = 0;
-	memcpy(&guard, mem, sizeof(guard));
-	if (this->guard != guard)
-		return EINVAL;
-
-	this->info("deserialization is finished, guard value checked");
+	log_info("deserialization is finished");
 
 	return 0;
 }
@@ -278,16 +247,16 @@ int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcep
 int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 {
 	if ((!mem) || (!size)) {
-		this->error("invalid shared block of memory provided");
+		log_error("invalid shared block of memory provided");
 		return EINVAL;
 	}
 
 	if (!this->it_fits(size)) {
-		this->error("serialise buffer cannot fit into the given size");
+		log_error("serialise buffer cannot fit into the given size");
 		return ENOMEM;
 	}
 	
-	this->info("prepare memory for serialization");
+	log_info("prepare memory for serialization");
 	memset(mem, 0, size);
 
 	/**
@@ -297,7 +266,6 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 	* - after we start in pairs: (addr, node)
 	*	- first 4 bytes addr node
 	*	- second node->mem_size() bytes
-	* - we end with the random guard value of 0x7777
 	*/
 	memcpy(mem, &this->start, sizeof(this->start));
 	mem += sizeof(this->start);
@@ -306,7 +274,7 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 	memcpy(mem, &n, sizeof(n));
 	mem += sizeof(n);
 
-	this->info("start seriliazing every node in map");
+	log_info("start seriliazing every node in map");
 	for (const auto &item : this->node_map) {
 		auto addr = item.first;
 
@@ -318,14 +286,13 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 		size_t node_size = node->mem_size();
 		int n = node->serialize(mem, node_size);
 		if (n != 0) {
-			this->error("cannot serialize the node");
+			log_error("cannot serialize the node");
 			return n;
 		}
 		mem += node_size;
 	}
 
-	memcpy(mem, &this->guard, sizeof(this->guard));
-	this->info("serialization is finished, guard value added");
+	log_info("serialization is finished");
 
 	return 0;
 }
