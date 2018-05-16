@@ -141,9 +141,9 @@ extern "C" {
 	DLL_API size_t GetLayer();
 	DLL_API BOOL DBTInit();
 	DLL_API PluginReport* DBTFinish();
-	//DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
+	DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
 	DLL_API PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers);
-	//DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
+	DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
 }
 
 extern BYTE* engine_share_buff;
@@ -158,6 +158,10 @@ std::string string_format(const std::string& format, Args ... args)
 	std::snprintf(buf.get(), size, format.c_str(), args ...);
 	return std::string(buf.get(), buf.get() + size - 1);
 }
+
+extern std::string execute_command(const std::string& command);
+
+extern std::string random_string();
 
 inline size_t cfg_buf_size()
 {

@@ -1,8 +1,7 @@
 #include <fstream>
 #include <cstddef>
-#include <random>
-#include <chrono>
 #include <string>
+
 #include "partial_flow_graph.hpp"
 #include "common.hpp"
 #include "log.hpp"
@@ -18,10 +17,8 @@ digraph ControlFlowGraph {
 		shape = box 
 		color = black
 		arrowhead = diamond
-		colorscheme = blues9
 		style = filled
 		fontname="Source Code Pro"
-		fillcolor=1
 	]	
 )";
 
@@ -71,49 +68,15 @@ int PartialFlowGraph::merge(const PartialFlowGraph &from) noexcept
 }
 
 
-static string execute_command(const string& command)
-{
-	char buffer[1024] = { 0 };
-	string str = "";
-	auto pipe = _popen(command.c_str(), "rt");
-	if (!pipe)
-		return "_popen returns an invalid file pointer";
-
-	while (fgets(buffer, 1024, pipe) != NULL)
-		str += buffer;
-
-	int err = feof(pipe);
-	if (!err)
-		return "failed to read the pipe to the end";
-	_pclose(pipe);
-
-	return str;
-}
-
-
-static string random_string()
-{
-	auto time_point = chrono::high_resolution_clock::now();
-	auto since = time_point.time_since_epoch();
-	// remove the other half, I don't care
-	unsigned int seed = (unsigned int)(since.count() & 0xFFFFFFFF);
-	mt19937 mt_rand(seed);
-	auto random = mt_rand();
-	return to_string(random);
-}
-
 int PartialFlowGraph::generate(const string content, ostream* out) const noexcept
 {
-	if (content.empty() || (!out))
-		return EINVAL;
-
 	(*out) << content << endl;
 	
 	auto name = to_string(this->start) + "_" + random_string();
 
 	const string cmd = "start \"\" cmd /c dot -Tpng partiaflowgraph.dot -o" + 
 			name + ".png";
-	
+
 	auto from = execute_command(cmd);
 	if (!from.empty())
 		log_error(
@@ -124,52 +87,71 @@ int PartialFlowGraph::generate(const string content, ostream* out) const noexcep
 	return 0;
 }
 
-int PartialFlowGraph::add(Instruction instruction) noexcept
+int PartialFlowGraph::add(const Instruction& instruction) noexcept
 {
-	auto valid = instruction.validate();
-	if (!valid) {
+	if (!instruction.validate()) {
 		log_error("invalid instruction passed");
 		return EINVAL;
 	}
 
+	auto address = instruction.eip;
+
+	// at the start of the partial flow graph init address
 	if (!this->start)
-		// init first addrs of the partial flow graph
-		this->start = instruction.eip;
+		this->start = address;
 
-	// TODO(hoenir): bug
-	shared_ptr<Node> node = nullptr;
 
-	if (this->node_map.empty()) {
-		auto node = make_shared<Node>();
-		node->start_address = instruction.eip;
-		this->node_map[node->start_address] = node;
-	}
-
-	if (!this->current_node_addr) // mark next node
-		this->current_node_addr = instruction.eip;
-
-	node = this->node_map[this->current_node_addr];
-
-	if (instruction.is_branch()) {
-		// finish with the old node
-		node->true_branch_address = instruction.true_branch();
-		node->false_branch_address = instruction.false_branch();
-		
-		// create and init all branches
-		auto true_node = make_shared<Node>();
-		auto false_node = make_shared<Node>();
-		true_node->start_address = node->true_branch_address;
-		false_node->start_address = node->false_branch_address;
-
-		// stash them
-		this->node_map[node->true_branch_address] = true_node;
-		this->node_map[node->false_branch_address] = false_node;
-
-		this->current_node_addr = 0;
-	}
+	auto found = this->node_map.find(address) != this->node_map.end();
 	
-	node->block.push_back(instruction.content);
+	// if this is true, this means we have to create a new node
+	if (!found && !this->ret_instr_encountered) {
+		auto new_node = make_shared<Node>();
+		new_node->start_address = address;
+		this->node_map[address] = new_node;
 
+		this->current_node_addr = address;
+	}
+
+	if (this->ret_instr_encountered) {
+		// we already created the node 
+		this->current_node_addr = address;
+		this->ret_instr_encountered = false;
+	}
+
+	auto current_node = this->node_map[this->current_node_addr];
+
+	if (instruction.is_branch() && 
+		instruction.branch_type != RetType) {
+		
+		// finish with the old node
+		auto taddr = instruction.true_branch();
+		auto faddr = instruction.false_branch();
+		current_node->true_branch_address = taddr;
+		current_node->false_branch_address = faddr;
+
+		// we know that every false and true branch could
+		// point to new nodes so create, init and push them
+		// into the map
+		if (taddr != address) {
+			auto tnode = make_shared<Node>();
+			tnode->start_address = taddr;
+			this->node_map[taddr] = tnode;
+		}
+		if (faddr != address) {
+			auto fnode = make_shared<Node>();
+			fnode->start_address = faddr;
+			this->node_map[faddr] = fnode;
+		}
+	}
+
+	if (instruction.branch_type == RetType) {
+		this->ret_instr_encountered = true;
+	}
+
+
+	// every instruction pushed should be in the node
+	current_node->block.push_back(instruction.content);
+	
 	return 0;
 }
 
@@ -198,9 +180,6 @@ bool PartialFlowGraph::it_fits(const size_t size) const noexcept
 
 int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcept
 {
-	if ((!mem) || (!size))
-		return EINVAL;
-
 	if (!this->it_fits(size))
 		return ENOMEM;
 

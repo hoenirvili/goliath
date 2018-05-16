@@ -17,6 +17,7 @@ private:
 	 */
 	size_t current_node_addr = 0x0;
 
+	bool ret_instr_encountered = false;
 	/**
 	 * it_fits returns true if the given size a 
 	 * PartialFlowGraph object in memory could fit
@@ -82,5 +83,5 @@ public:
 	 * if the operation fails or the instruction is not valid 
 	 * it returns EINVAL
 	 */
-	int add(Instruction instr) noexcept;
+	int add(const Instruction& instr) noexcept;
 };

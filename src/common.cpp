@@ -1,7 +1,11 @@
 #include <cstdio>
+#include <string>
+#include <chrono>
+#include <random>
 
 #include "common.hpp"
 
+using namespace std;
 
 void StackTrace(ExecutionContext* ctx, char* content)
 {
@@ -228,4 +232,36 @@ void StackTrace(ExecutionContext* ctx, char* content)
 #endif
         strcat(content, temp);
     }
+}
+
+
+string execute_command(const string& command)
+{
+	char buffer[1024] = { 0 };
+	string str = "";
+	auto pipe = _popen(command.c_str(), "rt");
+	if (!pipe)
+		return "_popen returns an invalid file pointer";
+
+	while (fgets(buffer, 1024, pipe) != NULL)
+		str += buffer;
+
+	int err = feof(pipe);
+	if (!err)
+		return "failed to read the pipe to the end";
+	
+	_pclose(pipe);
+
+	return str;
+}
+
+string random_string()
+{
+	auto time_point = chrono::high_resolution_clock::now();
+	auto since = time_point.time_since_epoch();
+	// remove the other half, I don't care
+	unsigned int seed = (unsigned int)(since.count() & 0xFFFFFFFF);
+	mt19937 mt_rand(seed);
+	auto random = mt_rand();
+	return to_string(random);
 }

@@ -3,28 +3,48 @@
 #include "types.hpp"
 
 /**
-* Instruction type holds all context
-* of the next instruction
+* Instruction type holds all context of the next instruction
 */
 class Instruction {
 
+private:
+	const size_t len;			/* instruction length */
+	const size_t argument_value;/* instruction branch argument */
+
 public:
-	size_t eip;					/* instruction pointer */
+	const size_t eip;			/* instruction pointer */
 	const char* content;		/* complete instruction */
-	Int32 branch_type;			/* no branch = 0 */
-	size_t len;					/* instruction length */
-	size_t argument_value;		/* instruction branch argument */
+	const Int32 branch_type;	/* no branch = 0 */
+	
+	Instruction(
+		size_t eip,
+		char* content,
+		Int32 branch_type,
+		size_t len,
+		size_t argument_value
+	) :
+		eip(eip),
+		content(content),
+		branch_type(branch_type),
+		len(len),
+		argument_value(argument_value) {}
+
+	~Instruction() = default;
+
+	/**
+	* ret_type returns true if  is a ret instruction
+	*/
+	bool is_ret() const noexcept;
 
 	/**
 	* validate returns true if the
-	* instruction object contains valid value
-	* fields
+	* instruction object contains valid values
 	*/
-	bool validate() const;
+	bool validate() const noexcept;
 
 	/**
 	* is_branch returns true if the
-	* instruction is a instruction that can branch
+	* instruction is an instruction that can branch
 	*/
 	bool is_branch() const noexcept;
 

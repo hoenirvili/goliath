@@ -42,7 +42,12 @@ size_t Instruction::false_branch() const noexcept
 	return this->eip + this->len;
 }
 
-bool Instruction::validate() const
+bool Instruction::is_ret() const noexcept
+{
+	return (this->branch_type == RetType);
+}
+
+bool Instruction::validate() const noexcept
 {
 	if (this->content == nullptr) {
 		log_warning("empty instruction content");

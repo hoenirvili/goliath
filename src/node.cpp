@@ -3,6 +3,7 @@
 
 #include "node.hpp"
 #include "common.hpp"
+#include "log.hpp"
 
 using namespace std;
 
@@ -14,6 +15,7 @@ static const unsigned int pallet[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
  * for a given number of occurrences return a number
  * based on the color pallet numbers in graphviz
  */
+//TODO(hoenir): fix this
 static string pick_color(unsigned int occurrences) {
     const unsigned int interval[] = {1, 2, 3, 5, 6, 7, 8, 9, 10};
 
@@ -42,47 +44,96 @@ static string pick_color(unsigned int occurrences) {
     return color;
 }
 
-string Node::graphviz_definition() const
+bool Node::no_branching() const noexcept
 {
-	constexpr const char* format = R"(
-	"%s" [
-		label = "%s"
-		color = "%s"
-	]
-)";
+	return (!this->true_branch_address &&
+		!this->false_branch_address &&
+		!this->block.size());
+}
 
-	auto name = string_format("0x%08x", this->start_address);
+std::string Node::graphviz_color() const noexcept
+{
+	if (this->no_branching())
+		return "color = \"plum1\"";
+	
+	return "colorscheme = blues9\n color = \"" +
+		pick_color(this->occurrences) +
+		"\"\n";
+}
 
-	string block = name + "\\n";
+std::string Node::graphviz_name() const noexcept
+{
+	if (this->start_address)
+		return string_format("0x%08x", this->start_address);
 
-	auto n = this->block.size();
-	if (n)
+	return "";
+}
+
+std::string Node::graphviz_label() const noexcept
+{
+	string block = graphviz_name() + "\\n";
+
+	if (this->block.size())
 		block += "\\n";
 
 	for (const auto &bl : this->block)
 		block += bl + "\\n";
 
-    auto color = pick_color(this->occurrences);
-    
-	const auto nm = name.c_str();
-    const auto blk = block.c_str();
-    const auto colr = color.c_str();
+	block = "label = \"" + block + "\"";
 	
-	return string_format(format, nm, blk, colr);
+	return block;
 }
 
-static string relation(const size_t start, const size_t end)
+
+bool Node::validate() const noexcept
 {
-	return string_format("\"0x%08x\" -> \"0x%08x\"", start, end);
+	if (!this->start_address) {
+		log_error("node contains invalid start address : %lu", this->start_address);
+		return false;
+	}
+
+	return true;
+}
+
+static const char* graphviz_definition_template = R"(
+	"%s" [
+		label = "%s"
+		%s
+	]
+)";
+
+string Node::graphviz_definition() const
+{
+	if (!this->validate())
+		return "";
+	
+	const auto name = this->graphviz_name();
+	const auto label = this->graphviz_label();
+	const auto color = this->graphviz_color();
+	
+	const auto nm = name.c_str();
+    const auto blk = label.c_str();
+    const auto colr = color.c_str();
+	
+	return string_format(
+		graphviz_definition_template, 
+		nm, blk, colr);
+}
+
+static inline string relation(size_t start, size_t end)
+{
+	return string_format("\"0x%08x\" -> \"0x%08x\"", start, end) + "\n";
 }
 
 string Node::graphviz_relation() const
 {
 	string str = "";
 	if (this->true_branch_address)
-		str += relation(this->start_address, this->true_branch_address) + "\n";
+		str += relation(this->start_address, this->true_branch_address);
+
 	if (this->false_branch_address)
-		str += relation(this->start_address, this->false_branch_address) + "\n";
+		str += relation(this->start_address, this->false_branch_address);
+
 	return str;
 }
 
@@ -93,9 +144,6 @@ bool Node::it_fits(size_t size) const noexcept
 
 int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
 {
-	if ((!mem) || (!size))
-		return EINVAL;
-	
 	if (!this->it_fits(size))
 		return ENOMEM;
 
@@ -135,9 +183,6 @@ int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
 
 int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 {
-	if ((!mem) || (!size))
-		return EINVAL;
-
 	if (!this->it_fits(size))
 		return ENOMEM;
 	

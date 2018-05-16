@@ -11,11 +11,40 @@ class Node {
 
 private:
 
-	// it_fits returns true if the size specified is greater or
-	// equal than the object node members
+	/**
+	 * it_fits returns true if the size specified is greater or
+	 * equal than the object node members
+	 */
 	bool it_fits(size_t size) const noexcept;
 
+	/**
+	* no_branching returns true if node does not branch
+	*/
+	bool no_branching() const noexcept;
+
+	/**
+	* graphviz_color returns graphviz color definitions for the node
+	*/
+	std::string graphviz_color() const noexcept;
+
+	/**
+	 * graphviz_name returns the graphviz node name definition
+	 */
+	std::string graphviz_name() const noexcept;
+
+	/**
+	 * graphviz_label returns the graphviz label definitions
+	 */
+	std::string graphviz_label() const noexcept;
+
 public:
+
+	/**
+	 * validate returns true if the node contains
+	 * valid node information
+	 */
+	bool validate() const noexcept;
+
 	/**
 	* start_address is the first
 	* start instruction assembly block code

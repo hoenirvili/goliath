@@ -71,46 +71,43 @@ PluginReport* DBTBranching(void* custom_params, PluginLayer** layers)
 PluginReport* DBTBeforeExecute(void *custom_params, PluginLayer **layers)
 {
 	CUSTOM_PARAMS* params = (CUSTOM_PARAMS *)custom_params;
-    DISASM* MyDisasm = params->MyDisasm;
-    TranslatorShellData* tdata = params->tdata;
-    size_t stack_trace = params->stack_trace;
 
-    char instr_bytes[100];
+	size_t eip = params->MyDisasm->EIP;
+	Int32 branch_type = params->MyDisasm->Instruction.BranchType;
+	size_t value = (size_t)params->MyDisasm->Instruction.AddrValue;
+	char* complete_instruction = params->MyDisasm->CompleteInstr;
+
+	char instr_bytes[100] = { 0 };
     char temp[MAX_PATH];
-    size_t len = params->instrlen;
-    PluginReport* report = (PluginReport*) VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
+	size_t len = params->instrlen;
+    
+	PluginReport* report = (PluginReport*)VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 	if (!report)
 		return nullptr;
 
-    char* content = (char*) VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+    char* content = (char*)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
 	if (!content)
 		return report;
 
-    if (stack_trace)
-        StackTrace((ExecutionContext*) tdata->PrivateStack, content);
+    if (params->stack_trace)
+        StackTrace((ExecutionContext*)params->tdata->PrivateStack, content);
     else
         memset(content, 0, 0x4000);
 
 #ifndef _M_X64
-    sprintf(temp, "%08X: ", (int) MyDisasm->VirtualAddr);
+    sprintf(temp, "%08X: ", (int)params->MyDisasm->VirtualAddr);
 #else
     sprintf(temp, "%08X%08X: ", (DWORD)(MyDisasm->VirtualAddr >> 32), (DWORD)(MyDisasm->VirtualAddr & 0xFFFFFFFF));
 #endif
 
     strcat(content, temp);
-    memset(instr_bytes, 0, sizeof(instr_bytes));
 	for (size_t i = 0; i < len; i++)
-        sprintf(instr_bytes + i * 3, "%02X ", *(BYTE*) (MyDisasm->EIP + i));
+        sprintf(instr_bytes + i * 3, "%02X ", *(BYTE*) (eip + i));
 
-    sprintf(temp, "%-*s : %s", 45, instr_bytes, MyDisasm->CompleteInstr);
+    sprintf(temp, "%-*s : %s", 45, instr_bytes, complete_instruction);
     strcat(content, temp);
 
-    Instruction instruction = {
-        MyDisasm->EIP,
-        MyDisasm->CompleteInstr,
-        MyDisasm->Instruction.BranchType,
-        len, (size_t) MyDisasm->Instruction.AddrValue
-    };
+	auto instruction = Instruction(eip, complete_instruction, branch_type, len, value);
 
 	pfg->add(instruction);
     
