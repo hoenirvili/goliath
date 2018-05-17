@@ -22,7 +22,7 @@ static unordered_map<level, string> prefix =
 
 static unique_ptr<ostream> out;
 
-void init(ostream* os)
+void init(ostream* os) noexcept
 {
 	out.reset(os);
 }
@@ -45,7 +45,7 @@ void write(
 	va_list list;
 	va_start(list, format);
 	auto len = vsnprintf(NULL, 0, format, list) + 1;
-	unique_ptr<char[]> message = make_unique<char[]>(len);
+	auto message = make_unique<char[]>(len);
 	vsnprintf(message.get(), len, format, list);
 	va_end(list);
 	(*out)

@@ -141,9 +141,9 @@ extern "C" {
 	DLL_API size_t GetLayer();
 	DLL_API BOOL DBTInit();
 	DLL_API PluginReport* DBTFinish();
-	DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
 	DLL_API PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers);
-	DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
+	// DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
+	// DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
 }
 
 extern BYTE* engine_share_buff;
@@ -154,7 +154,7 @@ template<typename ... Args>
 std::string string_format(const std::string& format, Args ... args)
 {
 	std::size_t size = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1;
-	std::unique_ptr<char[]> buf(new char[size]);
+	auto buf = std::make_unique<char[]>(size);
 	std::snprintf(buf.get(), size, format.c_str(), args ...);
 	return std::string(buf.get(), buf.get() + size - 1);
 }

@@ -12,7 +12,7 @@ class PartialFlowGraph {
 private:
 	
 	/**
-	 * current_ndoe_addr maintains the current node
+	 * current_ndoe_addr keeps track of the current node
 	 * address that has been added with the add function
 	 */
 	size_t current_node_addr = 0x0;

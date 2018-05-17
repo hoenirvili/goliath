@@ -36,7 +36,6 @@ static HANDLE file_mapping;
  */
 static unique_ptr<PartialFlowGraph> pfg;
 
-
 BOOL DBTInit()
 {
 	file_mapping = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
@@ -49,8 +48,8 @@ BOOL DBTInit()
 
 	const char *logname = LOGNAME_BUFFER(engine_share_buff);
 	string name = (!logname) ? string() : string(logname);
-    
-	auto* file = new fstream(name, ios::app);
+		
+	auto* file = new fstream(name, fstream::app);
 	if (!(*file))
 		return FALSE;
 
@@ -62,13 +61,8 @@ BOOL DBTInit()
 	return TRUE;
 }
 
-PluginReport* DBTBranching(void* custom_params, PluginLayer** layers)
-{
-    return (PluginReport*) 
-        VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
-}
 
-PluginReport* DBTBeforeExecute(void *custom_params, PluginLayer **layers)
+PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers)
 {
 	CUSTOM_PARAMS* params = (CUSTOM_PARAMS *)custom_params;
 
@@ -78,7 +72,7 @@ PluginReport* DBTBeforeExecute(void *custom_params, PluginLayer **layers)
 	char* complete_instruction = params->MyDisasm->CompleteInstr;
 
 	char instr_bytes[100] = { 0 };
-    char temp[MAX_PATH];
+	char temp[MAX_PATH] = { 0 };
 	size_t len = params->instrlen;
     
 	PluginReport* report = (PluginReport*)VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
@@ -117,12 +111,6 @@ PluginReport* DBTBeforeExecute(void *custom_params, PluginLayer **layers)
     report->content_after = 0;
 
     return report;
-}
-
-PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers)
-{
-    return (PluginReport*) 
-		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 }
 
 PluginReport* DBTFinish()

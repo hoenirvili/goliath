@@ -21,8 +21,8 @@ public:
 		char* content,
 		Int32 branch_type,
 		size_t len,
-		size_t argument_value
-	) :
+		size_t argument_value 
+	) noexcept :
 		eip(eip),
 		content(content),
 		branch_type(branch_type),

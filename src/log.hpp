@@ -9,7 +9,7 @@ enum class level : std::uint8_t { error, warning, info };
 /**
  * init initialises the internal writer
  */
-void init(std::ostream* os);
+void init(std::ostream* os) noexcept;
 
 /**
 * write will format and write the message to the internal writer

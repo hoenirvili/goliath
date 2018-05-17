@@ -1,6 +1,8 @@
 #include <fstream>
 #include <cstddef>
 #include <string>
+#include <stdexcept>
+
 
 #include "partial_flow_graph.hpp"
 #include "common.hpp"
@@ -93,65 +95,52 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 		log_error("invalid instruction passed");
 		return EINVAL;
 	}
-
-	auto address = instruction.eip;
-
-	// at the start of the partial flow graph init address
+	
 	if (!this->start)
-		this->start = address;
+		this->start = instruction.eip;
 
+	if (!this->current_node_addr)
+		this->current_node_addr = instruction.eip;
 
-	auto found = this->node_map.find(address) != this->node_map.end();
+	shared_ptr<Node> node = nullptr;
 	
-	// if this is true, this means we have to create a new node
-	if (!found && !this->ret_instr_encountered) {
-		auto new_node = make_shared<Node>();
-		new_node->start_address = address;
-		this->node_map[address] = new_node;
-
-		this->current_node_addr = address;
+	try {
+		auto node = this->node_map.at(this->current_node_addr);
+	} catch (const out_of_range&) {
+		node = make_shared<Node>();
+		node->start_address = this->current_node_addr;
+		this->node_map[this->current_node_addr] = node;
 	}
 
-	if (this->ret_instr_encountered) {
-		// we already created the node 
-		this->current_node_addr = address;
-		this->ret_instr_encountered = false;
-	}
+	if (instruction.is_branch()) {
+		if (instruction.is_ret()) {
+			this->current_node_addr = 0;
+			node->block.push_back(instruction.content);
+			return 0;
+		}
 
-	auto current_node = this->node_map[this->current_node_addr];
-
-	if (instruction.is_branch() && 
-		instruction.branch_type != RetType) {
+		node->true_branch_address = instruction.true_branch();
+		node->false_branch_address = instruction.false_branch();
 		
-		// finish with the old node
-		auto taddr = instruction.true_branch();
-		auto faddr = instruction.false_branch();
-		current_node->true_branch_address = taddr;
-		current_node->false_branch_address = faddr;
-
-		// we know that every false and true branch could
-		// point to new nodes so create, init and push them
-		// into the map
-		if (taddr != address) {
+		auto found = this->node_map.find(node->true_branch_address) != this->node_map.end();
+		if (!found) {
 			auto tnode = make_shared<Node>();
-			tnode->start_address = taddr;
-			this->node_map[taddr] = tnode;
+			tnode->start_address = node->true_branch_address;
+			this->node_map[node->true_branch_address] = tnode;
 		}
-		if (faddr != address) {
+
+		found = this->node_map.find(node->false_branch_address) != this->node_map.end();
+		if (!found) {
 			auto fnode = make_shared<Node>();
-			fnode->start_address = faddr;
-			this->node_map[faddr] = fnode;
+			fnode->start_address = node->false_branch_address;
+			this->node_map[node->false_branch_address] = fnode;
 		}
+
+		this->current_node_addr = 0;
 	}
-
-	if (instruction.branch_type == RetType) {
-		this->ret_instr_encountered = true;
-	}
-
-
-	// every instruction pushed should be in the node
-	current_node->block.push_back(instruction.content);
 	
+	node->block.push_back(instruction.content);
+
 	return 0;
 }
 
