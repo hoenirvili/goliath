@@ -11,6 +11,8 @@ class Node {
 
 private:
 
+	bool is_done = false;
+
 	/**
 	 * it_fits returns true if the size specified is greater or
 	 * equal than the object node members
@@ -38,7 +40,13 @@ private:
 	std::string graphviz_label() const noexcept;
 
 public:
+	
+	void mark_done() noexcept;
 
+	bool done() const noexcept;
+
+	bool last_instruction_ret = false;
+	
 	/**
 	 * validate returns true if the node contains
 	 * valid node information

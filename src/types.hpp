@@ -282,10 +282,10 @@ enum ARGUMENTS_TYPE {
     READ = 0x1,
     WRITE = 0x2,
 
-    REG0 = 0x1,
-    REG1 = 0x2,
-    REG2 = 0x4,
-    REG3 = 0x8,
+    REG0 = 0x1, //2^0
+    REG1 = 0x2, //2^1
+    REG2 = 0x4, //2^2
+    REG3 = 0x8, // ..
     REG4 = 0x10,
     REG5 = 0x20,
     REG6 = 0x40,
@@ -321,8 +321,3 @@ enum SPECIAL_INFO {
     /* === mask = 0xff000000 */
     ShowSegmentRegs = 0x01000000
 };
-
-//TODO(hoenir): this should be removed
-extern "C" {
-	DLL_API int Disasm(LPDISASM pDisAsm);
-}

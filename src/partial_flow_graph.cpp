@@ -3,7 +3,6 @@
 #include <string>
 #include <stdexcept>
 
-
 #include "partial_flow_graph.hpp"
 #include "common.hpp"
 #include "log.hpp"
@@ -20,7 +19,8 @@ digraph ControlFlowGraph {
 		color = black
 		arrowhead = diamond
 		style = filled
-		fontname="Source Code Pro"
+		fontname = "Source Code Pro"
+		arrowtail = normal
 	]	
 )";
 
@@ -89,6 +89,7 @@ int PartialFlowGraph::generate(const string content, ostream* out) const noexcep
 	return 0;
 }
 
+
 int PartialFlowGraph::add(const Instruction& instruction) noexcept
 {
 	if (!instruction.validate()) {
@@ -96,52 +97,85 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 		return EINVAL;
 	}
 	
+	// only one time
 	if (!this->start)
 		this->start = instruction.eip;
 
+
+	if (this->skip_how_many_times) {
+		this->skip_how_many_times--;
+		return 0;
+	}
+
+	// every time when this needs to change or alloc a new node
 	if (!this->current_node_addr)
 		this->current_node_addr = instruction.eip;
 
-	shared_ptr<Node> node = nullptr;
+	new_node_if_not_exist(this->current_node_addr);
 	
-	try {
-		auto node = this->node_map.at(this->current_node_addr);
-	} catch (const out_of_range&) {
-		node = make_shared<Node>();
-		node->start_address = this->current_node_addr;
-		this->node_map[this->current_node_addr] = node;
+	auto node = this->node_map[this->current_node_addr];
+
+	if (node->done()) {
+		// make sure we skip the next n-1 instructions
+		// make sure always bump up by 1 occurrences because the node is already done
+
+		this->skip_how_many_times = node->block.size();
+
+		// TODO(hoenir): Remove this away before release
+		if (this->skip_how_many_times == 0)
+			log_warning("node with %lu instruction is empty", this->skip_how_many_times);
+
+		if (this->skip_how_many_times > 1)
+			// we are already are at the first instruction
+			// so skip it
+			this->skip_how_many_times--;
+
+		node->occurrences++;
+
+		// reset node change
+		this->current_node_addr = 0;
+
+		return 0;
 	}
 
-	if (instruction.is_branch()) {
-		if (instruction.is_ret()) {
-			this->current_node_addr = 0;
-			node->block.push_back(instruction.content);
-			return 0;
-		}
+	if (instruction.is_branch() && !instruction.is_ret()) {
 
 		node->true_branch_address = instruction.true_branch();
 		node->false_branch_address = instruction.false_branch();
+
+		new_node_if_not_exist(node->true_branch_address);
+		new_node_if_not_exist(node->false_branch_address);
 		
-		auto found = this->node_map.find(node->true_branch_address) != this->node_map.end();
-		if (!found) {
-			auto tnode = make_shared<Node>();
-			tnode->start_address = node->true_branch_address;
-			this->node_map[node->true_branch_address] = tnode;
-		}
-
-		found = this->node_map.find(node->false_branch_address) != this->node_map.end();
-		if (!found) {
-			auto fnode = make_shared<Node>();
-			fnode->start_address = node->false_branch_address;
-			this->node_map[node->false_branch_address] = fnode;
-		}
-
 		this->current_node_addr = 0;
+		node->mark_done();
 	}
-	
+
+	if (instruction.is_ret()) {
+		this->current_node_addr = 0;
+		node->last_instruction_ret = true;
+		node->mark_done();
+	}
+
+
 	node->block.push_back(instruction.content);
 
 	return 0;
+}
+
+void PartialFlowGraph::new_node_if_not_exist(size_t address) noexcept
+{
+	if (address == 0) {
+		log_error("cannot add node with 0 address");
+		return;
+	}
+
+	auto found = this->node_map.find(address) != this->node_map.end();
+	if (found)
+		return;
+
+	auto node = make_shared<Node>();
+	node->start_address = address;
+	this->node_map[address] = node;
 }
 
 size_t PartialFlowGraph::mem_size() const noexcept
@@ -163,9 +197,8 @@ size_t PartialFlowGraph::mem_size() const noexcept
 
 bool PartialFlowGraph::it_fits(const size_t size) const noexcept
 {
-	return (size >= this->mem_size());
+	return (this->mem_size() <= size);
 }
-
 
 int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcept
 {
@@ -214,11 +247,6 @@ int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcep
 
 int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 {
-	if ((!mem) || (!size)) {
-		log_error("invalid shared block of memory provided");
-		return EINVAL;
-	}
-
 	if (!this->it_fits(size)) {
 		log_error("serialise buffer cannot fit into the given size");
 		return ENOMEM;
@@ -226,7 +254,7 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 	
 	log_info("prepare memory for serialization");
 	memset(mem, 0, size);
-
+	
 	/**
 	* serialization on x86
 	* - first 4 bytes is the start addrs of the first node node_map

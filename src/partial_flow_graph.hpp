@@ -12,18 +12,23 @@ class PartialFlowGraph {
 private:
 	
 	/**
+	 * keep track of how many times to skip the next instruction
+	 */
+	size_t skip_how_many_times = 0;
+	/**
 	 * current_ndoe_addr keeps track of the current node
 	 * address that has been added with the add function
 	 */
 	size_t current_node_addr = 0x0;
 
-	bool ret_instr_encountered = false;
 	/**
 	 * it_fits returns true if the given size a 
 	 * PartialFlowGraph object in memory could fit
 	 */
 	bool it_fits(const size_t size) const noexcept;
 	
+
+	void new_node_if_not_exist(size_t address) noexcept;
 public:
 
 	PartialFlowGraph() = default;

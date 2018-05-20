@@ -7,41 +7,14 @@
 
 using namespace std;
 
-// pallet contains all the blues9 color scheme pallet
-static const unsigned int pallet[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+void Node::mark_done() noexcept
+{
+	this->is_done = true;
+}
 
-/**
- * pick_color
- * for a given number of occurrences return a number
- * based on the color pallet numbers in graphviz
- */
-//TODO(hoenir): fix this
-static string pick_color(unsigned int occurrences) {
-    const unsigned int interval[] = {1, 2, 3, 5, 6, 7, 8, 9, 10};
-
-    string color = "1";
-    size_t n = sizeof(interval) / sizeof(interval[0]);
-    unsigned int di = 0, dj = 0;
-
-	unsigned int i = 0;
-	unsigned int j = i + 1;
-	for (; i < n - 1 && j < n; i++, j++) {
-		if ((interval[i] >= occurrences) && (interval[j] <= occurrences)) {
-			di = interval[i] - occurrences;
-			dj = occurrences - interval[j];
-			bool flag = (di > dj);
-			switch (flag) {
-			case true:
-				color = to_string(pallet[i]);
-				break;
-			case false:
-				color = to_string(pallet[j]);
-				break;
-			}
-		}
-	}
-
-    return color;
+bool Node::done() const noexcept
+{
+	return this->is_done;
 }
 
 bool Node::no_branching() const noexcept
@@ -56,16 +29,15 @@ std::string Node::graphviz_color() const noexcept
 	if (this->no_branching())
 		return "color = \"plum1\"";
 	
-	return "colorscheme = blues9\n color = \"" +
-		pick_color(this->occurrences) +
-		"\"\n";
+	std::string color = "1";//TODO(hoenir): fix this
+	return "colorscheme = blues9\n\t\tcolor=" + color + "\n";
 }
 
 std::string Node::graphviz_name() const noexcept
 {
 	if (this->start_address)
 		return string_format("0x%08x", this->start_address);
-
+	 
 	return "";
 }
 
@@ -97,7 +69,7 @@ bool Node::validate() const noexcept
 
 static const char* graphviz_definition_template = R"(
 	"%s" [
-		label = "%s"
+		%s
 		%s
 	]
 )";
@@ -122,17 +94,21 @@ string Node::graphviz_definition() const
 
 static inline string relation(size_t start, size_t end)
 {
-	return string_format("\"0x%08x\" -> \"0x%08x\"", start, end) + "\n";
+	return string_format("\"0x%08x\" -> \"0x%08x\"", start, end);
 }
 
 string Node::graphviz_relation() const
 {
 	string str = "";
-	if (this->true_branch_address)
+	if (this->true_branch_address) {
 		str += relation(this->start_address, this->true_branch_address);
+		str += " [color=green penwidth=3.5] \n";
+	}
 
-	if (this->false_branch_address)
+	if (this->false_branch_address) {
 		str += relation(this->start_address, this->false_branch_address);
+		str += " [color=red penwidth=3.5] \n";
+	}
 
 	return str;
 }

@@ -70,5 +70,10 @@ bool Instruction::validate() const noexcept
 		return false;
 	}
 
+	if (this->is_branch() && !this->is_ret() && this->argument_value == 0) {
+		log_warning("a branch instruction cannot have argument_value to be 0");
+		return false;
+	}
+
 	return true;
 }
