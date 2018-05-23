@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.hpp"
+#include "api.hpp"
 
 /**
 * Instruction type holds all context of the next instruction
@@ -15,15 +15,15 @@ public:
 	const size_t eip;			/* instruction pointer */
 	const char* content;		/* complete instruction */
 	const Int32 branch_type;	/* no branch = 0 */
-	
+
 	Instruction(
 		size_t eip,
 		char* content,
 		Int32 branch_type,
 		size_t len,
-		size_t argument_value 
+		size_t argument_value
 	) noexcept :
-		eip(eip),
+	eip(eip),
 		content(content),
 		branch_type(branch_type),
 		len(len),

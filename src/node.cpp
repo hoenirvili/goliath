@@ -1,8 +1,9 @@
 #include <cstring>
 #include <string>
 #include "node.hpp"
-#include "common.hpp"
+#include "api.hpp"
 #include "log.hpp"
+#include "format.hpp"
 
 using namespace std;
 
@@ -27,10 +28,10 @@ bool Node::no_branching() const noexcept
 static const unsigned int pallet[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
 /**
- * pick_color
- * for a given number of max occurrences and a fixed value
- * return the color pallet number in graphviz format
- */
+* pick_color
+* for a given number of max occurrences and a fixed value
+* return the color pallet number in graphviz format
+*/
 static unsigned int pick_color(unsigned int max, unsigned int value) noexcept {
 	size_t n = ARRAY_SIZE(pallet);
 	const auto split_in = 100.0f / n;
@@ -38,9 +39,9 @@ static unsigned int pick_color(unsigned int max, unsigned int value) noexcept {
 
 	for (size_t i = 0; i < n; i++)
 		interval[i] = split_in * (i + 1);
-	
+
 	const float p = ((float)(value / max) * 100.0f);
-	
+
 	if (p <= interval[0])
 		return 1;
 	if (p >= interval[n - 1])
@@ -54,13 +55,13 @@ static unsigned int pick_color(unsigned int max, unsigned int value) noexcept {
 				return pallet[i + 1];
 
 	return 1;
-}	
+}
 
 std::string Node::graphviz_color() const noexcept
 {
 	if (this->no_branching())
 		return "color = \"plum1\"";
-	
+
 	auto color = pick_color(this->max_occurrences, this->occurrences);
 	auto str = "colorscheme = blues9\n\t\tcolor = " + to_string(color);
 	if (color >= 7)
@@ -73,7 +74,7 @@ std::string Node::graphviz_name() const noexcept
 {
 	if (this->start_address)
 		return string_format("0x%08x", this->start_address);
-	 
+
 	return "";
 }
 
@@ -88,7 +89,7 @@ std::string Node::graphviz_label() const noexcept
 		block += bl + "\\n";
 
 	block = "label = \"" + block + "\"";
-	
+
 	return block;
 }
 
@@ -114,17 +115,17 @@ string Node::graphviz_definition() const
 {
 	if (!this->validate())
 		return "";
-	
+
 	const auto name = this->graphviz_name();
 	const auto label = this->graphviz_label();
 	const auto color = this->graphviz_color();
-	
+
 	const auto nm = name.c_str();
-    const auto blk = label.c_str();
-    const auto colr = color.c_str();
-	
+	const auto blk = label.c_str();
+	const auto colr = color.c_str();
+
 	return string_format(
-		graphviz_definition_template, 
+		graphviz_definition_template,
 		nm, blk, colr);
 }
 
@@ -180,7 +181,7 @@ int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
 
 	char *content = NULL;
 	size_t content_length = 0;
-	
+
 	for (size_t i = 0; i < block_size; i++) {
 		content = (char*)mem;
 
@@ -211,24 +212,24 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 
 	memcpy(mem, &this->start_address, sizeof(this->start_address));
 	mem += sizeof(this->start_address);
-	
+
 	memcpy(mem, &this->occurrences, sizeof(this->occurrences));
 	mem += sizeof(this->occurrences);
-	
+
 	memcpy(mem, &this->true_branch_address, sizeof(this->true_branch_address));
 	mem += sizeof(this->true_branch_address);
-	
+
 	memcpy(mem, &this->false_branch_address, sizeof(this->false_branch_address));
 	mem += sizeof(this->false_branch_address);
-	
+
 	auto block_size = this->block.size();
 	memcpy(mem, &block_size, sizeof(block_size));
 	mem += sizeof(block_size);
-	
+
 	for (const auto &item : this->block) {
 		auto code = item.c_str();
 		size_t code_size = strlen(code) + 1;
-		
+
 		memcpy(mem, code, code_size);
 		mem += code_size;
 	}

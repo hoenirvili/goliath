@@ -1,5 +1,6 @@
 #include "instruction.hpp"
 #include "log.hpp"
+#include "api.hpp"
 
 bool Instruction::is_branch() const noexcept
 {
@@ -54,7 +55,7 @@ bool Instruction::validate() const noexcept
 		return false;
 	}
 
-	if (!this->is_branch() && 
+	if (!this->is_branch() &&
 		this->branch_type != 0) {
 		log_warning("invalid branch passed %d", this->branch_type);
 		return false;

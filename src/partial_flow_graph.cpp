@@ -5,10 +5,11 @@
 #include <algorithm>
 
 #include "partial_flow_graph.hpp"
-#include "common.hpp"
+#include "api.hpp"
 #include "log.hpp"
-#include "types.hpp"
 #include "instruction.hpp"
+#include "random.hpp"
+#include "exec.hpp"
 
 using namespace std;
 
@@ -31,17 +32,17 @@ string PartialFlowGraph::graphviz()
 	this->set_nodes_max_occurrences();
 
 	string definitions = "";
-    for (const auto& item : this->node_map) {
-        auto node = item.second;
-        definitions += node->graphviz_definition();
-    }
+	for (const auto& item : this->node_map) {
+		auto node = item.second;
+		definitions += node->graphviz_definition();
+	}
 
-    auto digraph = digraph_prefix + definitions;
+	auto digraph = digraph_prefix + definitions;
 
-    for (const auto& item : this->node_map) {
-        auto node = item.second;
+	for (const auto& item : this->node_map) {
+		auto node = item.second;
 		digraph += node->graphviz_relation();
-    }
+	}
 
 	return digraph + "\n}";
 }
@@ -75,19 +76,19 @@ int PartialFlowGraph::merge(const PartialFlowGraph &from) noexcept
 int PartialFlowGraph::generate(const string content, ostream* out) const noexcept
 {
 	(*out) << content << endl;
-	
+
 	auto name = to_string(this->start) + "_" + random_string();
 
-	const string cmd = "start \"\" cmd /c dot -Tpng partiaflowgraph.dot -o" + 
-			name + ".png";
+	const string cmd = 
+		"start \"\" cmd /c dot -Tpng partiaflowgraph.dot -o" + name + ".png 2>&1";
 
 	auto from = execute_command(cmd);
 	if (!from.empty())
 		log_error(
-			"\n[DOT COMMAND OUTPUT START]\n %s \n[DOT COMMAND OUTPUT END]", 
+			"\n[DOT COMMAND OUTPUT START]\n %s \n[DOT COMMAND OUTPUT END]",
 			from.c_str()
 		);
-	
+
 	return 0;
 }
 
@@ -98,7 +99,7 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 		log_error("invalid instruction passed");
 		return EINVAL;
 	}
-	
+
 	if (!this->start)
 		this->start = instruction.eip;
 
@@ -113,7 +114,7 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 		this->current_node_addr = instruction.eip;
 
 	new_node_if_not_exist(this->current_node_addr);
-	
+
 	auto node = this->node_map[this->current_node_addr];
 
 	if (node->done()) {
@@ -123,7 +124,7 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 		if (this->skip_how_many_times > 1)
 			// we are already at the first instruction so skip it
 			this->skip_how_many_times--;
-		
+
 		// make sure always bump up by 1 occurrences 
 		// because the node is already done
 		node->occurrences++;
@@ -141,7 +142,7 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 
 		new_node_if_not_exist(node->true_branch_address);
 		new_node_if_not_exist(node->false_branch_address);
-		
+
 		this->current_node_addr = 0;
 		node->mark_done();
 	}
@@ -183,15 +184,15 @@ size_t PartialFlowGraph::mem_size() const noexcept
 	size_t size = 0;
 	size += sizeof(this->start);
 	size += sizeof(this->node_map.size());
-	
+
 	for (const auto &item : this->node_map) {
 		const auto address = item.first;
 		const auto node = item.second;
-		
+
 		size += sizeof(address);
 		size += node->mem_size();
 	}
-	
+
 	return size;
 }
 
@@ -199,12 +200,12 @@ void PartialFlowGraph::set_nodes_max_occurrences() noexcept
 {
 	auto node = max_element(this->node_map.begin(), this->node_map.end(),
 		[](const pair<size_t, shared_ptr<Node>>& left,
-			const pair<size_t, shared_ptr<Node>>& right) {	
+			const pair<size_t, shared_ptr<Node>>& right) {
 		return right.second->occurrences > left.second->occurrences;
 	});
 
 	size_t max_number_of_occurrences = node->second->occurrences;
-	
+
 	for (const auto &item : this->node_map) {
 		auto node = item.second;
 		node->max_occurrences = max_number_of_occurrences;
@@ -229,14 +230,14 @@ int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcep
 	size_t node_map_size = 0;
 	memcpy(&node_map_size, mem, sizeof(node_map_size));
 	mem += sizeof(node_map_size);
-	
+
 	this->node_map.clear(); // clear the map
 
 	int err = 0;
-	
+
 	if (!node_map_size)
 		log_info("deserialize every node from mem block");
-	
+
 	for (size_t i = 0; i < node_map_size; i++) {
 		size_t start_address = 0;
 		memcpy(&start_address, mem, sizeof(start_address));
@@ -244,7 +245,7 @@ int PartialFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcep
 
 		shared_ptr<Node> node = make_shared<Node>();
 		ptrdiff_t has_written = mem - start; /*how many bytes are written*/
-		err = node->deserialize(mem, size-has_written);
+		err = node->deserialize(mem, size - has_written);
 		if (err != 0) {
 			log_error("cannot deserialize the next node");
 			return err;
@@ -267,10 +268,10 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 		log_error("serialise buffer cannot fit into the given size");
 		return ENOMEM;
 	}
-	
+
 	log_info("prepare memory for serialization");
 	memset(mem, 0, size);
-	
+
 	/**
 	* serialization on x86
 	* - first 4 bytes is the start addrs of the first node node_map
@@ -294,7 +295,7 @@ int PartialFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
 		mem += sizeof(addr);
 
 		auto node = item.second;
-		
+
 		size_t node_size = node->mem_size();
 		int n = node->serialize(mem, node_size);
 		if (n != 0) {
