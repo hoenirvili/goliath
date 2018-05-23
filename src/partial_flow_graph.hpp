@@ -10,7 +10,12 @@
 class PartialFlowGraph {
 
 private:
-	
+	/**
+	 * set_nodes_max_occurrences
+	 *
+	 */
+	void set_nodes_max_occurrences() noexcept;
+
 	/**
 	 * keep track of how many times to skip the next instruction
 	 */
@@ -29,6 +34,7 @@ private:
 	
 
 	void new_node_if_not_exist(size_t address) noexcept;
+
 public:
 
 	PartialFlowGraph() = default;
@@ -61,7 +67,7 @@ public:
 	 * graphviz returns the graphviz script that is generated
 	 * based on the current partial flow graph state
 	 */
-	std::string graphviz() const;
+	std::string graphviz();
 
 	/**
 	 * merge the partial flow graph given with the current one
@@ -89,4 +95,7 @@ public:
 	 * it returns EINVAL
 	 */
 	int add(const Instruction& instr) noexcept;
+
+
+	bool empty() const noexcept;
 };

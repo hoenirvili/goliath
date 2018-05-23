@@ -103,13 +103,16 @@ struct PluginLayer {
     struct PluginLayer* nextnode;
 };
 
-#define PLUGIN_LAYER 0    // layer curent 1 - peste APIReporter/ExitDetector
+#define PLUGIN_LAYER 1    // layer curent 1 - peste APIReporter/ExitDetector
 
 struct CUSTOM_PARAMS {
     DISASM* MyDisasm;
     TranslatorShellData* tdata;
     size_t stack_trace;
     size_t instrlen;
+	size_t symbolic_gradient; // false branch
+	size_t next_addr; // true banch
+	size_t side_addr;
 };
 
 #define CONDITION_PATH(buf) ((char*) buf + CONDITION_PATH_OFFSET)
@@ -142,13 +145,13 @@ extern "C" {
 	DLL_API BOOL DBTInit();
 	DLL_API PluginReport* DBTFinish();
 	DLL_API PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers);
-	// DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
-	// DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
+	DLL_API PluginReport* DBTBranching(void* custom_params, PluginLayer** layers);
+	DLL_API PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers);
 }
 
 extern BYTE* engine_share_buff;
 
-extern void StackTrace(ExecutionContext* ctx, char* content);
+void StackTrace(ExecutionContext* ctx, char* content);
 
 template<typename ... Args>
 std::string string_format(const std::string& format, Args ... args)
@@ -159,9 +162,11 @@ std::string string_format(const std::string& format, Args ... args)
 	return std::string(buf.get(), buf.get() + size - 1);
 }
 
-extern std::string execute_command(const std::string& command);
+std::string execute_command(const std::string& command);
 
-extern std::string random_string();
+std::string random_string();
+
+PluginLayer* GetPluginInterface(char* pluginname, size_t layer, PluginLayer **layers);
 
 inline size_t cfg_buf_size()
 {

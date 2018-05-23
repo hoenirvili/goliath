@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <string>
 #include <stdexcept>
+#include <algorithm>
 
 #include "partial_flow_graph.hpp"
 #include "common.hpp"
@@ -24,8 +25,11 @@ digraph ControlFlowGraph {
 	]	
 )";
 
-string PartialFlowGraph::graphviz() const
+string PartialFlowGraph::graphviz()
 {
+
+	this->set_nodes_max_occurrences();
+
 	string definitions = "";
     for (const auto& item : this->node_map) {
         auto node = item.second;
@@ -36,9 +40,7 @@ string PartialFlowGraph::graphviz() const
 
     for (const auto& item : this->node_map) {
         auto node = item.second;
-		auto relation = node->graphviz_relation();
-		if (!relation.empty())
-			digraph += node->graphviz_relation();
+		digraph += node->graphviz_relation();
     }
 
 	return digraph + "\n}";
@@ -97,17 +99,16 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 		return EINVAL;
 	}
 	
-	// only one time
 	if (!this->start)
 		this->start = instruction.eip;
-
 
 	if (this->skip_how_many_times) {
 		this->skip_how_many_times--;
 		return 0;
 	}
 
-	// every time when this needs to change or alloc a new node
+	// every time when current node
+	// needs to change or alloc a new node
 	if (!this->current_node_addr)
 		this->current_node_addr = instruction.eip;
 
@@ -117,22 +118,17 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 
 	if (node->done()) {
 		// make sure we skip the next n-1 instructions
-		// make sure always bump up by 1 occurrences because the node is already done
-
 		this->skip_how_many_times = node->block.size();
 
-		// TODO(hoenir): Remove this away before release
-		if (this->skip_how_many_times == 0)
-			log_warning("node with %lu instruction is empty", this->skip_how_many_times);
-
 		if (this->skip_how_many_times > 1)
-			// we are already are at the first instruction
-			// so skip it
+			// we are already at the first instruction so skip it
 			this->skip_how_many_times--;
-
+		
+		// make sure always bump up by 1 occurrences 
+		// because the node is already done
 		node->occurrences++;
 
-		// reset node change
+		// reset current node
 		this->current_node_addr = 0;
 
 		return 0;
@@ -156,10 +152,14 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 		node->mark_done();
 	}
 
-
 	node->block.push_back(instruction.content);
 
 	return 0;
+}
+
+bool PartialFlowGraph::empty() const noexcept
+{
+	return this->node_map.empty();
 }
 
 void PartialFlowGraph::new_node_if_not_exist(size_t address) noexcept
@@ -193,6 +193,22 @@ size_t PartialFlowGraph::mem_size() const noexcept
 	}
 	
 	return size;
+}
+
+void PartialFlowGraph::set_nodes_max_occurrences() noexcept
+{
+	auto node = max_element(this->node_map.begin(), this->node_map.end(),
+		[](const pair<size_t, shared_ptr<Node>>& left,
+			const pair<size_t, shared_ptr<Node>>& right) {	
+		return right.second->occurrences > left.second->occurrences;
+	});
+
+	size_t max_number_of_occurrences = node->second->occurrences;
+	
+	for (const auto &item : this->node_map) {
+		auto node = item.second;
+		node->max_occurrences = max_number_of_occurrences;
+	}
 }
 
 bool PartialFlowGraph::it_fits(const size_t size) const noexcept

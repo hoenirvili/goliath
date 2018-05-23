@@ -62,6 +62,11 @@ BOOL DBTInit()
 	return TRUE;
 }
 
+//PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers)
+//{
+//
+//}
+
 static size_t bit_index_reg_position(int byte)
 {
 	const ARGUMENTS_TYPE regs[] = {
@@ -127,6 +132,7 @@ static size_t instruction_value(const DISASM* disass) noexcept
 
 PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers)
 {
+	log_info("Am apelat before execute");
 	CUSTOM_PARAMS* params = (CUSTOM_PARAMS*)custom_params;
 
 	ExecutionContext* ctx = (ExecutionContext*)params->tdata->PrivateStack;
@@ -136,7 +142,7 @@ PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers)
 
 	char* complete_instruction = params->MyDisasm->CompleteInstr;
 
-	char instr_bytes[100] = { 0 };
+	char instr_bytes[256] = { 0 };
 	char temp[MAX_PATH] = { 0 };
 	size_t len = params->instrlen;
     
@@ -166,17 +172,28 @@ PluginReport* DBTBeforeExecute(void* custom_params, PluginLayer** layers)
     sprintf(temp, "%-*s : %s", 45, instr_bytes, complete_instruction);
     strcat(content, temp);
 
-	auto instruction = Instruction(eip, complete_instruction, branch_type, len, value);
-	pfg->add(instruction);
+	//auto instruction = Instruction(eip, complete_instruction, branch_type, len, value);
+	//pfg->add(instruction);
     
 	// pack the plugin response
-    report->plugin_name = "DBTTrace";
+    report->plugin_name = "DBTTrace"; // plugin name
     report->content_before = content;
     report->content_after = 0;
 
     return report;
 }
 
+PluginReport* DBTBranching(void* custom_params, PluginLayer** layers)
+{
+	log_info("am apelat dbtbranching");
+	return NULL;
+}
+
+PluginReport* DBTAfterExecute(void* custom_params, PluginLayer** layers)
+{
+	log_info("am apelat dbtafterexecute");
+	return NULL;
+}
 
 static int generate_control_flow_graph()
 {
@@ -199,43 +216,44 @@ static int generate_control_flow_graph()
 PluginReport* DBTFinish()
 {
 	log_info("[DBTITrace] Finish is called");
-	
-	auto plugin = (PluginReport*)
-		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
-	
-	if (!plugin) {
-		log_error("Finish plugin virtual allocation failed");
-		return plugin;
-	}
+	return NULL;
+	//
+	//auto plugin = (PluginReport*)
+	//	VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
+	//
+	//if (!plugin) {
+	//	log_error("Finish plugin virtual allocation failed");
+	//	return plugin;
+	//}
 
-	if (generate_control_flow_graph() != 0)
-		return plugin;
+	//if (generate_control_flow_graph() != 0)
+	//	return plugin;
 
-	BYTE *cfg_shared_mem = CFG(engine_share_buff);
-	auto from = PartialFlowGraph();
+	//BYTE *cfg_shared_mem = CFG(engine_share_buff);
+	//auto from = PartialFlowGraph();
 
-	size_t size = cfg_buf_size();
-	int err = from.deserialize(cfg_shared_mem, size);
-	if (err != 0) {
-		log_error("cannot deserialize from shard buffer engine a pfg");
-		return plugin;
-	}
+	//size_t size = cfg_buf_size();
+	//int err = from.deserialize(cfg_shared_mem, size);
+	//if (err != 0) {
+	//	log_error("cannot deserialize from shard buffer engine a pfg");
+	//	return plugin;
+	//}
 
-	err = pfg->merge(from);
-	if (err != 0) {
-		log_error("cannot merge two partial flow graphs");
-		return plugin;
-	}
+	//err = pfg->merge(from);
+	//if (err != 0) {
+	//	log_error("cannot merge two partial flow graphs");
+	//	return plugin;
+	//}
 
-	err = pfg->serialize(cfg_shared_mem, size);
-	if (err != 0) {
-		log_error("cannot serialize from pfg to shared buffer engine");
-		return plugin;
-	}
+	//err = pfg->serialize(cfg_shared_mem, size);
+	//if (err != 0) {
+	//	log_error("cannot serialize from pfg to shared buffer engine");
+	//	return plugin;
+	//}
 
-	// pack the plugin response
-	plugin->plugin_name = "DBTTrace";
-	plugin->content_after = 0;
+	//// pack the plugin response
+	//plugin->plugin_name = "DBTTrace";
+	//plugin->content_after = 0;
 
-	return plugin;
+	//return plugin;
 }

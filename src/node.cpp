@@ -1,6 +1,5 @@
 #include <cstring>
 #include <string>
-
 #include "node.hpp"
 #include "common.hpp"
 #include "log.hpp"
@@ -24,13 +23,50 @@ bool Node::no_branching() const noexcept
 		!this->block.size());
 }
 
+// pallet contains all the blues9 color scheme pallet
+static const unsigned int pallet[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+/**
+ * pick_color
+ * for a given number of max occurrences and a fixed value
+ * return the color pallet number in graphviz format
+ */
+static unsigned int pick_color(unsigned int max, unsigned int value) noexcept {
+	size_t n = ARRAY_SIZE(pallet);
+	const auto split_in = 100.0f / n;
+	auto interval = vector<float>(n);
+
+	for (size_t i = 0; i < n; i++)
+		interval[i] = split_in * (i + 1);
+	
+	const float p = ((float)(value / max) * 100.0f);
+	
+	if (p <= interval[0])
+		return 1;
+	if (p >= interval[n - 1])
+		return 9;
+
+	for (size_t i = 0; i < n - 1; i++)
+		if (p >= interval[i] && p <= interval[i + 1])
+			if (p < ((interval[i] + interval[i + 1]) / 2.0f))
+				return pallet[i];
+			else
+				return pallet[i + 1];
+
+	return 1;
+}	
+
 std::string Node::graphviz_color() const noexcept
 {
 	if (this->no_branching())
 		return "color = \"plum1\"";
 	
-	std::string color = "1";//TODO(hoenir): fix this
-	return "colorscheme = blues9\n\t\tcolor=" + color + "\n";
+	auto color = pick_color(this->max_occurrences, this->occurrences);
+	auto str = "colorscheme = blues9\n\t\tcolor = " + to_string(color);
+	if (color >= 7)
+		str += "\n\t\tfontcolor = white";
+	str += "\n";
+	return str;
 }
 
 std::string Node::graphviz_name() const noexcept
@@ -100,6 +136,7 @@ static inline string relation(size_t start, size_t end)
 string Node::graphviz_relation() const
 {
 	string str = "";
+
 	if (this->true_branch_address) {
 		str += relation(this->start_address, this->true_branch_address);
 		str += " [color=green penwidth=3.5] \n";

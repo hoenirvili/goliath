@@ -265,3 +265,19 @@ string random_string()
 	auto random = mt_rand();
 	return to_string(random);
 }
+
+
+PluginLayer* GetPluginInterface(char* pluginname, size_t layer, PluginLayer **layers)
+{
+	PluginLayer *scanner;
+
+	scanner = layers[layer];
+
+	while (scanner) {
+		if (scanner->data && scanner->data->plugin_name && !strcmp(scanner->data->plugin_name, pluginname))
+			return scanner;
+		scanner = scanner->nextnode;
+	}
+
+	return 0;
+}

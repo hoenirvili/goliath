@@ -10,7 +10,10 @@
 class Node {
 
 private:
-
+	/**
+	 * is_done is true when all the internal
+	 * node fiels are set
+	 */
 	bool is_done = false;
 
 	/**
@@ -41,6 +44,9 @@ private:
 
 public:
 	
+	size_t max_occurrences = 1;
+
+	/**/
 	void mark_done() noexcept;
 
 	bool done() const noexcept;
@@ -98,13 +104,13 @@ public:
 	* serialize all contents of the node into the specified mem location
 	* in order to write in that location size must be huge enough
 	*/
-	int serialize(uint8_t *mem, const size_t size) const noexcept;
+	int serialize(uint8_t* mem, const size_t size) const noexcept;
 	
 	/**
 	* deserialize extract byte per byte overwriting all internal state
 	* until we consume all size bytes
 	*/
-	int deserialize(const uint8_t *mem, const size_t size) noexcept;
+	int deserialize(const uint8_t* mem, const size_t size) noexcept;
 	
 	/**
 	* mem_size returns the number of bytes that's needed for serialization
