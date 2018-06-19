@@ -92,7 +92,6 @@ int PartialFlowGraph::generate(const string content, ostream* out) const noexcep
 	return 0;
 }
 
-
 int PartialFlowGraph::add(const Instruction& instruction) noexcept
 {
 	if (!instruction.validate()) {
@@ -108,55 +107,117 @@ int PartialFlowGraph::add(const Instruction& instruction) noexcept
 		return 0;
 	}
 
-	// every time when current node
-	// needs to change or alloc a new node
 	if (!this->current_node_addr)
 		this->current_node_addr = instruction.eip;
 
-	new_node_if_not_exist(this->current_node_addr);
-
+	this->new_node_if_not_exist(this->current_node_addr);
 	auto node = this->node_map[this->current_node_addr];
 
 	if (node->done()) {
-		// make sure we skip the next n-1 instructions
 		this->skip_how_many_times = node->block.size();
-
 		if (this->skip_how_many_times > 1)
-			// we are already at the first instruction so skip it
 			this->skip_how_many_times--;
-
-		// make sure always bump up by 1 occurrences 
-		// because the node is already done
 		node->occurrences++;
-
-		// reset current node
 		this->current_node_addr = 0;
-
 		return 0;
-	}
-
-	if (instruction.is_branch() && !instruction.is_ret()) {
-
-		node->true_branch_address = instruction.true_branch();
-		node->false_branch_address = instruction.false_branch();
-
-		new_node_if_not_exist(node->true_branch_address);
-		new_node_if_not_exist(node->false_branch_address);
-
-		this->current_node_addr = 0;
-		node->mark_done();
-	}
-
-	if (instruction.is_ret()) {
-		this->current_node_addr = 0;
-		node->last_instruction_ret = true;
-		node->mark_done();
 	}
 
 	node->block.push_back(instruction.content);
 
 	return 0;
 }
+
+int PartialFlowGraph::add_branch(const Instruction& instruction) noexcept
+{
+	if (!instruction.is_branch()) {
+		log_error("instruction is not a branch instruction");
+		return EINVAL;
+	}
+
+	auto node = this->node_map[this->current_node_addr];
+	
+	if (!instruction.is_ret()) {
+		node->true_branch_address = instruction.true_branch();
+		node->false_branch_address = instruction.false_branch();
+	
+		this->new_node_if_not_exist(node->true_branch_address);
+		this->new_node_if_not_exist(node->false_branch_address);
+	
+		this->current_node_addr = 0;
+		node->mark_done();
+		return 0;
+	}
+	
+	this->current_node_addr = 0;
+	node->last_instruction_ret = true;
+	node->mark_done();
+	return 0;
+}
+
+//int PartialFlowGraph::add(const Instruction& instruction) noexcept
+//{
+//	if (!instruction.validate()) {
+//		log_error("invalid instruction passed");
+//		return EINVAL;
+//	}
+//
+//	if (!this->start)
+//		this->start = instruction.eip;
+//
+//	if (this->skip_how_many_times) {
+//		this->skip_how_many_times--;
+//		return 0;
+//	}
+//
+//	// every time when current node
+//	// needs to change or alloc a new node
+//	if (!this->current_node_addr)
+//		this->current_node_addr = instruction.eip;
+//
+//	new_node_if_not_exist(this->current_node_addr);
+//
+//	auto node = this->node_map[this->current_node_addr];
+//
+//	if (node->done()) {
+//		// make sure we skip the next n-1 instructions
+//		this->skip_how_many_times = node->block.size();
+//
+//		if (this->skip_how_many_times > 1)
+//			// we are already at the first instruction so skip it
+//			this->skip_how_many_times--;
+//
+//		// make sure always bump up by 1 occurrences 
+//		// because the node is already done
+//		node->occurrences++;
+//
+//		// reset current node
+//		this->current_node_addr = 0;
+//
+//		return 0;
+//	}
+//
+//	if (instruction.is_branch() && !instruction.is_ret()) {
+//
+//		node->true_branch_address = instruction.true_branch();
+//		node->false_branch_address = instruction.false_branch();
+//
+//		new_node_if_not_exist(node->true_branch_address);
+//		new_node_if_not_exist(node->false_branch_address);
+//
+//		this->current_node_addr = 0;
+//		node->mark_done();
+//	}
+//
+//	if (instruction.is_ret()) {
+//		this->current_node_addr = 0;
+//		node->last_instruction_ret = true;
+//		node->mark_done();
+//	}
+//
+//	node->block.push_back(instruction.content);
+//
+//	return 0;
+//}
 
 bool PartialFlowGraph::empty() const noexcept
 {

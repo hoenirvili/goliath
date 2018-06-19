@@ -98,4 +98,6 @@ public:
 
 
 	bool empty() const noexcept;
+
+	int add_branch(const Instruction& instruction) noexcept;
 };

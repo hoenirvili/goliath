@@ -231,7 +231,7 @@ enum INSTRUCTION_TYPE
 	INSERTION_EXTRACTION,
 	DOT_PRODUCT,
 	SAD_INSTRUCTION,
-	ACCELERATOR_INSTRUCTION,    /* crc32, popcnt (sse4.2) */
+	ACCELERATOR_INSTRUCTION,	/* crc32, popcnt (sse4.2) */
 	ROUND_INSTRUCTION
 
 };
@@ -433,7 +433,7 @@ struct PluginLayer {
 	struct PluginLayer *nextnode;
 };
 
-#define PLUGIN_LAYER 0
+#define PLUGIN_LAYER 2
 
 struct CUSTOM_PARAMS {
 	DISASM *MyDisasm;
@@ -448,10 +448,10 @@ struct CUSTOM_PARAMS {
 extern "C" 
 {
 	DLL_API BOOL DBTInit();
-	DLL_API PluginReport *DBTBeforeExecute(CUSTOM_PARAMS *custom_params, PluginLayer **layers);
+	DLL_API PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers);
 	DLL_API size_t GetLayer();
-	DLL_API PluginReport* DBTBranching(void *custom_params, PluginLayer **layers);
-	DLL_API PluginReport* DBTAfterExecute(void *custom_params, PluginLayer **layers);
+	DLL_API PluginReport* DBTBranching(void *params, PluginLayer **layers);
+	DLL_API PluginReport* DBTAfterExecute(void *params, PluginLayer **layers);
 	DLL_API PluginReport* DBTFinish();
 }
 

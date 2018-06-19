@@ -59,8 +59,11 @@ BOOL DBTInit()
 	return TRUE;
 }
 
-PluginReport* DBTBeforeExecute(CUSTOM_PARAMS *custom_params, PluginLayer **layers)
+PluginReport* DBTBeforeExecute(void *params, PluginLayer **layers)
 {
+	log_info("[CFGTrace] Before execute is called");
+
+	CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS*)params;
 	DISASM* MyDisasm = custom_params->MyDisasm;
 	TranslatorShellData* tdata = custom_params->tdata;
 	size_t stack_trace = custom_params->stack_trace;
@@ -87,9 +90,9 @@ PluginReport* DBTBeforeExecute(CUSTOM_PARAMS *custom_params, PluginLayer **layer
 		auto ctx = (ExecutionContext*)tdata->PrivateStack;
 		auto stack = Stack(ctx);
 		stack.trace(content);
-	}
-	else
+	} else
 		memset(content, 0, 0x4000);
+
 #ifndef _M_X64
 	sprintf(temp, "%08X: ", (int)MyDisasm->VirtualAddr);
 #else
@@ -98,6 +101,7 @@ PluginReport* DBTBeforeExecute(CUSTOM_PARAMS *custom_params, PluginLayer **layer
 		(DWORD)(MyDisasm->VirtualAddr & 0xFFFFFFFF));
 #endif
 	strcat(content, temp);
+
 	memset(instr_bytes, 0, sizeof(instr_bytes));
 	for (i = 0; i < len; i++)
 		sprintf(instr_bytes + i * 3, "%02X ", *(BYTE*)(MyDisasm->EIP + i));
@@ -111,19 +115,21 @@ PluginReport* DBTBeforeExecute(CUSTOM_PARAMS *custom_params, PluginLayer **layer
 	return report;
 }
 
-PluginReport* DBTBranching(void *custom_params, PluginLayer **layers)
+PluginReport* DBTBranching(void *params, PluginLayer **layers)
 {
+	log_info("[CFGTrace] Branching is called");
 	return nullptr;
 }
 
-PluginReport* DBTAfterExecute(void *custom_params, PluginLayer **layers)
+PluginReport* DBTAfterExecute(void *params, PluginLayer **layers)
 {
+	log_info("[CFGTrace] AferExecute is called");
 	return nullptr;
 }
+
 
 PluginReport* DBTFinish()
 {
 	log_info("[CFGTrace] Finish is called");
-
 	return nullptr;
 }
