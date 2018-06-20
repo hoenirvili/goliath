@@ -1,8 +1,10 @@
 #include "api.hpp"
 #include "log.hpp"
 #include "trace.hpp"
+#include "partial_flow_graph.hpp"
 #include <cstdio>
 #include <fstream>
+#include <memory>
 #include <Windows.h>
 
 using namespace std;
@@ -19,7 +21,7 @@ PluginLayer* GetPluginInterface(char *pluginname, size_t layer, PluginLayer **la
 		scanner = scanner->nextnode;
 	}
 
-	return 0;
+	return nullptr;
 }
 
 /**
@@ -36,6 +38,10 @@ size_t GetLayer()
 {
 	return PLUGIN_LAYER;
 }
+
+
+unique_ptr<PartialFlowGraph> graph;
+
 
 BOOL DBTInit()
 {
@@ -56,6 +62,9 @@ BOOL DBTInit()
 
 	log_init(file);
 	log_info("[CFGTrace] Init is called");
+	
+	graph = make_unique<PartialFlowGraph>();
+	
 	return TRUE;
 }
 
@@ -108,6 +117,16 @@ PluginReport* DBTBeforeExecute(void *params, PluginLayer **layers)
 	sprintf(temp, "%-*s : %s", 45, instr_bytes, MyDisasm->CompleteInstr);
 	strcat(content, temp);
 
+	auto instruction = Instruction(
+		MyDisasm->EIP,
+		MyDisasm->CompleteInstr,
+		MyDisasm->Instruction.BranchType,
+		custom_params->instrlen,
+		(size_t)MyDisasm->Instruction.AddrValue
+	);
+
+	graph->add(instruction);
+
 	report->plugin_name = "CFGTrace";
 	report->content_before = content;
 	report->content_after = 0;
@@ -118,6 +137,22 @@ PluginReport* DBTBeforeExecute(void *params, PluginLayer **layers)
 PluginReport* DBTBranching(void *params, PluginLayer **layers)
 {
 	log_info("[CFGTrace] Branching is called");
+	
+	CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS*)params;
+	DISASM* MyDisasm = custom_params->MyDisasm;
+
+	auto instruction = Instruction(
+		MyDisasm->EIP,
+		MyDisasm->CompleteInstr,
+		MyDisasm->Instruction.BranchType,
+		custom_params->instrlen,
+		(size_t)MyDisasm->Instruction.AddrValue
+	);
+
+	int err = graph->add_branch(instruction);
+	if (err)
+		return nullptr;
+
 	return nullptr;
 }
 

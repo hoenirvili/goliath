@@ -134,6 +134,14 @@ int PartialFlowGraph::add_branch(const Instruction& instruction) noexcept
 		return EINVAL;
 	}
 
+	if (!this->start)
+		this->start = instruction.eip;
+
+	if (!this->current_node_addr)
+		this->current_node_addr = instruction.eip;
+
+	this->new_node_if_not_exist(this->current_node_addr);
+
 	auto node = this->node_map[this->current_node_addr];
 	
 	if (!instruction.is_ret()) {
