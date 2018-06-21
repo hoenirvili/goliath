@@ -74,22 +74,23 @@ PluginReport* DBTBeforeExecute(void *params, PluginLayer **layers)
 
 	CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS*)params;
 	DISASM* MyDisasm = custom_params->MyDisasm;
-	TranslatorShellData* tdata = custom_params->tdata;
+	/*TranslatorShellData* tdata = custom_params->tdata;
 	size_t stack_trace = custom_params->stack_trace;
 
 	char instr_bytes[100];
 	char temp[MAX_PATH];
 	size_t i;
 	size_t len = custom_params->instrlen;
-
-	PluginReport *report = (PluginReport*)
+*/
+	auto report = new PluginReport();
+	/*PluginReport *report = (PluginReport*)
 		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
 	if (!report) {
 		log_error("cannot virtual alloc a new report");
 		return nullptr;
-	}
+	}*/
 
-	char *content = (char*)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+	/*char *content = (char*)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
 	if (!content) {
 		log_error("cannot alloc a new content block");
 		return nullptr;
@@ -115,21 +116,21 @@ PluginReport* DBTBeforeExecute(void *params, PluginLayer **layers)
 	for (i = 0; i < len; i++)
 		sprintf(instr_bytes + i * 3, "%02X ", *(BYTE*)(MyDisasm->EIP + i));
 	sprintf(temp, "%-*s : %s", 45, instr_bytes, MyDisasm->CompleteInstr);
-	strcat(content, temp);
+	strcat(content, temp);*/
 
-	auto instruction = Instruction(
-		MyDisasm->EIP,
-		MyDisasm->CompleteInstr,
-		MyDisasm->Instruction.BranchType,
-		custom_params->instrlen,
-		(size_t)MyDisasm->Instruction.AddrValue
-	);
+	//auto instruction = Instruction(
+	//	MyDisasm->EIP,
+	//	MyDisasm->CompleteInstr,
+	//	MyDisasm->Instruction.BranchType,
+	//	custom_params->instrlen,
+	//	(size_t)MyDisasm->Instruction.AddrValue
+	//);
 
-	graph->add(instruction);
+	//graph->add(instruction);
 
 	report->plugin_name = "CFGTrace";
-	report->content_before = content;
-	report->content_after = 0;
+	report->content_before = nullptr;
+	report->content_after = nullptr;
 
 	return report;
 }
@@ -137,22 +138,6 @@ PluginReport* DBTBeforeExecute(void *params, PluginLayer **layers)
 PluginReport* DBTBranching(void *params, PluginLayer **layers)
 {
 	log_info("[CFGTrace] Branching is called");
-	
-	CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS*)params;
-	DISASM* MyDisasm = custom_params->MyDisasm;
-
-	auto instruction = Instruction(
-		MyDisasm->EIP,
-		MyDisasm->CompleteInstr,
-		MyDisasm->Instruction.BranchType,
-		custom_params->instrlen,
-		(size_t)MyDisasm->Instruction.AddrValue
-	);
-
-	int err = graph->add_branch(instruction);
-	if (err)
-		return nullptr;
-
 	return nullptr;
 }
 
@@ -161,7 +146,6 @@ PluginReport* DBTAfterExecute(void *params, PluginLayer **layers)
 	log_info("[CFGTrace] AferExecute is called");
 	return nullptr;
 }
-
 
 PluginReport* DBTFinish()
 {
