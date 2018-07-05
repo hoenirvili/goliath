@@ -1,9 +1,11 @@
 #include <cstring>
 #include <string>
-#include "node.hpp"
-#include "api.hpp"
-#include "log.hpp"
-#include "format.hpp"
+#include "node.h"
+#include "api.h"
+#include "log.h"
+#include "instruction.h"
+#include "format.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -17,11 +19,43 @@ bool Node::done() const noexcept
 	return this->is_done;
 }
 
+void Node::append_instruction(Instruction instruction) noexcept
+{
+	if (this->done())
+		return;
+
+	size_t eip = instruction.pointer_address();
+	if (this->start_address == 0) // only once, just the first instruction
+		this->start_address = eip;
+
+	if (contains_address(eip))
+		return;
+
+	this->addresses.emplace_back(eip);
+	this->block.emplace_back(instruction.string());
+
+	if (instruction.is_branch()) {
+		if (instruction.is_jump()) // direct jump can have one outcome
+			this->true_branch_address = instruction.true_branch_address();
+		if (instruction.is_conditional_jump()) // can have two outcomes
+			this->false_branch_address = instruction.false_branch_address();
+
+		this->mark_done();
+	}
+}
+
+bool Node::contains_address(size_t eip) const noexcept
+{
+	auto begin = this->addresses.begin();
+	auto end = this->addresses.end();
+	return (find(begin, end, eip) != end);
+}
+
 bool Node::no_branching() const noexcept
 {
 	return (!this->true_branch_address &&
 		!this->false_branch_address &&
-		!this->block.size());
+		this->block.size());
 }
 
 // pallet contains all the blues9 color scheme pallet
@@ -200,16 +234,6 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 	if (!this->it_fits(size))
 		return ENOMEM;
 	
-	/**
-	*	- first 4 bytes are the start_addr of the node
-	*	- second 4 bytes are the number of occurrences
-	*	- third 4 bytes true branch address
-	*	- forth 4 bytes false branch address
-	*	- fifth 4 bytes is the size of the node block
-	*	- the last is the hole block as strings, every string  is separated by "\0"
-	*	so we don't need to include his size also
-	*/
-
 	memcpy(mem, &this->start_address, sizeof(this->start_address));
 	mem += sizeof(this->start_address);
 

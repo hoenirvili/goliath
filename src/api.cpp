@@ -1,7 +1,7 @@
-#include "api.hpp"
-#include "log.hpp"
-#include "trace.hpp"
-#include "partial_flow_graph.hpp"
+#include "api.h"
+#include "log.h"
+#include "control_flow_graph.h"
+#include "instruction.h"
 #include <cstdio>
 #include <fstream>
 #include <memory>
@@ -24,24 +24,14 @@ PluginLayer* GetPluginInterface(char *pluginname, size_t layer, PluginLayer **la
 	return nullptr;
 }
 
-/**
- * engine_share_buff start of shared memory
- * from the engine with the plugin
- */
 BYTE *engine_share_buff;
 
-/**
- * GetLayer returns the type
- * of priority that the plugin has
- */
 size_t GetLayer()
 {
 	return PLUGIN_LAYER;
 }
 
-
-unique_ptr<PartialFlowGraph> graph;
-
+unique_ptr<ControlFlowGraph> graph;
 
 BOOL DBTInit()
 {
@@ -63,88 +53,105 @@ BOOL DBTInit()
 	log_init(file);
 	log_info("[CFGTrace] Init is called");
 	
-	graph = make_unique<PartialFlowGraph>();
+	graph = make_unique<ControlFlowGraph>();
 	
 	return TRUE;
 }
 
 PluginReport* DBTBeforeExecute(void *params, PluginLayer **layers)
 {
-	log_info("[CFGTrace] Before execute is called");
-
+	static int counter = 0;
 	CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS*)params;
-	DISASM* MyDisasm = custom_params->MyDisasm;
-	/*TranslatorShellData* tdata = custom_params->tdata;
-	size_t stack_trace = custom_params->stack_trace;
+	DISASM * MyDisasm = custom_params->MyDisasm;
 
-	char instr_bytes[100];
-	char temp[MAX_PATH];
-	size_t i;
-	size_t len = custom_params->instrlen;
-*/
+	char *content = (char*)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+	if (!content)
+		return 0;
+
 	auto report = new PluginReport();
-	/*PluginReport *report = (PluginReport*)
-		VirtualAlloc(0, sizeof(PluginReport), MEM_COMMIT, PAGE_READWRITE);
-	if (!report) {
-		log_error("cannot virtual alloc a new report");
-		return nullptr;
-	}*/
-
-	/*char *content = (char*)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
-	if (!content) {
-		log_error("cannot alloc a new content block");
-		return nullptr;
-	}
-
-	if (stack_trace) {
-		auto ctx = (ExecutionContext*)tdata->PrivateStack;
-		auto stack = Stack(ctx);
-		stack.trace(content);
-	} else
-		memset(content, 0, 0x4000);
-
-#ifndef _M_X64
-	sprintf(temp, "%08X: ", (int)MyDisasm->VirtualAddr);
-#else
-	sprintf(temp, "%08X%08X: ", 
-		(DWORD)(MyDisasm->VirtualAddr >> 32), 
-		(DWORD)(MyDisasm->VirtualAddr & 0xFFFFFFFF));
-#endif
-	strcat(content, temp);
-
-	memset(instr_bytes, 0, sizeof(instr_bytes));
-	for (i = 0; i < len; i++)
-		sprintf(instr_bytes + i * 3, "%02X ", *(BYTE*)(MyDisasm->EIP + i));
-	sprintf(temp, "%-*s : %s", 45, instr_bytes, MyDisasm->CompleteInstr);
-	strcat(content, temp);*/
-
-	//auto instruction = Instruction(
-	//	MyDisasm->EIP,
-	//	MyDisasm->CompleteInstr,
-	//	MyDisasm->Instruction.BranchType,
-	//	custom_params->instrlen,
-	//	(size_t)MyDisasm->Instruction.AddrValue
-	//);
-
-	//graph->add(instruction);
 
 	report->plugin_name = "CFGTrace";
-	report->content_before = nullptr;
-	report->content_after = nullptr;
 
+	sprintf(content, "counter=%d", counter++);
+	report->content_before = content;
+	report->content_after = nullptr;
+	auto instruction = Instruction(
+		MyDisasm->EIP,
+		MyDisasm->CompleteInstr,
+		MyDisasm->Instruction.BranchType,
+		custom_params->instrlen,
+		custom_params->next_addr,
+		custom_params->side_addr
+	);
+	int err = graph->append_instruction(instruction);
+	if (err)
+		log_error("cannot append instruction before call");
+	
+	
 	return report;
 }
 
 PluginReport* DBTBranching(void *params, PluginLayer **layers)
 {
-	log_info("[CFGTrace] Branching is called");
-	return nullptr;
+	CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS*)params;
+	DISASM *MyDisasm = custom_params->MyDisasm;
+
+	char *content = (char*)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+	if (!content)
+		return nullptr;
+
+	auto report = new PluginReport();
+
+	report->plugin_name = "CFGTrace";
+
+	sprintf(content, "BRANCH");
+	report->content_before = content;
+	report->content_after = nullptr;
+	auto instruction = Instruction(
+		MyDisasm->EIP,
+		MyDisasm->CompleteInstr,
+		MyDisasm->Instruction.BranchType,
+		custom_params->instrlen,
+		custom_params->next_addr,
+		custom_params->side_addr
+	);
+	int err = graph->append_instruction(instruction);
+	if (err)
+		log_error("cannot append branch instruction");
+	return report;
 }
 
 PluginReport* DBTAfterExecute(void *params, PluginLayer **layers)
 {
-	log_info("[CFGTrace] AferExecute is called");
-	return nullptr;
+	static int counter = 1000;
+	CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS*)params;
+	DISASM * MyDisasm = custom_params->MyDisasm;
+
+	char *content = (char*)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+	if (!content)
+		return 0;
+
+	auto report = new PluginReport();
+
+	report->plugin_name = "CFGTrace";
+
+	sprintf(content, "counter=%d", counter++);
+	report->content_before = nullptr;
+	report->content_after = content;
+
+	auto instruction = Instruction(
+		MyDisasm->EIP,
+		MyDisasm->CompleteInstr,
+		MyDisasm->Instruction.BranchType,
+		custom_params->instrlen,
+		custom_params->next_addr,
+		custom_params->side_addr
+	);
+	int err = graph->append_instruction(instruction);
+	if (err)
+		log_error("cannot append instruction after call");
+
+	return report;
 }
 
 PluginReport* DBTFinish()

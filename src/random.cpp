@@ -1,4 +1,4 @@
-#include "random.hpp"
+#include "random.h"
 #include <random>
 #include <chrono>
 

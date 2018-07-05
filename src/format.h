@@ -4,11 +4,6 @@
 #include <string>
 
 
-/***
- * string_format formats the text like
- * printf, scanf family functions and returns 
- * it as std::string object
- */
 template<typename ... Args>
 std::string string_format(const std::string& format, Args ... args)
 {

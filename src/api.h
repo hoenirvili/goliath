@@ -2,6 +2,8 @@
 
 #include <Windows.h>
 
+#pragma warning (disable:4996)
+
 #define DLL_API __declspec(dllexport)
 
 typedef signed char				Int8;
@@ -439,9 +441,10 @@ struct CUSTOM_PARAMS {
 	DISASM *MyDisasm;
 	TranslatorShellData *tdata;
 	size_t stack_trace;
+	size_t translate_loops;
 	size_t instrlen;
-	size_t symbolic_gradient;	// false branch
-	size_t next_addr;			// true banch
+	size_t symbolic_gradient;
+	size_t next_addr;
 	size_t side_addr;
 };
 
