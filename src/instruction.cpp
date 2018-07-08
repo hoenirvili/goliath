@@ -2,46 +2,6 @@
 #include "log.h"
 #include "api.h"
 
-
-bool Instruction::is_conditional_jump() const noexcept
-{
-	switch (this->branch_type) {
-	case JO:
-	case JC:
-	case JE:
-	case JA:
-	case JS:
-	case JP:
-	case JL:
-	case JG:
-	case JB:
-	case JECXZ:
-	case JNO:
-	case JNC:
-	case JNE:
-	case JNA:
-	case JNS:
-	case JNP:
-	case JNL:
-	case JNG:
-	case JNB:
-		return true;
-	}
-	
-	return false;
-}
-
-bool Instruction::is_jump() const noexcept
-{
-	switch (this->branch_type) {
-	case JmpType:
-	case CallType:
-		return true;
-	}
-
-	return false;
-}
-
 bool Instruction::is_branch() const noexcept
 {
 	switch (this->branch_type) {
@@ -80,12 +40,24 @@ const char* Instruction::string() const noexcept
 
 size_t Instruction::true_branch_address() const noexcept
 {
-	return this->next_node_addr;
+	if (this->is_branch())
+		return this->next_node_addr;
+	return this->eip + this->len;
 }
 
 size_t Instruction::false_branch_address() const noexcept
 {
-	return this->eip + this->len;
+	if (this->is_branch() && !this->is_ret() && !this->direct_branch()) {
+		if (this->next_node_addr == this->side_node_addr)
+			return this->eip + this->len;
+		return this->side_node_addr;
+	}
+	return 0;
+}
+
+bool Instruction::direct_branch() const noexcept
+{
+	return (this->branch_type == JmpType);
 }
 
 size_t Instruction::pointer_address() const noexcept

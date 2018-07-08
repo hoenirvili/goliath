@@ -33,6 +33,11 @@ size_t GetLayer()
 
 unique_ptr<ControlFlowGraph> graph;
 
+static inline int* iteration(BYTE *mem)
+{
+	return (int*)(mem);
+}
+
 BOOL DBTInit()
 {
 	HANDLE file_mapping = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
@@ -55,6 +60,11 @@ BOOL DBTInit()
 	
 	graph = make_unique<ControlFlowGraph>();
 	
+	auto cfg = CFG(engine_share_buff);
+	auto it = iteration(cfg);
+	
+	log_info("[CFGTrace] Iteration %d", *it);
+
 	return TRUE;
 }
 
@@ -83,11 +93,10 @@ PluginReport* DBTBeforeExecute(void *params, PluginLayer **layers)
 		custom_params->next_addr,
 		custom_params->side_addr
 	);
+
 	int err = graph->append_instruction(instruction);
 	if (err)
 		log_error("cannot append instruction before call");
-	
-	
 	return report;
 }
 
@@ -107,17 +116,7 @@ PluginReport* DBTBranching(void *params, PluginLayer **layers)
 	sprintf(content, "BRANCH");
 	report->content_before = content;
 	report->content_after = nullptr;
-	auto instruction = Instruction(
-		MyDisasm->EIP,
-		MyDisasm->CompleteInstr,
-		MyDisasm->Instruction.BranchType,
-		custom_params->instrlen,
-		custom_params->next_addr,
-		custom_params->side_addr
-	);
-	int err = graph->append_instruction(instruction);
-	if (err)
-		log_error("cannot append branch instruction");
+	
 	return report;
 }
 
@@ -139,23 +138,26 @@ PluginReport* DBTAfterExecute(void *params, PluginLayer **layers)
 	report->content_before = nullptr;
 	report->content_after = content;
 
-	auto instruction = Instruction(
-		MyDisasm->EIP,
-		MyDisasm->CompleteInstr,
-		MyDisasm->Instruction.BranchType,
-		custom_params->instrlen,
-		custom_params->next_addr,
-		custom_params->side_addr
-	);
-	int err = graph->append_instruction(instruction);
-	if (err)
-		log_error("cannot append instruction after call");
-
 	return report;
 }
 
 PluginReport* DBTFinish()
 {
 	log_info("[CFGTrace] Finish is called");
+	auto cfg = CFG(engine_share_buff);
+	auto it = iteration(cfg);
+
+	if ((*it) == 0) {
+
+		auto graphviz = graph->graphviz();
+		auto out = fstream("partiaflowgraph.dot", fstream::out);
+		int err = graph->generate(graphviz, &out);
+		if (err != 0) {
+			log_error("cannot generate partial flow graph");
+			return 0;
+		}
+	}
+
+	(*it)++;
 	return nullptr;
 }

@@ -4,11 +4,11 @@
 #include <vector>
 #include <string>
 
+
 class Node {
 
 private:
-	std::vector<std::string> block;
-	std::vector<size_t> addresses;
+	std::vector<Instruction> block;
 	bool is_done = false;
 	
 	bool it_fits(size_t size) const noexcept;
@@ -16,18 +16,18 @@ private:
 	std::string graphviz_color() const noexcept;
 	std::string graphviz_name() const noexcept;
 	std::string graphviz_label() const noexcept;
+	void already_visited(size_t eip) noexcept;
 
 public:	
-	size_t start_address;
 	size_t max_occurrences = 1;
 	size_t true_branch_address = 0;
 	size_t false_branch_address = 0;
 	unsigned int occurrences = 1;
 
 	void mark_done() noexcept;
+	size_t start_address() const noexcept;
 	bool done() const noexcept;
-	void append_instruction(Instruction instruction) noexcept;
-	bool validate() const noexcept;
+	void append_instruction(const Instruction& instruction) noexcept;
 	std::string graphviz_definition() const;
 	std::string graphviz_relation() const;
 	int serialize(uint8_t *mem, const size_t size) const noexcept;

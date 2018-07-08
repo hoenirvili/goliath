@@ -62,14 +62,12 @@ int ControlFlowGraph::generate(const string content, ostream* out) const noexcep
 	return 0;
 }
 
-
 bool ControlFlowGraph::node_exists(size_t address) const noexcept
 {
 	return (this->nodes.find(address) != this->nodes.end());
 }
 
-
-bool ControlFlowGraph::contains_address(size_t address) const noexcept
+bool ControlFlowGraph::node_contains_address(size_t address) const noexcept
 {
 	for (const auto& item : this->nodes)
 		if (item.second->contains_address(address))
@@ -84,48 +82,28 @@ int ControlFlowGraph::append_instruction(Instruction instruction) noexcept
 		return EINVAL;
 	
 	size_t eip = instruction.pointer_address();
-	if (this->start_address_first_node == 0)
-		this->start_address_first_node = eip;
-
 	if (this->current_node_start_addr == 0)
 		this->current_node_start_addr = eip;
-	
+
+	if (this->current_pointer == 0)
+		this->current_pointer = eip;
+
 	unique_ptr<Node> node;
-
-	/*if this->contains_address(this->current_node_start_addr) {
-		node = this->node_that_contains_address(this->current_node_start_addr);
-		
-	}*/
-
-	switch (this->node_exists(this->current_node_start_addr)) {
-	// extract the node or create it
-	case true:
-		node = move(this->nodes[this->current_node_start_addr]);
-		break;
-	case false:
+	if (!this->node_exists(this->current_pointer))
 		node = make_unique<Node>();
-		false;
-	}
+	else 
+		node = move(this->nodes[this->current_pointer]);
 
 	node->append_instruction(instruction);
-	
+
 	if (node->done()) {
-		this->current_node_start_addr = 0; // we expect a next node
-		
-		if (!node->true_branch_address) {
-			auto true_node = make_unique<Node>();
-			this->nodes[node->true_branch_address] = move(true_node);
-		}
-
-		if (!node->false_branch_address) {
-			auto false_node = make_unique<Node>();
-			this->nodes[node->false_branch_address] = move(false_node);
-		}
+		this->nodes[this->current_pointer] = move(node);
+		this->current_pointer = 0;
+		return 0;
 	}
-	
-	// move the node back
-	this->nodes[this->current_node_start_addr] = move(node);
 
+	this->nodes[this->current_pointer] = move(node);
+	
 	return 0;
 }
 

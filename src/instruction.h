@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "api.h"
 
 /**
@@ -31,11 +32,10 @@ public:
 		side_node_addr(side_node_addr) {}
 	~Instruction() = default;
 	bool is_ret() const noexcept;
-	bool is_conditional_jump() const noexcept;
-	bool is_jump() const noexcept;
 	bool validate() const noexcept;
 	bool is_branch() const noexcept;
-	const char* string() const noexcept;
+	bool direct_branch() const noexcept;
+	std::string string() const noexcept;
 	size_t true_branch_address() const noexcept;
 	size_t false_branch_address() const noexcept;
 	size_t pointer_address() const noexcept;

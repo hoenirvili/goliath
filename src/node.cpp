@@ -19,36 +19,43 @@ bool Node::done() const noexcept
 	return this->is_done;
 }
 
-void Node::append_instruction(Instruction instruction) noexcept
+void Node::append_instruction(const Instruction& instruction) noexcept
 {
 	if (this->done())
 		return;
 
 	size_t eip = instruction.pointer_address();
-	if (this->start_address == 0) // only once, just the first instruction
-		this->start_address = eip;
-
-	if (contains_address(eip))
+	if (this->contains_address(eip)) {
+		this->already_visited(eip);
 		return;
+	}
 
-	this->addresses.emplace_back(eip);
-	this->block.emplace_back(instruction.string());
+	this->block.push_back(instruction);
 
 	if (instruction.is_branch()) {
-		if (instruction.is_jump()) // direct jump can have one outcome
+		if (!instruction.is_ret()) {
 			this->true_branch_address = instruction.true_branch_address();
-		if (instruction.is_conditional_jump()) // can have two outcomes
 			this->false_branch_address = instruction.false_branch_address();
+		}
 
 		this->mark_done();
 	}
 }
 
+void Node::already_visited(size_t eip) noexcept
+{
+	auto instruction = this->block[0];
+	if (instruction.pointer_address() == eip)
+		this->occurrences++;
+}
+
 bool Node::contains_address(size_t eip) const noexcept
 {
-	auto begin = this->addresses.begin();
-	auto end = this->addresses.end();
-	return (find(begin, end, eip) != end);
+	for (const auto& instruction : this->block)
+		if (instruction.pointer_address() == eip)
+			return true;
+	
+	return false;
 }
 
 bool Node::no_branching() const noexcept
@@ -91,6 +98,14 @@ static unsigned int pick_color(unsigned int max, unsigned int value) noexcept {
 	return 1;
 }
 
+size_t Node::start_address() const noexcept
+{
+	if (this->block.empty())
+		return 0;
+
+	return this->block[0].pointer_address();
+}
+
 std::string Node::graphviz_color() const noexcept
 {
 	if (this->no_branching())
@@ -106,37 +121,27 @@ std::string Node::graphviz_color() const noexcept
 
 std::string Node::graphviz_name() const noexcept
 {
-	if (this->start_address)
-		return string_format("0x%08x", this->start_address);
-
+	auto size_start = this->start_address();
+	if (size_start)
+		return string_format("0x%08x", size_start);
 	return "";
 }
 
 std::string Node::graphviz_label() const noexcept
 {
-	string block = graphviz_name() + "\\n";
+	string code_block = graphviz_name() + "\\n";
 
 	if (this->block.size())
-		block += "\\n";
+		code_block += "\\n";
 
-	for (const auto &bl : this->block)
-		block += bl + "\\n";
-
-	block = "label = \"" + block + "\"";
-
-	return block;
-}
-
-
-bool Node::validate() const noexcept
-{
-	if (!this->start_address) {
-		log_error("node contains invalid start address : %lu", this->start_address);
-		return false;
+	for (const auto &instruction : this->block) {
+		std::string bl = instruction.string();
+		code_block += bl + "\\n";
 	}
 
-	return true;
+	return "label = \"" + code_block + "\"";
 }
+
 
 static const char* graphviz_definition_template = R"(
 	"%s" [
@@ -147,9 +152,6 @@ static const char* graphviz_definition_template = R"(
 
 string Node::graphviz_definition() const
 {
-	if (!this->validate())
-		return "";
-
 	const auto name = this->graphviz_name();
 	const auto label = this->graphviz_label();
 	const auto color = this->graphviz_color();
@@ -172,13 +174,14 @@ string Node::graphviz_relation() const
 {
 	string str = "";
 
+	size_t start = this->start_address();
 	if (this->true_branch_address) {
-		str += relation(this->start_address, this->true_branch_address);
+		str += relation(start, this->true_branch_address);
 		str += " [color=green penwidth=3.5] \n";
 	}
 
 	if (this->false_branch_address) {
-		str += relation(this->start_address, this->false_branch_address);
+		str += relation(start, this->false_branch_address);
 		str += " [color=red penwidth=3.5] \n";
 	}
 
@@ -187,16 +190,15 @@ string Node::graphviz_relation() const
 
 bool Node::it_fits(size_t size) const noexcept
 {
+	// TODO(hoenir) this is not functional
 	return (size >= this->mem_size());
 }
 
 int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
 {
+	//TODO(hoenir) this is not functional
 	if (!this->it_fits(size))
 		return ENOMEM;
-
-	memcpy(&this->start_address, mem, sizeof(this->start_address));
-	mem += sizeof(this->start_address);
 
 	memcpy(&this->occurrences, mem, sizeof(this->occurrences));
 	mem += sizeof(this->occurrences);
@@ -219,7 +221,7 @@ int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
 	for (size_t i = 0; i < block_size; i++) {
 		content = (char*)mem;
 
-		this->block.push_back(content);
+		//this->block.push_back(content);
 
 		content_length = strlen((const char*)mem) + 1;
 		mem += content_length;
@@ -231,12 +233,10 @@ int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
 
 int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 {
+	//TODO(hoenir) this is not functional
 	if (!this->it_fits(size))
 		return ENOMEM;
 	
-	memcpy(mem, &this->start_address, sizeof(this->start_address));
-	mem += sizeof(this->start_address);
-
 	memcpy(mem, &this->occurrences, sizeof(this->occurrences));
 	mem += sizeof(this->occurrences);
 
@@ -251,11 +251,11 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 	mem += sizeof(block_size);
 
 	for (const auto &item : this->block) {
-		auto code = item.c_str();
-		size_t code_size = strlen(code) + 1;
+		//auto code = item.c_str();
+		//size_t code_size = strlen(code) + 1;
 
-		memcpy(mem, code, code_size);
-		mem += code_size;
+		//memcpy(mem, code, code_size);
+		//mem += code_size;
 	}
 
 	return 0;
@@ -263,14 +263,15 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
 
 size_t Node::mem_size() const noexcept
 {
+	//TODO(hoenir) this is not correctt
 	size_t size = 0;
-	size += sizeof(this->start_address);
+	//size += sizeof(this->start_address);
 	size += sizeof(this->occurrences);
 	size += sizeof(this->true_branch_address);
 	size += sizeof(this->false_branch_address);
 	size += sizeof(this->block.size());
-	for (const auto& item : this->block)
-		size += item.size() + 1;
+	//for (const auto& item : this->block)
+		//size += item.size() + 1;
 
 	return size;
 }

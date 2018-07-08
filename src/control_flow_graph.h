@@ -14,7 +14,7 @@ private:
 	size_t current_pointer = 0x0;
 	bool first = false;
 
-	bool contains_address(size_t address) const noexcept;
+	bool node_contains_address(size_t address) const noexcept;
 	void set_nodes_max_occurrences() noexcept;
 	bool it_fits(const size_t size) const noexcept;
 
