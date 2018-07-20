@@ -43,6 +43,16 @@ string ControlFlowGraph::graphviz()
 	return digraph + "\n}";
 }
 
+int ControlFlowGraph::serialize(uint8_t * mem, size_t size) const noexcept
+{
+	return 0;
+}
+
+int ControlFlowGraph::deserialize(const uint8_t * mem, size_t size) noexcept
+{
+	return 0;
+}
+
 int ControlFlowGraph::generate(const string content, ostream* out) const noexcept
 {
 	(*out) << content << endl;
@@ -67,6 +77,13 @@ bool ControlFlowGraph::node_exists(size_t address) const noexcept
 	return (this->nodes.find(address) != this->nodes.end());
 }
 
+unique_ptr<Node> ControlFlowGraph::get_current_node(size_t start_address) noexcept
+{
+	if (this->node_exists(start_address))
+		return move(this->nodes[start_address]);
+	return make_unique<Node>(start_address);
+}
+
 bool ControlFlowGraph::node_contains_address(size_t address) const noexcept
 {
 	for (const auto& item : this->nodes)
@@ -76,35 +93,68 @@ bool ControlFlowGraph::node_contains_address(size_t address) const noexcept
 	return false;
 }
 
-int ControlFlowGraph::append_instruction(Instruction instruction) noexcept
+size_t ControlFlowGraph::set_and_get_current_address(size_t eip) noexcept
 {
-	if (!instruction.validate())
-		return EINVAL;
-	
-	size_t eip = instruction.pointer_address();
 	if (this->current_node_start_addr == 0)
 		this->current_node_start_addr = eip;
 
 	if (this->current_pointer == 0)
 		this->current_pointer = eip;
+	
+	return this->current_pointer;
+}
 
-	unique_ptr<Node> node;
-	if (!this->node_exists(this->current_pointer))
-		node = make_unique<Node>();
-	else 
-		node = move(this->nodes[this->current_pointer]);
-
-	node->append_instruction(instruction);
-
-	if (node->done()) {
-		this->nodes[this->current_pointer] = move(node);
-		this->current_pointer = 0;
+int ControlFlowGraph::append_instruction(Instruction instruction) noexcept
+{
+	if (!instruction.validate())
+		return EINVAL;
+	
+	if (instruction.is_branch())
 		return 0;
-	}
 
-	this->nodes[this->current_pointer] = move(node);
+	size_t current = this->set_and_get_current_address(instruction.pointer_address());
+	auto node = this->get_current_node(current);
+	node->append_instruction(instruction);
+	this->nodes[current] = move(node);
 	
 	return 0;
+}
+
+void ControlFlowGraph::append_node_neighbours(const unique_ptr<Node>& node) noexcept
+{
+	size_t true_address = node->true_neighbour();
+	size_t false_address = node->false_neighbour();
+
+	if (true_address != 0) {
+		auto tnode = get_current_node(true_address);
+		this->nodes[true_address] = move(tnode);
+	}
+
+	if (false_address != 0) {
+		auto fnode = get_current_node(false_address);
+		this->nodes[false_address] = move(fnode);
+	}
+}
+
+int ControlFlowGraph::append_branch_instruction(Instruction instruction) noexcept
+{
+	if (!instruction.validate())
+		return EINVAL;
+	
+	size_t current = this->set_and_get_current_address(instruction.pointer_address());
+	auto node = this->get_current_node(current);
+	node->append_branch_instruction(instruction);
+	this->append_node_neighbours(node);
+	this->unset_current_address(node);
+	this->nodes[current] = move(node);
+
+	return 0;
+}
+
+void ControlFlowGraph::unset_current_address(const unique_ptr<Node>& node) noexcept
+{
+	if (node->done())
+		this->current_pointer = 0;
 }
 
 size_t ControlFlowGraph::mem_size() const noexcept
@@ -138,88 +188,3 @@ bool ControlFlowGraph::it_fits(const size_t size) const noexcept
 {
 	return (this->mem_size() <= size);
 }
-
-int ControlFlowGraph::deserialize(const uint8_t* mem, const size_t size) noexcept
-{
-	if (!this->it_fits(size))
-		return ENOMEM;
-
-	const uint8_t* start = mem; // remember the start of the block
-
-	memcpy(&this->start_address_first_node, mem, sizeof(this->start_address_first_node));
-	mem += sizeof(this->start_address_first_node);
-
-	size_t nodes_size = 0;
-	memcpy(&nodes_size, mem, sizeof(nodes_size));
-	mem += sizeof(nodes_size);
-
-	this->nodes.clear(); // clear the map
-
-	int err = 0;
-
-	if (!nodes_size)
-		log_info("deserialize every node from mem block");
-
-	for (size_t i = 0; i < nodes_size; i++) {
-		size_t start_address = 0;
-		memcpy(&start_address, mem, sizeof(start_address));
-		mem += sizeof(start_address);
-
-		unique_ptr<Node> node = make_unique<Node>();
-		ptrdiff_t has_written = mem - start; /*how many bytes are written*/
-		err = node->deserialize(mem, size - has_written);
-		if (err != 0) {
-			log_error("cannot deserialize the next node");
-			return err;
-		}
-
-		this->nodes[start_address] = move(node);
-
-		mem += node->mem_size();
-	}
-
-	log_info("deserialization is finished");
-
-	return 0;
-}
-
-int ControlFlowGraph::serialize(uint8_t *mem, size_t size) const noexcept
-{
-	if (!this->it_fits(size)) {
-		log_error("serialise buffer cannot fit into the given size");
-		return ENOMEM;
-	}
-
-	log_info("prepare memory for serialization");
-	
-	memset(mem, 0, size);
-	
-	memcpy(mem, &this->start_address_first_node, sizeof(this->start_address_first_node));
-	mem += sizeof(this->start_address_first_node);
-
-	auto n = this->nodes.size();
-	memcpy(mem, &n, sizeof(n));
-	mem += sizeof(n);
-
-	log_info("start seriliazing every node in map");
-
-	for (const auto &item : this->nodes) {
-		auto addr = item.first;
-
-		memcpy(mem, &addr, sizeof(addr));
-		mem += sizeof(addr);
-
-		size_t node_size = item.second->mem_size();
-		int n = item.second->serialize(mem, node_size);
-		if (n != 0) {
-			log_error("cannot serialize the node");
-			return n;
-		}
-		mem += node_size;
-	}
-
-	log_info("serialization is finished");
-
-	return 0;
-}
-

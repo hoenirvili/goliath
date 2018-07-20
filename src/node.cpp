@@ -19,7 +19,31 @@ bool Node::done() const noexcept
 	return this->is_done;
 }
 
-void Node::append_instruction(const Instruction& instruction) noexcept
+size_t Node::true_neighbour() const noexcept
+{
+	return this->true_branch_address;
+}
+
+size_t Node::false_neighbour() const noexcept
+{
+	return this->false_branch_address;
+}
+
+void Node::append_instruction(Instruction instruction) noexcept
+{
+	if (this->done())
+		return;
+
+	size_t eip = instruction.pointer_address();
+	if (this->contains_address(eip)) {
+		this->already_visited(eip);
+		return;
+	}
+
+	this->block.push_back(instruction);
+}
+
+void Node::append_branch_instruction(Instruction instruction) noexcept
 {
 	if (this->done())
 		return;
@@ -32,14 +56,12 @@ void Node::append_instruction(const Instruction& instruction) noexcept
 
 	this->block.push_back(instruction);
 
-	if (instruction.is_branch()) {
-		if (!instruction.is_ret()) {
-			this->true_branch_address = instruction.true_branch_address();
-			this->false_branch_address = instruction.false_branch_address();
-		}
-
-		this->mark_done();
+	if (!instruction.is_ret()) {
+		this->true_branch_address = instruction.true_branch_address();
+		this->false_branch_address = instruction.false_branch_address();
 	}
+
+	this->mark_done();
 }
 
 void Node::already_visited(size_t eip) noexcept
@@ -74,6 +96,9 @@ static const unsigned int pallet[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 * return the color pallet number in graphviz format
 */
 static unsigned int pick_color(unsigned int max, unsigned int value) noexcept {
+	if ((max == 1) && (value == 1))
+		return 1;
+	
 	size_t n = ARRAY_SIZE(pallet);
 	const auto split_in = 100.0f / n;
 	auto interval = vector<float>(n);
@@ -100,10 +125,7 @@ static unsigned int pick_color(unsigned int max, unsigned int value) noexcept {
 
 size_t Node::start_address() const noexcept
 {
-	if (this->block.empty())
-		return 0;
-
-	return this->block[0].pointer_address();
+	return this->_start_address;
 }
 
 std::string Node::graphviz_color() const noexcept

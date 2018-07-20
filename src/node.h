@@ -4,10 +4,10 @@
 #include <vector>
 #include <string>
 
-
 class Node {
 
 private:
+	size_t _start_address = 0;
 	std::vector<Instruction> block;
 	bool is_done = false;
 	
@@ -18,7 +18,7 @@ private:
 	std::string graphviz_label() const noexcept;
 	void already_visited(size_t eip) noexcept;
 
-public:	
+public:
 	size_t max_occurrences = 1;
 	size_t true_branch_address = 0;
 	size_t false_branch_address = 0;
@@ -27,13 +27,17 @@ public:
 	void mark_done() noexcept;
 	size_t start_address() const noexcept;
 	bool done() const noexcept;
-	void append_instruction(const Instruction& instruction) noexcept;
+	void append_instruction(Instruction instruction) noexcept;
+	void append_branch_instruction(Instruction instruction) noexcept;
 	std::string graphviz_definition() const;
 	std::string graphviz_relation() const;
 	int serialize(uint8_t *mem, const size_t size) const noexcept;
 	int deserialize(const uint8_t *mem, const size_t size) noexcept;
 	size_t mem_size() const noexcept;
 	bool contains_address(size_t eip) const noexcept;
+	size_t true_neighbour() const noexcept;
+	size_t false_neighbour() const noexcept;
 	Node() = default;
+	Node(size_t start_address) : _start_address(start_address) {}
 	~Node() = default;
 };

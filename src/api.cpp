@@ -116,6 +116,19 @@ PluginReport* DBTBranching(void *params, PluginLayer **layers)
 	sprintf(content, "BRANCH");
 	report->content_before = content;
 	report->content_after = nullptr;
+
+	auto instruction = Instruction(
+		MyDisasm->EIP,
+		MyDisasm->CompleteInstr,
+		MyDisasm->Instruction.BranchType,
+		custom_params->instrlen,
+		custom_params->next_addr,
+		custom_params->side_addr
+	);
+
+	int err = graph->append_branch_instruction(instruction);
+	if (err)
+		log_error("cannot append instruction before call");
 	
 	return report;
 }
@@ -148,7 +161,6 @@ PluginReport* DBTFinish()
 	auto it = iteration(cfg);
 
 	if ((*it) == 0) {
-
 		auto graphviz = graph->graphviz();
 		auto out = fstream("partiaflowgraph.dot", fstream::out);
 		int err = graph->generate(graphviz, &out);

@@ -14,7 +14,7 @@ private:
 	const size_t side_node_addr;
 	const Int32 branch_type;	/* no branch = 0 */
 	const size_t eip;			/* current instruction pointer */
-	const char *content;		/* complete instruction */
+	const std::string content;	/* complete instruction */
 public:
 	Instruction(
 		size_t eip,
@@ -33,6 +33,7 @@ public:
 	~Instruction() = default;
 	bool is_ret() const noexcept;
 	bool validate() const noexcept;
+	bool is_call() const noexcept;
 	bool is_branch() const noexcept;
 	bool direct_branch() const noexcept;
 	std::string string() const noexcept;

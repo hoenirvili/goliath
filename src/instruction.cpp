@@ -33,26 +33,37 @@ bool Instruction::is_branch() const noexcept
 	return false;
 }
 
-const char* Instruction::string() const noexcept
+std::string Instruction::string() const noexcept
 {
 	return this->content;
 }
 
 size_t Instruction::true_branch_address() const noexcept
 {
-	if (this->is_branch())
-		return this->next_node_addr;
-	return this->eip + this->len;
+	return this->next_node_addr;
 }
 
 size_t Instruction::false_branch_address() const noexcept
 {
-	if (this->is_branch() && !this->is_ret() && !this->direct_branch()) {
-		if (this->next_node_addr == this->side_node_addr)
-			return this->eip + this->len;
+	if (this->direct_branch())
+		return 0;
+	if (this->is_ret())
+		return 0;
+
+	// try to avoid nasty engine bug
+	if (this->is_call())
+		return this->eip + this->len;
+
+	if (!this->is_ret() && !this->is_call())
 		return this->side_node_addr;
-	}
-	return 0;
+
+
+	return this->eip + this->len;
+}
+
+bool Instruction::is_call() const noexcept
+{
+	return (this->branch_type == CallType);
 }
 
 bool Instruction::direct_branch() const noexcept
@@ -72,7 +83,7 @@ bool Instruction::is_ret() const noexcept
 
 bool Instruction::validate() const noexcept
 {
-	if (this->content == nullptr) {
+	if (this->content.empty()) {
 		log_warning("empty instruction content");
 		return false;
 	}
