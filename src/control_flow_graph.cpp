@@ -59,9 +59,7 @@ int ControlFlowGraph::generate(const string content, ostream* out) const noexcep
 
 	auto name = to_string(this->start_address_first_node) + "_" + random_string();
 
-	const string cmd = 
-		"start \"\" cmd /c dot -Tpng partiaflowgraph.dot -o" + name + ".png 2>&1";
-
+	const string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
 	auto from = execute_command(cmd);
 	if (!from.empty())
 		log_error(
