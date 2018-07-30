@@ -4,9 +4,9 @@
 #include "api.h"
 
 /**
-* Instruction type holds all context of the next instruction
+* instruction type holds all context of the next instruction
 */
-class Instruction {
+class instruction {
 
 private:
 	const size_t len;			/* instruction length */
@@ -16,7 +16,7 @@ private:
 	const size_t eip;			/* current instruction pointer */
 	const std::string content;	/* complete instruction */
 public:
-	Instruction(
+	instruction(
 		size_t eip,
 		char *content,
 		Int32 branch_type,
@@ -30,7 +30,7 @@ public:
 		len(len),
 		next_node_addr(next_node_addr),
 		side_node_addr(side_node_addr) {}
-	~Instruction() = default;
+	~instruction() = default;
 	bool is_ret() const noexcept;
 	bool validate() const noexcept;
 	bool is_call() const noexcept;

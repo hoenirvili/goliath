@@ -29,7 +29,7 @@ size_t Node::false_neighbour() const noexcept
 	return this->false_branch_address;
 }
 
-void Node::append_instruction(Instruction instruction) noexcept
+void Node::append_instruction(instruction instruction) noexcept
 {
 	if (this->done())
 		return;
@@ -43,7 +43,7 @@ void Node::append_instruction(Instruction instruction) noexcept
 	this->block.push_back(instruction);
 }
 
-void Node::append_branch_instruction(Instruction instruction) noexcept
+void Node::append_branch_instruction(instruction instruction) noexcept
 {
 	if (this->done())
 		return;
@@ -145,7 +145,7 @@ std::string Node::graphviz_name() const noexcept
 {
 	auto size_start = this->start_address();
 	if (size_start)
-		return string_format("0x%08x", size_start);
+        return fmt_string("0x%08x", size_start);
 	return "";
 }
 
@@ -182,14 +182,14 @@ string Node::graphviz_definition() const
 	const auto blk = label.c_str();
 	const auto colr = color.c_str();
 
-	return string_format(
+	return fmt_string(
 		graphviz_definition_template,
 		nm, blk, colr);
 }
 
 static inline string relation(size_t start, size_t end)
 {
-	return string_format("\"0x%08x\" -> \"0x%08x\"", start, end);
+    return fmt_string("\"0x%08x\" -> \"0x%08x\"", start, end);
 }
 
 string Node::graphviz_relation() const

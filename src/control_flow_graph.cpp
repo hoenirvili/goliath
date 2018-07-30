@@ -3,7 +3,6 @@
 #include <string>
 #include <stdexcept>
 #include <algorithm>
-
 #include "control_flow_graph.h"
 #include "api.h"
 #include "log.h"
@@ -15,7 +14,7 @@ using namespace std;
 
 // digraph_prefix template
 constexpr const char* digraph_prefix = R"(
-digraph ControlFlowGraph {
+digraph control_flow_graph {
 	node [
 		shape = box 
 		color = black
@@ -26,7 +25,7 @@ digraph ControlFlowGraph {
 	]	
 )";
 
-string ControlFlowGraph::graphviz()
+string control_flow_graph::graphviz()
 {
 
 	this->set_nodes_max_occurrences();
@@ -43,46 +42,53 @@ string ControlFlowGraph::graphviz()
 	return digraph + "\n}";
 }
 
-int ControlFlowGraph::serialize(uint8_t * mem, size_t size) const noexcept
+int control_flow_graph::serialize(uint8_t* mem, size_t size) const
 {
 	return 0;
 }
 
-int ControlFlowGraph::deserialize(const uint8_t * mem, size_t size) noexcept
+int control_flow_graph::deserialize(const uint8_t* mem, size_t size)
 {
 	return 0;
 }
 
-int ControlFlowGraph::generate(const string content, ostream* out) const noexcept
+void control_flow_graph::generate(const string content, ostream* out) const
 {
 	(*out) << content << endl;
 
 	auto name = to_string(this->start_address_first_node) + "_" + random_string();
 
 	const string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
-	auto from = execute_command(cmd);
-	if (!from.empty())
-		log_error(
-			"\n[DOT COMMAND OUTPUT START]\n %s \n[DOT COMMAND OUTPUT END]",
-			from.c_str()
-		);
+    string process_stderr, process_exit;
+	
+	execute_command(cmd, &process_stderr, &process_exit);
+    
+	string exception_message = "";
+	if (!process_stderr.empty()) {
+        exception_message += process_exit;
+	}
 
-	return 0;
+	if (!process_exit.empty()) {
+        exception_message += process_exit;
+	}
+
+	if (!exception_message.empty())
+        throw runtime_error(exception_message);
 }
 
-bool ControlFlowGraph::node_exists(size_t address) const noexcept
+bool control_flow_graph::node_exists(size_t address) const noexcept
 {
 	return (this->nodes.find(address) != this->nodes.end());
 }
 
-unique_ptr<Node> ControlFlowGraph::get_current_node(size_t start_address) noexcept
+unique_ptr<Node> control_flow_graph::get_current_node(size_t start_address) noexcept
 {
 	if (this->node_exists(start_address))
 		return move(this->nodes[start_address]);
 	return make_unique<Node>(start_address);
 }
 
-bool ControlFlowGraph::node_contains_address(size_t address) const noexcept
+bool control_flow_graph::node_contains_address(size_t address) const noexcept
 {
 	for (const auto& item : this->nodes)
 		if (item.second->contains_address(address))
@@ -91,7 +97,7 @@ bool ControlFlowGraph::node_contains_address(size_t address) const noexcept
 	return false;
 }
 
-size_t ControlFlowGraph::set_and_get_current_address(size_t eip) noexcept
+size_t control_flow_graph::set_and_get_current_address(size_t eip) noexcept
 {
 	if (this->current_node_start_addr == 0)
 		this->current_node_start_addr = eip;
@@ -102,23 +108,21 @@ size_t ControlFlowGraph::set_and_get_current_address(size_t eip) noexcept
 	return this->current_pointer;
 }
 
-int ControlFlowGraph::append_instruction(Instruction instruction) noexcept
+void control_flow_graph::append_instruction(instruction instruction)
 {
-	if (!instruction.validate())
-		return EINVAL;
+    if (!instruction.validate())
+        throw invalid_argument("invalid instruction passed");
 	
 	if (instruction.is_branch())
-		return 0;
+        throw invalid_argument("cannot append instruction that is branch");
 
 	size_t current = this->set_and_get_current_address(instruction.pointer_address());
 	auto node = this->get_current_node(current);
 	node->append_instruction(instruction);
 	this->nodes[current] = move(node);
-	
-	return 0;
 }
 
-void ControlFlowGraph::append_node_neighbours(const unique_ptr<Node>& node) noexcept
+void control_flow_graph::append_node_neighbours(const unique_ptr<Node>& node) noexcept
 {
 	size_t true_address = node->true_neighbour();
 	size_t false_address = node->false_neighbour();
@@ -134,10 +138,13 @@ void ControlFlowGraph::append_node_neighbours(const unique_ptr<Node>& node) noex
 	}
 }
 
-int ControlFlowGraph::append_branch_instruction(Instruction instruction) noexcept
+void control_flow_graph::append_branch_instruction(instruction instruction)
 {
-	if (!instruction.validate())
-		return EINVAL;
+    if (!instruction.validate())
+        throw invalid_argument("invalid instruction passed");
+
+	if (!instruction.is_branch())
+        throw invalid_argument("cannot append non branch instruction");
 	
 	size_t current = this->set_and_get_current_address(instruction.pointer_address());
 	auto node = this->get_current_node(current);
@@ -145,17 +152,15 @@ int ControlFlowGraph::append_branch_instruction(Instruction instruction) noexcep
 	this->append_node_neighbours(node);
 	this->unset_current_address(node);
 	this->nodes[current] = move(node);
-
-	return 0;
 }
 
-void ControlFlowGraph::unset_current_address(const unique_ptr<Node>& node) noexcept
+void control_flow_graph::unset_current_address(const unique_ptr<Node>& node) noexcept
 {
 	if (node->done())
 		this->current_pointer = 0;
 }
 
-size_t ControlFlowGraph::mem_size() const noexcept
+size_t control_flow_graph::mem_size() const noexcept
 {
 	size_t size = 0;
 	size += sizeof(this->start_address_first_node);
@@ -171,7 +176,7 @@ size_t ControlFlowGraph::mem_size() const noexcept
 	return size;
 }
 
-void ControlFlowGraph::set_nodes_max_occurrences() noexcept
+void control_flow_graph::set_nodes_max_occurrences() noexcept
 {
 	unsigned int max = 0;
 	for (const auto &item : this->nodes)
@@ -182,7 +187,7 @@ void ControlFlowGraph::set_nodes_max_occurrences() noexcept
 		item.second->max_occurrences = max;
 }
 
-bool ControlFlowGraph::it_fits(const size_t size) const noexcept
+bool control_flow_graph::it_fits(const size_t size) const noexcept
 {
 	return (this->mem_size() <= size);
 }

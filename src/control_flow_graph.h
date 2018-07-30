@@ -3,11 +3,10 @@
 #include <map>
 #include <memory>
 #include <string>
-
 #include "node.h"
 #include "instruction.h"
 
-class ControlFlowGraph {
+class control_flow_graph {
 
 private:
 	size_t current_node_start_addr = 0x0;
@@ -26,14 +25,14 @@ public:
 	size_t start_address_first_node = 0;
 	std::map<size_t, std::unique_ptr<Node>> nodes;
 	
-	int generate(std::string content, std::ostream* out) const noexcept;
+	void generate(std::string content, std::ostream* out) const;
 	std::string graphviz();
-	int serialize(uint8_t* mem, size_t size) const noexcept;
-	int deserialize(const uint8_t* mem, size_t size) noexcept;
+	int serialize(uint8_t* mem, size_t size) const;
+	int deserialize(const uint8_t* mem, size_t size);
 	size_t mem_size() const noexcept;
 	bool node_exists(size_t start) const noexcept;
-	int append_instruction(Instruction instruction) noexcept;
-	int append_branch_instruction(Instruction instruction) noexcept;
-	ControlFlowGraph() = default;
-	~ControlFlowGraph() = default;
+	void append_instruction(instruction instruction);
+	void append_branch_instruction(instruction instruction);
+	control_flow_graph() = default;
+	~control_flow_graph() = default;
 };

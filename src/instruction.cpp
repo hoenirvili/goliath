@@ -2,7 +2,7 @@
 #include "log.h"
 #include "api.h"
 
-bool Instruction::is_branch() const noexcept
+bool instruction::is_branch() const noexcept
 {
 	switch (this->branch_type) {
 	case JO:
@@ -33,17 +33,17 @@ bool Instruction::is_branch() const noexcept
 	return false;
 }
 
-std::string Instruction::string() const noexcept
+std::string instruction::string() const noexcept
 {
 	return this->content;
 }
 
-size_t Instruction::true_branch_address() const noexcept
+size_t instruction::true_branch_address() const noexcept
 {
 	return this->next_node_addr;
 }
 
-size_t Instruction::false_branch_address() const noexcept
+size_t instruction::false_branch_address() const noexcept
 {
 	if (this->direct_branch())
 		return 0;
@@ -61,27 +61,27 @@ size_t Instruction::false_branch_address() const noexcept
 	return this->eip + this->len;
 }
 
-bool Instruction::is_call() const noexcept
+bool instruction::is_call() const noexcept
 {
 	return (this->branch_type == CallType);
 }
 
-bool Instruction::direct_branch() const noexcept
+bool instruction::direct_branch() const noexcept
 {
 	return (this->branch_type == JmpType);
 }
 
-size_t Instruction::pointer_address() const noexcept
+size_t instruction::pointer_address() const noexcept
 {
 	return this->eip;
 }
 
-bool Instruction::is_ret() const noexcept
+bool instruction::is_ret() const noexcept
 {
 	return (this->branch_type == RetType);
 }
 
-bool Instruction::validate() const noexcept
+bool instruction::validate() const noexcept
 {
 	if (this->content.empty()) {
 		log_warning("empty instruction content");

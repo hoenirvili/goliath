@@ -1,6 +1,7 @@
-#include <windows.h>
 #include "exec.h"
 #include "win32_error.h"
+#include "format.h"
+#include <windows.h>
 
 using namespace std;
 
@@ -31,16 +32,16 @@ void execute_command(const string& command, string* process_stderr, string* proc
     si.hStdInput = INVALID_HANDLE_VALUE;
     si.dwFlags = STARTF_USESTDHANDLES;
 
-    success = CreateProcessA(NULL,    // name
-        (LPSTR) command.c_str(),    // command line
-        NULL,    // process security attributes
-        NULL,    // primary thread security attributes
-        TRUE,    // handles are inherited
-        0,    // creation flags
-        NULL,    // use parent's environment
-        NULL,    // use parent's current directory
-        &si,    // STARTUPINFO pointer
-        &pi    // receives PROCESS_INFORMATION
+    success = CreateProcessA(NULL, // name
+        (LPSTR) command.c_str(), // command line
+        NULL, // process security attributes
+        NULL, // primary thread security attributes
+        TRUE, // handles are inherited
+        0, // creation flags
+        NULL, // use parent's environment
+        NULL, // use parent's current directory
+        &si, // STARTUPINFO pointer
+        &pi // receives PROCESS_INFORMATION
     );
 
     // the parrent does not need the writer

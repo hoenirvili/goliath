@@ -8,7 +8,7 @@ class Node {
 
 private:
 	size_t _start_address = 0;
-	std::vector<Instruction> block;
+	std::vector<instruction> block;
 	bool is_done = false;
 	
 	bool it_fits(size_t size) const noexcept;
@@ -27,8 +27,8 @@ public:
 	void mark_done() noexcept;
 	size_t start_address() const noexcept;
 	bool done() const noexcept;
-	void append_instruction(Instruction instruction) noexcept;
-	void append_branch_instruction(Instruction instruction) noexcept;
+	void append_instruction(instruction instruction) noexcept;
+	void append_branch_instruction(instruction instruction) noexcept;
 	std::string graphviz_definition() const;
 	std::string graphviz_relation() const;
 	int serialize(uint8_t *mem, const size_t size) const noexcept;
