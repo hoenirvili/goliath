@@ -8,9 +8,9 @@ using namespace std;
 void execute_command(const string& command, string* process_stderr, string* process_exit)
 {
     SECURITY_ATTRIBUTES sa = {
-        sizeof(SECURITY_ATTRIBUTES),    // nLength
-        nullptr,    // lpSecurityDescriptor
-        true    // bInheritHandle
+        sizeof(SECURITY_ATTRIBUTES), // nLength
+        nullptr, // lpSecurityDescriptor
+        true // bInheritHandle
     };
 
     HANDLE stderr_reader, stderr_writer;

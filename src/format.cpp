@@ -22,7 +22,7 @@ string fmt_win32_error(DWORD id)
     if (buffer == nullptr)
         throw system_error(id, system_category(), "cannot unallocated buffer");
 
-    // trim space.\r\n
+    // trim space and .
     while (buffer[size - 1] == '.' || 
 		buffer[size - 1] == ' ')
         size--;

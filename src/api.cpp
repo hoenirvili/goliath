@@ -92,92 +92,102 @@ PluginReport* DBTBeforeExecute(void* params, PluginLayer** layers)
         custom_params->next_addr,
         custom_params->side_addr);
 
-	if (instr.is_branch())
+    if (instr.is_branch()) {
+		if (instr.is_call())
+			try {
+				graph->append_branch_instruction(instr);
+			} catch (const exception& ex) {
+				log_error("%s", ex.what());
+			}
 		return report;
-    
+	}
+
 	try {
-        graph->append_instruction(instr);
-    }
-    catch (const exception& ex) {
-        log_error("%s", ex.what());
-    }
-
-    return report;
+		graph->append_instruction(instr);
+	} catch (const exception& ex) {
+		log_error("%s", ex.what());
+	}
+	
+	return report;
 }
 
-PluginReport* DBTBranching(void* params, PluginLayer** layers)
-{
-    CUSTOM_PARAMS* custom_params = (CUSTOM_PARAMS*) params;
-    DISASM* MyDisasm = custom_params->MyDisasm;
+    PluginReport* DBTBranching(void* params, PluginLayer** layers)
+    {
+        CUSTOM_PARAMS* custom_params = (CUSTOM_PARAMS*) params;
+        DISASM* MyDisasm = custom_params->MyDisasm;
 
-    char* content = (char*) VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
-    if (!content)
-        return nullptr;
+        char* content = (char*) VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+        if (!content)
+            return nullptr;
 
-    auto report = new PluginReport();
+        auto report = new PluginReport();
 
-    report->plugin_name = "CFGTrace";
+        report->plugin_name = "CFGTrace";
 
-    sprintf(content, "BRANCH");
-    report->content_before = content;
-    report->content_after = nullptr;
+        sprintf(content, "BRANCH");
+        report->content_before = content;
+        report->content_after = nullptr;
 
-    auto instr = instruction(MyDisasm->EIP,
-        MyDisasm->CompleteInstr,
-        MyDisasm->Instruction.BranchType,
-        custom_params->instrlen,
-        custom_params->next_addr,
-        custom_params->side_addr);
+        auto instr = instruction(MyDisasm->EIP,
+            MyDisasm->CompleteInstr,
+            MyDisasm->Instruction.BranchType,
+            custom_params->instrlen,
+            custom_params->next_addr,
+            custom_params->side_addr);
 
-    try {
-        graph->append_branch_instruction(instr);
-    }
-    catch (const exception& ex) {
-        log_error("%s", ex.what());
-    }
+		// skip calls
+		if (instr.is_call())
+            return report;
 
-    return report;
-}
-
-PluginReport* DBTAfterExecute(void* params, PluginLayer** layers)
-{
-    static int counter = 1000;
-    CUSTOM_PARAMS* custom_params = (CUSTOM_PARAMS*) params;
-    DISASM* MyDisasm = custom_params->MyDisasm;
-
-    char* content = (char*) VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
-    if (!content)
-        return 0;
-
-    auto report = new PluginReport();
-
-    report->plugin_name = "CFGTrace";
-
-    sprintf(content, "counter=%d", counter++);
-    report->content_before = nullptr;
-    report->content_after = content;
-
-    return report;
-}
-
-PluginReport* DBTFinish()
-{
-    log_info("[CFGTrace] Finish is called");
-    auto cfg = CFG(engine_share_buff);
-    auto it = iteration(cfg);
-
-    if ((*it) == 0) {
-        auto graphviz = graph->graphviz();
-        auto out = fstream("partiaflowgraph.dot", fstream::out);
 		try {
-            graph->generate(graphviz, &out);
+            graph->append_branch_instruction(instr);
         } catch (const exception& ex) {
             log_error("%s", ex.what());
-		}
+        }
 
-        (*it)++;
-        return nullptr;
+        return report;
     }
 
-	return nullptr;
-}
+    PluginReport* DBTAfterExecute(void* params, PluginLayer** layers)
+    {
+        static int counter = 1000;
+        CUSTOM_PARAMS* custom_params = (CUSTOM_PARAMS*) params;
+        DISASM* MyDisasm = custom_params->MyDisasm;
+
+        char* content = (char*) VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+        if (!content)
+            return 0;
+
+        auto report = new PluginReport();
+
+        report->plugin_name = "CFGTrace";
+
+        sprintf(content, "counter=%d", counter++);
+        report->content_before = nullptr;
+        report->content_after = content;
+
+        return report;
+    }
+
+    PluginReport* DBTFinish()
+    {
+        log_info("[CFGTrace] Finish is called");
+        auto cfg = CFG(engine_share_buff);
+        auto it = iteration(cfg);
+		//TODO(hoenir): You need to fill up the code for the n-th interation
+        if ((*it) == 0) {
+            auto graphviz = graph->graphviz();
+            auto out = fstream("partiaflowgraph.dot", fstream::out);
+            try {
+                graph->generate(graphviz, &out);
+            }
+            catch (const exception& ex) {
+                log_error("%s", ex.what());
+            }
+
+            (*it)++;
+            return nullptr;
+        }
+
+        return nullptr;
+    }

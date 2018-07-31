@@ -31,30 +31,20 @@ size_t Node::false_neighbour() const noexcept
 
 void Node::append_instruction(instruction instruction) noexcept
 {
-	if (this->done())
-		return;
-
 	size_t eip = instruction.pointer_address();
-	if (this->contains_address(eip)) {
+	//TODO(hoenir): always increment when first eip, ignore the rest
+	//TODO(hoenir): what if the jump is in the middle of the block?
+	if (this->done() && this->contains_address(eip)) {
 		this->already_visited(eip);
 		return;
 	}
 
 	this->block.push_back(instruction);
 }
-
+	
 void Node::append_branch_instruction(instruction instruction) noexcept
 {
-	if (this->done())
-		return;
-
-	size_t eip = instruction.pointer_address();
-	if (this->contains_address(eip)) {
-		this->already_visited(eip);
-		return;
-	}
-
-	this->block.push_back(instruction);
+	this->append_instruction(instruction);
 
 	if (!instruction.is_ret()) {
 		this->true_branch_address = instruction.true_branch_address();
