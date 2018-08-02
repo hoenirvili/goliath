@@ -133,22 +133,22 @@ std::string Node::graphviz_color() const noexcept
 
 std::string Node::graphviz_name() const noexcept
 {
-	auto size_start = this->start_address();
-	if (size_start)
-        return fmt_string("0x%08x", size_start);
+	auto start = this->start_address();
+    if (start)
+        return fmt_string("0x%08X", start);
 	return "";
 }
 
 std::string Node::graphviz_label() const noexcept
 {
-	string code_block = graphviz_name() + "\\n";
+	string code_block = graphviz_name() + "\\l";
 
 	if (this->block.size())
-		code_block += "\\n";
+		code_block += "\\l";
 
 	for (const auto &instruction : this->block) {
 		std::string bl = instruction.string();
-		code_block += bl + "\\n";
+		code_block += bl + "\\l";
 	}
 
 	return "label = \"" + code_block + "\"";
@@ -179,7 +179,7 @@ string Node::graphviz_definition() const
 
 static inline string relation(size_t start, size_t end)
 {
-    return fmt_string("\"0x%08x\" -> \"0x%08x\"", start, end);
+    return fmt_string("\"0x%08X\" -> \"0x%08X\"", start, end);
 }
 
 string Node::graphviz_relation() const
@@ -189,12 +189,12 @@ string Node::graphviz_relation() const
 	size_t start = this->start_address();
 	if (this->true_branch_address) {
 		str += relation(start, this->true_branch_address);
-		str += " [color=green penwidth=3.5] \n";
+		str += " [color=green penwidth=2.0] \n";
 	}
 
 	if (this->false_branch_address) {
 		str += relation(start, this->false_branch_address);
-		str += " [color=red penwidth=3.5] \n";
+		str += " [color=red penwidth=2.0] \n";
 	}
 
 	return str;

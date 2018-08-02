@@ -40,6 +40,10 @@ std::string instruction::string() const noexcept
 
 size_t instruction::true_branch_address() const noexcept
 {
+	// we are dealing with an relative address
+	if (this->next_node_addr == 0xFFFFFFFF)
+		return *(uintptr_t*) (this->side_node_addr);
+
 	return this->next_node_addr;
 }
 

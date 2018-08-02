@@ -69,7 +69,7 @@ void control_flow_graph::generate(const string content, ostream* out) const
 	}
 
 	if (!process_exit.empty()) {
-        exception_message += process_exit;
+        exception_message += " " + process_exit;
 	}
 
 	if (!exception_message.empty())

@@ -9,12 +9,14 @@
 
 using namespace std;
 
-PluginLayer* GetPluginInterface(char* pluginname, size_t layer, PluginLayer** layers)
+PluginLayer* GetPluginInterface(const char* pluginname, size_t layer, PluginLayer** layers)
 {
     PluginLayer* scanner = layers[layer];
 
     while (scanner) {
-        if (scanner->data && scanner->data->plugin_name && !strcmp(scanner->data->plugin_name, pluginname))
+        if (scanner->data && 
+			scanner->data->plugin_name && 
+			!strcmp(scanner->data->plugin_name, pluginname))
             return scanner;
 
         scanner = scanner->nextnode;
@@ -161,6 +163,12 @@ PluginReport* DBTBeforeExecute(void* params, PluginLayer** layers)
         auto report = new PluginReport();
 
         report->plugin_name = "CFGTrace";
+
+		auto plugin = GetPluginInterface("APIReporter", 1, layers);
+        if (plugin) {
+			auto content_before = (char*)plugin->data->content_before;
+        }
+
 
         sprintf(content, "counter=%d", counter++);
         report->content_before = nullptr;
