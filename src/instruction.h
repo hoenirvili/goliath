@@ -8,6 +8,7 @@
 */
 class instruction {
 
+
 private:
 	const size_t len;			/* instruction length */
 	const size_t next_node_addr;/* next node address */
@@ -15,7 +16,10 @@ private:
 	const Int32 branch_type;	/* no branch = 0 */
 	const size_t eip;			/* current instruction pointer */
 	const std::string content;	/* complete instruction */
+
 public:
+    std::string api_reporter; /* extra information from APIReporter*/
+
 	instruction(
 		size_t eip,
 		char *content,
@@ -29,7 +33,9 @@ public:
 		branch_type(branch_type),
 		len(len),
 		next_node_addr(next_node_addr),
-		side_node_addr(side_node_addr) {}
+		side_node_addr(side_node_addr){}
+
+    instruction() = delete; 
 	~instruction() = default;
 	bool is_ret() const noexcept;
 	bool validate() const noexcept;

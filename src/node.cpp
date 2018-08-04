@@ -29,6 +29,20 @@ size_t Node::false_neighbour() const noexcept
 	return this->false_branch_address;
 }
 
+bool Node::is_last_instruction_call() const noexcept
+{
+    auto last = this->block.back();
+    return last.is_call();
+}
+
+instruction Node::last_api_reporter_instruction() const noexcept
+{
+    auto last = this->block.back();
+    auto eip = last.pointer_address();
+    auto content = (char*)last.api_reporter.c_str();
+    return instruction(eip, content, CallType, 0, 0, 0);
+}
+
 void Node::append_instruction(instruction instruction) noexcept
 {
 	size_t eip = instruction.pointer_address();
@@ -80,35 +94,52 @@ bool Node::no_branching() const noexcept
 // pallet contains all the blues9 color scheme pallet
 static const unsigned int pallet[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-/**
+
+static float inline precent(float is, float of) noexcept
+{
+    return ((is / of) * 100);
+}
+    /**
 * pick_color
 * for a given number of max occurrences and a fixed value
 * return the color pallet number in graphviz format
 */
-static unsigned int pick_color(unsigned int max, unsigned int value) noexcept {
+static unsigned int pick_color(unsigned int max, unsigned int value) noexcept
+{
 	if ((max == 1) && (value == 1))
 		return 1;
 	
 	size_t n = ARRAY_SIZE(pallet);
-	const auto split_in = 100.0f / n;
+	const float split_in = 100.0f / n;
 	auto interval = vector<float>(n);
 
-	for (size_t i = 0; i < n; i++)
+	for (size_t i = 0; i < n; i++) {
 		interval[i] = split_in * (i + 1);
+        if (interval[i] == 100.0f) // don't make this 100.0f
+            interval[i]--;
+	}
 
-	const float p = ((float)(value / max) * 100.0f);
+	const auto fvalue = static_cast<float>(value);
+    const auto fmax = static_cast<float>(max);
+	const auto p = precent(fvalue, fmax);
 
 	if (p <= interval[0])
 		return 1;
 	if (p >= interval[n - 1])
 		return 9;
 
-	for (size_t i = 0; i < n - 1; i++)
-		if (p >= interval[i] && p <= interval[i + 1])
-			if (p < ((interval[i] + interval[i + 1]) / 2.0f))
-				return pallet[i];
-			else
-				return pallet[i + 1];
+	for (size_t i = 0; i < n - 1; i++) {
+        auto low = interval[i];
+        auto high = interval[i + 1];
+        if (p >= low && p <= high) {
+            const auto half = (high + low) / 2;
+            const auto pr = precent(p, half);
+            if (pr > 50.0)
+                return pallet[i + 1];
+            else
+                return pallet[i];
+        }
+	}
 
 	return 1;
 }
@@ -124,6 +155,11 @@ std::string Node::graphviz_color() const noexcept
 		return "color = \"plum1\"";
 
 	auto color = pick_color(this->max_occurrences, this->occurrences);
+	log_info(
+		"Max occurence %d, Occurence: %d and color number %d", 
+		this->max_occurrences, this->occurrences, color
+	);
+
 	auto str = "colorscheme = blues9\n\t\tcolor = " + to_string(color);
 	if (color >= 7)
 		str += "\n\t\tfontcolor = white";

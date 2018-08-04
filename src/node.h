@@ -23,8 +23,9 @@ public:
 	size_t true_branch_address = 0;
 	size_t false_branch_address = 0;
 	unsigned int occurrences = 1;
-
+    bool is_last_instruction_call() const noexcept;
 	void mark_done() noexcept;
+    instruction last_api_reporter_instruction() const noexcept;
 	size_t start_address() const noexcept;
 	bool done() const noexcept;
 	void append_instruction(instruction instruction) noexcept;
@@ -37,7 +38,7 @@ public:
 	bool contains_address(size_t eip) const noexcept;
 	size_t true_neighbour() const noexcept;
 	size_t false_neighbour() const noexcept;
-	Node() = default;
 	Node(size_t start_address) : _start_address(start_address) {}
+	Node() = default;
 	~Node() = default;
 };
