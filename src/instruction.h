@@ -26,8 +26,8 @@ public:
 		Int32 branch_type,
 		size_t len,
 		size_t next_node_addr,
-		size_t side_node_addr
-	) noexcept :
+		size_t side_node_addr) noexcept
+        :
 		eip(eip),
 		content(content),
 		branch_type(branch_type),
@@ -40,8 +40,8 @@ public:
 	bool is_ret() const noexcept;
 	bool validate() const noexcept;
 	bool is_call() const noexcept;
-	bool is_branch() const noexcept;
-	bool direct_branch() const noexcept;
+    bool is_branch() const noexcept;
+    bool direct_branch() const noexcept;
 	std::string string() const noexcept;
 	size_t true_branch_address() const noexcept;
 	size_t false_branch_address() const noexcept;

@@ -1,8 +1,8 @@
+#include "format.h"
+#include "win32_error.h"
 #include <stdexcept>
 #include <string>
 #include <windows.h>
-#include "format.h"
-#include "win32_error.h"
 
 using namespace std;
 
@@ -19,7 +19,7 @@ string win32_error::context() const noexcept
     return last_string + ":";
 }
 
-const char* win32_error::what() const
+const char *win32_error::what() const
 {
     return runtime_error::what();
 }

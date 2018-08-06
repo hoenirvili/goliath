@@ -4,7 +4,7 @@
 #include <windows.h>
 
 template <typename... Args>
-std::string fmt_string(const std::string& format, Args... args)
+std::string fmt_string(const std::string &format, Args... args)
 {
     std::size_t size = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
     auto buf = std::make_unique<char[]>(size);

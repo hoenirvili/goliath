@@ -10,12 +10,14 @@
 
 using namespace std;
 
-PluginLayer* GetPluginInterface(const char* pluginname, size_t layer, PluginLayer** layers)
+PluginLayer *
+GetPluginInterface(const char *pluginname, size_t layer, PluginLayer **layers)
 {
-    PluginLayer* scanner = layers[layer];
+    PluginLayer *scanner = layers[layer];
 
     while (scanner) {
-        if (scanner->data && scanner->data->plugin_name && !strcmp(scanner->data->plugin_name, pluginname))
+        if (scanner->data && scanner->data->plugin_name &&
+            !strcmp(scanner->data->plugin_name, pluginname))
             return scanner;
 
         scanner = scanner->nextnode;
@@ -24,7 +26,7 @@ PluginLayer* GetPluginInterface(const char* pluginname, size_t layer, PluginLaye
     return nullptr;
 }
 
-BYTE* engine_share_buff;
+BYTE *engine_share_buff;
 
 size_t GetLayer()
 {
@@ -33,25 +35,27 @@ size_t GetLayer()
 
 unique_ptr<control_flow_graph> graph;
 
-static inline int* iteration(BYTE* mem)
+static inline int *iteration(BYTE *mem)
 {
-    return (int*) (mem);
+    return (int *)(mem);
 }
 
 BOOL DBTInit()
 {
-    HANDLE file_mapping = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
+    HANDLE file_mapping =
+      OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
     if (!file_mapping)
         return FALSE;
 
-    engine_share_buff = (BYTE*) MapViewOfFile(file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
+    engine_share_buff = (BYTE *)MapViewOfFile(
+      file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
     if (!engine_share_buff)
         return FALSE;
 
-    const char* logname = LOGNAME_BUFFER(engine_share_buff);
+    const char *logname = LOGNAME_BUFFER(engine_share_buff);
     string name = (!logname) ? string() : string(logname);
 
-    auto* file = new fstream(name, fstream::app);
+    auto *file = new fstream(name, fstream::app);
     if (!(*file))
         return FALSE;
 
@@ -68,41 +72,37 @@ BOOL DBTInit()
     return TRUE;
 }
 
-static size_t get_next_addr_call(DISASM* disasm)
+static size_t get_next_addr_call(DISASM *disasm)
 {
-    array<char*, 3> args = {
-		disasm->Argument1.ArgMnemonic, 
-		disasm->Argument2.ArgMnemonic, 
-		disasm->Argument3.ArgMnemonic
-	};
+    array<char *, 3> args = {disasm->Argument1.ArgMnemonic,
+                             disasm->Argument2.ArgMnemonic,
+                             disasm->Argument3.ArgMnemonic};
 
     size_t r = 0xffffffff;
-	
-	for (const auto& arg : args)
-    {
+
+    for (const auto &arg : args) {
         try {
             r = stoul(arg, nullptr, 16);
             goto _exit;
-        }
-        catch (const invalid_argument&) {
+        } catch (const invalid_argument &) {
             continue;
-        }
-        catch (const out_of_range&) {
+        } catch (const out_of_range &) {
             return r;
-		}
+        }
     }
 
 _exit:
     return r;
 }
 
-PluginReport* DBTBeforeExecute(void* params, PluginLayer** layers)
+PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 {
     static int counter = 0;
-    CUSTOM_PARAMS* custom_params = (CUSTOM_PARAMS*) params;
-    DISASM* MyDisasm = custom_params->MyDisasm;
+    CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
+    DISASM *MyDisasm = custom_params->MyDisasm;
 
-    char* content = (char*) VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+    char *content =
+      (char *)VirtualAlloc(nullptr, 0x4000, MEM_COMMIT, PAGE_READWRITE);
     if (!content)
         return 0;
 
@@ -115,28 +115,29 @@ PluginReport* DBTBeforeExecute(void* params, PluginLayer** layers)
 
     size_t next_addr = 0;
     if ((next_addr = custom_params->next_addr); next_addr == 0xffffffff) {
-        if (auto plugin = GetPluginInterface("APIReporter", 1, layers); plugin) {
-            auto api_reporter = (char*) plugin->data->content_before;
+        if (auto plugin = GetPluginInterface("APIReporter", 1, layers);
+            plugin) {
+            auto api_reporter = (char *)plugin->data->content_before;
             next_addr = get_next_addr_call(MyDisasm);
         }
     }
 
     auto instr = instruction(MyDisasm->EIP,
-        MyDisasm->CompleteInstr,
-        MyDisasm->Instruction.BranchType,
-        custom_params->instrlen,
-        next_addr,
-        custom_params->side_addr);
+                             MyDisasm->CompleteInstr,
+                             MyDisasm->Instruction.BranchType,
+                             custom_params->instrlen,
+                             next_addr,
+                             custom_params->side_addr);
 
     if (instr.is_branch()) {
         if (instr.is_call()) {
-			if (auto plugin = GetPluginInterface("APIReporter", 1, layers); plugin)
-                instr.api_reporter = (char*) plugin->data->content_before;
+            if (auto plugin = GetPluginInterface("APIReporter", 1, layers);
+                plugin)
+                instr.api_reporter = (char *)plugin->data->content_before;
 
             try {
                 graph->append_branch_instruction(instr);
-            }
-            catch (const exception& ex) {
+            } catch (const exception &ex) {
                 log_error("%s", ex.what());
             }
         }
@@ -145,20 +146,19 @@ PluginReport* DBTBeforeExecute(void* params, PluginLayer** layers)
 
     try {
         graph->append_instruction(instr);
-    }
-    catch (const exception& ex) {
+    } catch (const exception &ex) {
         log_error("%s", ex.what());
     }
 
     return report;
 }
 
-PluginReport* DBTBranching(void* params, PluginLayer** layers)
+PluginReport *DBTBranching(void *params, PluginLayer **layers)
 {
-    CUSTOM_PARAMS* custom_params = (CUSTOM_PARAMS*) params;
-    DISASM* MyDisasm = custom_params->MyDisasm;
+    CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
+    DISASM *MyDisasm = custom_params->MyDisasm;
 
-    char* content = (char*) VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+    char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
     if (!content)
         return nullptr;
 
@@ -170,11 +170,11 @@ PluginReport* DBTBranching(void* params, PluginLayer** layers)
     report->content_after = nullptr;
 
     auto instr = instruction(MyDisasm->EIP,
-        MyDisasm->CompleteInstr,
-        MyDisasm->Instruction.BranchType,
-        custom_params->instrlen,
-        custom_params->next_addr,
-        custom_params->side_addr);
+                             MyDisasm->CompleteInstr,
+                             MyDisasm->Instruction.BranchType,
+                             custom_params->instrlen,
+                             custom_params->next_addr,
+                             custom_params->side_addr);
 
     // skip calls
     if (instr.is_call())
@@ -182,21 +182,20 @@ PluginReport* DBTBranching(void* params, PluginLayer** layers)
 
     try {
         graph->append_branch_instruction(instr);
-    }
-    catch (const exception& ex) {
+    } catch (const exception &ex) {
         log_error("%s", ex.what());
     }
 
     return report;
 }
 
-PluginReport* DBTAfterExecute(void* params, PluginLayer** layers)
+PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 {
     static int counter = 1000;
-    CUSTOM_PARAMS* custom_params = (CUSTOM_PARAMS*) params;
-    DISASM* MyDisasm = custom_params->MyDisasm;
+    CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
+    DISASM *MyDisasm = custom_params->MyDisasm;
 
-    char* content = (char*) VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+    char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
     if (!content)
         return 0;
 
@@ -210,7 +209,7 @@ PluginReport* DBTAfterExecute(void* params, PluginLayer** layers)
     return report;
 }
 
-PluginReport* DBTFinish()
+PluginReport *DBTFinish()
 {
     log_info("[CFGTrace] Finish is called");
     auto cfg = CFG(engine_share_buff);
@@ -222,8 +221,7 @@ PluginReport* DBTFinish()
         auto out = fstream("partiaflowgraph.dot", fstream::out);
         try {
             graph->generate(graphviz, &out);
-        }
-        catch (const exception& ex) {
+        } catch (const exception &ex) {
             log_error("%s", ex.what());
         }
 
