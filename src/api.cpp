@@ -72,33 +72,97 @@ BOOL DBTInit()
     return TRUE;
 }
 
-static size_t get_next_addr_call(DISASM *disasm)
+static inline bool direct_branch(BRANCH_TYPE type) noexcept
 {
-    array<char *, 3> args = {disasm->Argument1.ArgMnemonic,
-                             disasm->Argument2.ArgMnemonic,
-                             disasm->Argument3.ArgMnemonic};
+    return type == JmpType;
+}
 
-    size_t r = 0xffffffff;
+static inline bool is_ret(BRANCH_TYPE type) noexcept
+{
+    return type == RetType;
+}
 
-    for (const auto &arg : args) {
-        try {
-            r = stoul(arg, nullptr, 16);
-            goto _exit;
-        } catch (const invalid_argument &) {
-            continue;
-        } catch (const out_of_range &) {
-            return r;
-        }
+static inline bool is_call(BRANCH_TYPE type) noexcept
+{
+    return type == CallType;
+}
+
+static inline bool is_branch(BRANCH_TYPE type) noexcept
+{
+    switch (type) {
+    case JO:
+    case JC:
+    case JE:
+    case JA:
+    case JS:
+    case JP:
+    case JL:
+    case JG:
+    case JB:
+    case JECXZ:
+    case JmpType:
+    case CallType:
+    case RetType:
+    case JNO:
+    case JNC:
+    case JNE:
+    case JNA:
+    case JNS:
+    case JNP:
+    case JNL:
+    case JNG:
+    case JNB:
+        return true;
     }
 
-_exit:
-    return r;
+    return false;
+}
+
+static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
+{
+    BRANCH_TYPE type =
+      (BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
+
+    if (direct_branch(type))
+        return 0;
+    if (is_ret(type))
+        return 0;
+
+    size_t eip = custom_params->MyDisasm->EIP;
+    size_t len = custom_params->instrlen;
+
+    size_t false_branch = eip + len;
+    if (is_call(type)) {
+        if (custom_params->next_addr == custom_params->side_addr &&
+            custom_params->next_addr == false_branch)
+            return 0;
+
+        return false_branch;
+    }
+
+    if (!is_call(type) && !is_ret(type))
+        return custom_params->side_addr;
+
+    return false_branch;
+}
+
+static size_t compute_next_addr(CUSTOM_PARAMS *custom_params)
+{
+    return custom_params->next_addr;
+}
+
+static void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept
+{
+    custom_params->next_addr = compute_next_addr(custom_params);
+    custom_params->side_addr = compute_side_addr(custom_params);
 }
 
 PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 {
     static int counter = 0;
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
+    compute_next_and_side_addr(custom_params);
+
     DISASM *MyDisasm = custom_params->MyDisasm;
 
     char *content =
@@ -113,34 +177,26 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
     report->content_before = content;
     report->content_after = nullptr;
 
-    size_t next_addr = 0;
-    if ((next_addr = custom_params->next_addr); next_addr == 0xffffffff) {
-        if (auto plugin = GetPluginInterface("APIReporter", 1, layers);
-            plugin) {
-            auto api_reporter = (char *)plugin->data->content_before;
-            next_addr = get_next_addr_call(MyDisasm);
-        }
-    }
-
     auto instr = instruction(MyDisasm->EIP,
                              MyDisasm->CompleteInstr,
-                             MyDisasm->Instruction.BranchType,
+                             (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
                              custom_params->instrlen,
-                             next_addr,
+                             custom_params->next_addr,
                              custom_params->side_addr);
+    if (auto plugin = GetPluginInterface("APIReporter", 1, layers); plugin) {
+        instr.api_reporter = (char *)plugin->data->content_before;
+        instr.branch_type = (BRANCH_TYPE)0; // make this a simple instruction
+    }
 
-    if (instr.is_branch()) {
-        if (instr.is_call()) {
-            if (auto plugin = GetPluginInterface("APIReporter", 1, layers);
-                plugin)
-                instr.api_reporter = (char *)plugin->data->content_before;
-
+    if (is_branch(instr.branch_type)) {
+        if (is_call(instr.branch_type)) {
             try {
                 graph->append_branch_instruction(instr);
             } catch (const exception &ex) {
                 log_error("%s", ex.what());
             }
         }
+
         return report;
     }
 
@@ -156,6 +212,7 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 PluginReport *DBTBranching(void *params, PluginLayer **layers)
 {
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
+    compute_next_and_side_addr(custom_params);
     DISASM *MyDisasm = custom_params->MyDisasm;
 
     char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
@@ -171,13 +228,12 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
 
     auto instr = instruction(MyDisasm->EIP,
                              MyDisasm->CompleteInstr,
-                             MyDisasm->Instruction.BranchType,
+                             (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
                              custom_params->instrlen,
                              custom_params->next_addr,
                              custom_params->side_addr);
-
     // skip calls
-    if (instr.is_call())
+    if (is_call(instr.branch_type))
         return report;
 
     try {
@@ -193,6 +249,7 @@ PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 {
     static int counter = 1000;
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
+    compute_next_and_side_addr(custom_params);
     DISASM *MyDisasm = custom_params->MyDisasm;
 
     char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);

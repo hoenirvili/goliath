@@ -29,19 +29,11 @@ size_t Node::false_neighbour() const noexcept
     return this->false_branch_address;
 }
 
-bool Node::is_last_instruction_call() const noexcept
-{
-    auto last = this->block.back();
-    return last.is_call();
-}
-
-instruction Node::last_api_reporter_instruction() const noexcept
-{
-    auto last = this->block.back();
-    auto eip = last.pointer_address();
-    auto content = (char *)last.api_reporter.c_str();
-    return instruction(eip, content, CallType, 0, 0, 0);
-}
+// bool Node::is_last_instruction_call() const noexcept
+//{
+//    auto last = this->block.back();
+//    return last.is_call();
+//}
 
 void Node::append_instruction(instruction instruction) noexcept
 {
@@ -153,11 +145,6 @@ std::string Node::graphviz_color() const noexcept
         return "color = \"plum1\"";
 
     auto color = pick_color(this->max_occurrences, this->occurrences);
-    log_info("Max occurence %d, Occurence: %d and color number %d",
-             this->max_occurrences,
-             this->occurrences,
-             color);
-
     auto str = "colorscheme = blues9\n\t\tcolor = " + to_string(color);
     if (color >= 7)
         str += "\n\t\tfontcolor = white";
