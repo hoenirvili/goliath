@@ -11,7 +11,6 @@ class control_flow_graph
 private:
     size_t current_node_start_addr = 0x0;
     size_t current_pointer = 0x0;
-    bool first = false;
 
     bool node_contains_address(size_t address) const noexcept;
     void set_nodes_max_occurrences() noexcept;
@@ -26,8 +25,8 @@ public:
     std::map<size_t, std::unique_ptr<Node>> nodes;
     void generate(std::string content, std::ostream *out) const;
     std::string graphviz();
-    int serialize(uint8_t *mem, size_t size) const;
-    int deserialize(const uint8_t *mem, size_t size);
+    void serialize(uint8_t *mem, size_t size) const;
+    void deserialize(const uint8_t *mem, size_t size);
     size_t mem_size() const noexcept;
     bool node_exists(size_t start) const noexcept;
     void append_instruction(instruction instruction);

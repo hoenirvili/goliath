@@ -23,17 +23,16 @@ public:
     size_t true_branch_address = 0;
     size_t false_branch_address = 0;
     unsigned int occurrences = 1;
-    // bool is_last_instruction_call() const noexcept;
+
     void mark_done() noexcept;
-    // instruction last_api_reporter_instruction() const noexcept;
     size_t start_address() const noexcept;
     bool done() const noexcept;
     void append_instruction(instruction instruction) noexcept;
     void append_branch_instruction(instruction instruction) noexcept;
     std::string graphviz_definition() const;
     std::string graphviz_relation() const;
-    int serialize(uint8_t *mem, const size_t size) const noexcept;
-    int deserialize(const uint8_t *mem, const size_t size) noexcept;
+    void serialize(uint8_t *mem, const size_t size) const;
+    void deserialize(const uint8_t *mem, const size_t size);
     size_t mem_size() const noexcept;
     bool contains_address(size_t eip) const noexcept;
     size_t true_neighbour() const noexcept;

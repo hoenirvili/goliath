@@ -29,12 +29,6 @@ size_t Node::false_neighbour() const noexcept
     return this->false_branch_address;
 }
 
-// bool Node::is_last_instruction_call() const noexcept
-//{
-//    auto last = this->block.back();
-//    return last.is_call();
-//}
-
 void Node::append_instruction(instruction instruction) noexcept
 {
     size_t eip = instruction.pointer_address();
@@ -168,7 +162,7 @@ std::string Node::graphviz_label() const noexcept
         code_block += "\\l";
 
     for (const auto &instruction : this->block) {
-        std::string bl = instruction.string();
+        std::string bl = instruction.str();
         code_block += bl + "\\l";
     }
 
@@ -220,18 +214,34 @@ string Node::graphviz_relation() const
 
 bool Node::it_fits(size_t size) const noexcept
 {
-    // TODO(hoenir) this is not functional
     return (size >= this->mem_size());
 }
 
-int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
+void Node::deserialize(const uint8_t *mem, const size_t size)
 {
-    // TODO(hoenir) this is not functional
     if (!this->it_fits(size))
-        return ENOMEM;
+        throw invalid_argument("cannot deserialize node");
 
-    memcpy(&this->occurrences, mem, sizeof(this->occurrences));
-    mem += sizeof(this->occurrences);
+    memcpy(&this->_start_address, mem, sizeof(this->_start_address));
+    mem += sizeof(this->_start_address);
+
+    // how many instruction we have?
+    size_t n = 0;
+    memcpy(&n, mem, sizeof(n));
+    mem += sizeof(n);
+
+    for (auto i = 0; i < n; i++) {
+        auto instr = instruction();
+        size_t sz = instr.mem_size();
+        instr.deserialize(mem, sz);
+        this->block.push_back(instr);
+    }
+
+    memcpy(&this->is_done, mem, sizeof(this->is_done));
+    mem += sizeof(this->is_done);
+
+    memcpy(&this->max_occurrences, mem, sizeof(this->max_occurrences));
+    mem += sizeof(this->max_occurrences);
 
     memcpy(&this->true_branch_address, mem, sizeof(this->true_branch_address));
     mem += sizeof(this->true_branch_address);
@@ -240,35 +250,41 @@ int Node::deserialize(const uint8_t *mem, const size_t size) noexcept
       &this->false_branch_address, mem, sizeof(this->false_branch_address));
     mem += sizeof(this->false_branch_address);
 
+    memcpy(&this->occurrences, mem, sizeof(this->occurrences));
+    mem += sizeof(this->occurrences);
+
     size_t block_size = 0;
     memcpy(&block_size, mem, sizeof(block_size));
     mem += sizeof(block_size);
-
-    this->block.clear();
-
-    char *content = NULL;
-    size_t content_length = 0;
-
-    for (size_t i = 0; i < block_size; i++) {
-        content = (char *)mem;
-
-        // this->block.push_back(content);
-
-        content_length = strlen((const char *)mem) + 1;
-        mem += content_length;
-    }
-
-    return 0;
 }
 
-int Node::serialize(uint8_t *mem, const size_t size) const noexcept
+void Node::serialize(uint8_t *mem, const size_t size) const
 {
-    // TODO(hoenir) this is not functional
     if (!this->it_fits(size))
-        return ENOMEM;
+        throw invalid_argument("cannot serialize node");
 
-    memcpy(mem, &this->occurrences, sizeof(this->occurrences));
-    mem += sizeof(this->occurrences);
+    memcpy(mem, &this->_start_address, sizeof(this->_start_address));
+    mem += sizeof(this->_start_address);
+
+    // how many instruction we have?
+    size_t n = this->block.size();
+    memcpy(mem, &n, sizeof(n));
+    mem += sizeof(n);
+
+    for (auto &item : this->block) {
+        size_t sz = item.mem_size();
+        item.serialize(mem, sz);
+        mem += sz;
+    }
+
+    memcpy(mem, &this->is_done, sizeof(this->is_done));
+    mem += sizeof(this->is_done);
+
+    memcpy(mem, &this->max_occurrences, sizeof(this->max_occurrences));
+    mem += sizeof(this->max_occurrences);
+
+    memcpy(mem, &this->true_branch_address, sizeof(this->true_branch_address));
+    mem += sizeof(this->true_branch_address);
 
     memcpy(mem, &this->true_branch_address, sizeof(this->true_branch_address));
     mem += sizeof(this->true_branch_address);
@@ -277,32 +293,21 @@ int Node::serialize(uint8_t *mem, const size_t size) const noexcept
       mem, &this->false_branch_address, sizeof(this->false_branch_address));
     mem += sizeof(this->false_branch_address);
 
-    auto block_size = this->block.size();
-    memcpy(mem, &block_size, sizeof(block_size));
-    mem += sizeof(block_size);
-
-    for (const auto &item : this->block) {
-        // auto code = item.c_str();
-        // size_t code_size = strlen(code) + 1;
-
-        // memcpy(mem, code, code_size);
-        // mem += code_size;
-    }
-
-    return 0;
+    memcpy(mem, &this->occurrences, sizeof(this->occurrences));
+    mem += sizeof(this->occurrences);
 }
 
 size_t Node::mem_size() const noexcept
 {
-    // TODO(hoenir) this is not correctt
     size_t size = 0;
-    // size += sizeof(this->start_address);
-    size += sizeof(this->occurrences);
+    size += sizeof(this->_start_address);
+    size += sizeof(this->block.size());
+    for (const auto &item : this->block)
+        size += item.mem_size();
+    size += sizeof(this->is_done);
+    size += sizeof(this->max_occurrences);
     size += sizeof(this->true_branch_address);
     size += sizeof(this->false_branch_address);
-    size += sizeof(this->block.size());
-    // for (const auto& item : this->block)
-    // size += item.size() + 1;
-
+    size += sizeof(this->occurrences);
     return size;
 }

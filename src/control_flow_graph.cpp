@@ -41,14 +41,49 @@ string control_flow_graph::graphviz()
     return digraph + "\n}";
 }
 
-int control_flow_graph::serialize(uint8_t *mem, size_t size) const
+void control_flow_graph::serialize(uint8_t *mem, size_t size) const
 {
-    return 0;
+    if (!this->it_fits(size))
+        throw invalid_argument("cannot serialise control flow graph");
+
+    memcpy(mem, &start_address_first_node, sizeof(&start_address_first_node));
+    mem += sizeof(start_address_first_node);
+
+    size_t n = this->nodes.size();
+    memcpy(mem, &n, sizeof(n));
+    mem += sizeof(n);
+
+    for (auto &item : this->nodes) {
+        auto key = item.first;
+        memcpy(mem, &key, sizeof(key));
+        mem += sizeof(key);
+        size_t sz = item.second->mem_size();
+        item.second->serialize(mem, sz);
+        mem += sz;
+    }
 }
 
-int control_flow_graph::deserialize(const uint8_t *mem, size_t size)
+void control_flow_graph::deserialize(const uint8_t *mem, size_t size)
 {
-    return 0;
+    if (!this->it_fits(size))
+        throw invalid_argument("cannot deserialize control flow graph");
+
+    memcpy(&start_address_first_node, mem, sizeof(&start_address_first_node));
+    mem += sizeof(start_address_first_node);
+
+    size_t n = 0;
+    memcpy(&n, mem, sizeof(n));
+    mem += sizeof(n);
+
+    for (auto i = 0u; i < n; i++) {
+        size_t key = 0;
+        memcpy(&key, mem, sizeof(key));
+        mem += sizeof(key);
+        auto node = unique_ptr<Node>();
+        auto sz = node->mem_size();
+        node->deserialize(mem, sz);
+        this->nodes[key] = move(node);
+    }
 }
 
 void control_flow_graph::generate(const string content, ostream *out) const

@@ -9,11 +9,11 @@
 class instruction
 {
 private:
-    const size_t len;            /* instruction length */
-    const size_t next_node_addr; /* next node address */
-    const size_t side_node_addr;
-    const size_t eip;          /* current instruction pointer */
-    const std::string content; /* complete instruction */
+    size_t len;            /* instruction length */
+    size_t next_node_addr; /* next node address */
+    size_t side_node_addr;
+    size_t eip;          /* current instruction pointer */
+    std::string content; /* complete instruction */
 
 public:
     std::string api_reporter; /* extra information from APIReporter*/
@@ -33,16 +33,19 @@ public:
           side_node_addr(side_node_addr)
     {
     }
-
-    instruction() = delete;
+    void deserialize(const uint8_t *mem, const size_t size);
+    void serialize(uint8_t *mem, const size_t size) const;
+    bool it_fits(size_t size) const noexcept;
+    instruction() = default;
     ~instruction() = default;
     bool is_ret() const noexcept;
     bool validate() const noexcept;
     bool is_call() const noexcept;
     bool is_branch() const noexcept;
     bool direct_branch() const noexcept;
-    std::string string() const noexcept;
+    std::string str() const noexcept;
     size_t true_branch_address() const noexcept;
     size_t false_branch_address() const noexcept;
     size_t pointer_address() const noexcept;
+    size_t mem_size() const noexcept;
 };

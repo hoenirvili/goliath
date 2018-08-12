@@ -1,6 +1,10 @@
 #include "api.h"
 #include "instruction.h"
 #include "log.h"
+#include <stdexcept>
+#include <string>
+
+using namespace std;
 
 bool instruction::is_branch() const noexcept
 {
@@ -32,8 +36,89 @@ bool instruction::is_branch() const noexcept
 
     return false;
 }
+size_t instruction::mem_size() const noexcept
+{
+    size_t sz = 0;
+    sz += sizeof(this->eip);
+    sz += this->api_reporter.size();
+    sz += this->content.size();
+    sz += sizeof(this->branch_type);
+    sz += sizeof(this->len);
+    sz += sizeof(this->next_node_addr);
+    sz += sizeof(this->side_node_addr);
+    return sz;
+}
 
-std::string instruction::string() const noexcept
+bool instruction::it_fits(size_t size) const noexcept
+{
+    return (size >= this->mem_size());
+}
+
+void instruction::deserialize(const uint8_t *mem, const size_t size)
+{
+    if (!it_fits(size))
+        throw invalid_argument("size provided does not fit");
+
+    memcpy(&this->len, mem, sizeof(this->len));
+    mem += sizeof(this->len);
+
+    memcpy(&this->next_node_addr, mem, sizeof(this->next_node_addr));
+    mem += sizeof(this->next_node_addr);
+
+    memcpy(&this->side_node_addr, mem, sizeof(this->side_node_addr));
+    mem += sizeof(this->side_node_addr);
+
+    memcpy(&this->eip, mem, sizeof(this->eip));
+    mem += sizeof(this->eip);
+
+    // content
+    char *cmem = (char *)mem;
+    size_t cmem_size = strlen(cmem);
+    this->content = string(cmem, cmem_size);
+    mem += cmem_size + 1; // skip also the \0
+
+    // api_reporter
+    cmem = (char *)mem;
+    cmem_size = strlen(cmem);
+    this->api_reporter = string(cmem, cmem_size);
+    mem += cmem_size + 1; // skip also the \0
+
+    memcpy(&this->branch_type, mem, sizeof(this->branch_type));
+    mem += sizeof(this->branch_type);
+}
+
+void instruction::serialize(uint8_t *mem, const size_t size) const
+{
+    if (!it_fits(size))
+        throw invalid_argument("size provided does not fit");
+
+    memcpy(mem, &this->len, sizeof(this->len));
+    mem += sizeof(this->len);
+
+    memcpy(mem, &this->next_node_addr, sizeof(this->next_node_addr));
+    mem += sizeof(this->next_node_addr);
+
+    memcpy(mem, &this->side_node_addr, sizeof(this->side_node_addr));
+    mem += sizeof(this->side_node_addr);
+
+    memcpy(mem, &this->eip, sizeof(this->eip));
+    mem += sizeof(this->eip);
+
+    // content
+    size_t cmem_size = this->content.size() + 1;
+    memcpy(mem, this->content.c_str(), cmem_size);
+    mem += cmem_size;
+
+    // api_reporter
+    cmem_size = this->api_reporter.size() + 1;
+    memcpy(mem, this->api_reporter.c_str(), cmem_size);
+    mem += cmem_size;
+
+    memcpy(mem, &this->branch_type, sizeof(this->branch_type));
+    mem += sizeof(this->branch_type);
+}
+
+std::string instruction::str() const noexcept
 {
     if (this->api_reporter.empty())
         return this->content;
@@ -47,80 +132,11 @@ size_t instruction::true_branch_address() const noexcept
         return 0;
 
     return this->next_node_addr;
-    // we are dealing with an relative address
-    /*   if (this->next_node_addr == 0xFFFFFFFF)
-           return *(uintptr_t *)(this->side_node_addr);
-
-       return this->next_node_addr;
-       */
 }
 
 size_t instruction::false_branch_address() const noexcept
 {
     return this->side_node_addr;
-
-    /* if (this->direct_branch())
-         return 0;
-     if (this->is_ret())
-         return 0;
- */
-    // size_t false_branch = this->eip + this->len;
-
-    // try to avoid nasty engine bug
-    // if (this->is_call()) {
-    //    // TODO(hoenir): investigate this
-    //    /*
-    //    011E129E: E8 0A 03 00 00				: call 0x011E15AD;
-    //    011E15AD: 55							: push ebp;
-    //    wierd because this->next_node_addr is equal to this->side_node_addr
-    //    side_node_addr should be equal to false_branch.
-    //    */
-    //    if (this->next_node_addr == this->side_node_addr &&
-    //        this->next_node_addr == false_branch)
-    //        return 0;
-
-    //    return false_branch;
-    //}
-
-    // if (!this->is_ret() && !this->is_call()) {
-    //    // TODO(hoenir): investigate this
-    //    /*
-    //    011E157F: 75 03							: jne 0x11E1584;
-    //    011E1584: 64 A1 18 00 00 00				: mov eax
-    //    ,dword[fs:0x00000018] the jne jump addr is the exact this->eip +
-    //    this->len; it does not matter if this is true or false the odd thing
-    //    is that we have this->side_addr which should be the exact this->len +
-    //    this->eip but it's a totally different address.
-    //    */
-    //    // if (this->next_node_addr == false_branch) // this should fix this
-    //    //    return 0;
-    //    /*
-    //    011E15D4: 84 C0                         : test al ,al;
-    //    011E15D6: 75 0A							: jne 0x11E15E2;
-    //    011E15E2: B0 01                         : mov al ,0x01;
-    //    hex 011E15D6 => 18748886
-    //    hex 0x000002 => 2 (this->len);
-    //    hex 011E15E2 => 18748898
-    //        jne instruction opcodes in intel manual
-    //        is "75cb" which is 2 bytes. why the next addr is way more farther
-    //        than the expected one?
-
-    //    0x11E15E2 -
-    //    0x11E15D6
-    //    --------
-    //    decimal(12) but this should be 2.
-
-    //    but the interesting part is that this->next_node_addr is
-    //    0x011E15E2 which we assume is correct and the next_node_addr
-    //    of the redundant jne. But here's the fun part,
-    //    the next (this->eip + this->len) is 0x011E15D8 which is NOT equal
-    //    to 0x011E15E2
-    //    */
-    //    return this->side_node_addr;
-    //}
-
-    //// TODO(hoenir) is there any change that this will return ?
-    // return false_branch;
 }
 
 bool instruction::is_call() const noexcept
@@ -150,10 +166,10 @@ bool instruction::validate() const noexcept
         return false;
     }
 
-    /*if (!this->is_branch() && this->branch_type != 0) {
+    if (!this->is_branch() && this->branch_type != 0) {
         log_warning("invalid branch passed %d", this->branch_type);
         return false;
-    }*/
+    }
 
     if (this->eip == 0) {
         log_warning("invalid eip instruction %d", this->eip);
