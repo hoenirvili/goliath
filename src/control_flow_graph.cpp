@@ -206,6 +206,7 @@ size_t control_flow_graph::mem_size() const noexcept
     size += sizeof(this->start_address_first_node);
     size += sizeof(this->nodes.size());
 
+    size += sizeof(size_t);
     for (const auto &item : this->nodes) {
         const auto address = item.first;
 

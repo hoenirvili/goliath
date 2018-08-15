@@ -23,6 +23,7 @@ private:
 public:
     size_t start_address_first_node = 0;
     std::map<size_t, std::unique_ptr<Node>> nodes;
+
     void generate(std::string content, std::ostream *out) const;
     std::string graphviz();
     void serialize(uint8_t *mem, size_t size) const;

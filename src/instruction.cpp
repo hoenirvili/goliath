@@ -36,6 +36,7 @@ bool instruction::is_branch() const noexcept
 
     return false;
 }
+
 size_t instruction::mem_size() const noexcept
 {
     size_t sz = 0;

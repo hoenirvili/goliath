@@ -72,6 +72,7 @@ bool Node::contains_address(size_t eip) const noexcept
 
 bool Node::no_branching() const noexcept
 {
+    // TODO(): Modify this. terminal_node
     return (!this->true_branch_address && !this->false_branch_address &&
             this->block.size());
 }
@@ -230,7 +231,7 @@ void Node::deserialize(const uint8_t *mem, const size_t size)
     memcpy(&n, mem, sizeof(n));
     mem += sizeof(n);
 
-    for (auto i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         auto instr = instruction();
         size_t sz = instr.mem_size();
         instr.deserialize(mem, sz);
@@ -301,7 +302,7 @@ size_t Node::mem_size() const noexcept
 {
     size_t size = 0;
     size += sizeof(this->_start_address);
-    size += sizeof(this->block.size());
+    size += sizeof(size_t);
     for (const auto &item : this->block)
         size += item.mem_size();
     size += sizeof(this->is_done);

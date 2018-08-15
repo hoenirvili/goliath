@@ -67,6 +67,8 @@ BOOL DBTInit()
     auto cfg = CFG(engine_share_buff);
     auto it = iteration(cfg);
 
+    // todo: deserializare memorie
+
     log_info("[CFGTrace] Iteration %d", *it);
 
     return TRUE;
@@ -271,10 +273,15 @@ PluginReport *DBTFinish()
     log_info("[CFGTrace] Finish is called");
     auto cfg = CFG(engine_share_buff);
     auto it = iteration(cfg);
+    cfg += sizeof(it); // skip the number
 
-    // TODO(hoenir): You need to fill up the code for the n-th interation
     if ((*it) == 0) {
+        size_t sz = graph->mem_size();
+        graph->serialize(cfg, sz);
+
         auto graphviz = graph->graphviz();
+        // TODO(hoenir): this should be removed, only generate once
+        // not for every PFG
         auto out = fstream("partiaflowgraph.dot", fstream::out);
         try {
             graph->generate(graphviz, &out);
@@ -285,6 +292,17 @@ PluginReport *DBTFinish()
         (*it)++;
         return nullptr;
     }
+
+    auto previous_graph = control_flow_graph();
+    auto sz = previous_graph.mem_size();
+    previous_graph.deserialize(cfg, sz);
+    // TODO(hoenir): finish this method
+    // graph.merge(previous_graph);
+    sz = graph->mem_size();
+    graph->serialize(cfg, sz);
+    (*it)++;
+
+    // TODO(hoenir): how do we know we are at the last iteration?
 
     return nullptr;
 }
