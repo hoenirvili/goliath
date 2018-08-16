@@ -26,18 +26,13 @@ GetPluginInterface(const char *pluginname, size_t layer, PluginLayer **layers)
     return nullptr;
 }
 
-BYTE *engine_share_buff;
+BYTE *engine_shared_memory;
+
+unique_ptr<control_flow_graph> graph;
 
 size_t GetLayer()
 {
     return PLUGIN_LAYER;
-}
-
-unique_ptr<control_flow_graph> graph;
-
-static inline int *iteration(BYTE *mem)
-{
-    return (int *)(mem);
 }
 
 BOOL DBTInit()
@@ -47,12 +42,12 @@ BOOL DBTInit()
     if (!file_mapping)
         return FALSE;
 
-    engine_share_buff = (BYTE *)MapViewOfFile(
+    engine_shared_memory = (BYTE *)MapViewOfFile(
       file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
-    if (!engine_share_buff)
+    if (!engine_shared_memory)
         return FALSE;
 
-    const char *logname = LOGNAME_BUFFER(engine_share_buff);
+    const char *logname = LOGNAME_BUFFER(engine_shared_memory);
     string name = (!logname) ? string() : string(logname);
 
     auto *file = new fstream(name, fstream::app);
@@ -64,13 +59,15 @@ BOOL DBTInit()
 
     graph = make_unique<control_flow_graph>();
 
-    auto cfg = CFG(engine_share_buff);
-    auto it = iteration(cfg);
+    auto mem = cfg_shared_memory(engine_shared_memory);
+    auto it = cfg_iteration(mem);
 
-    // todo: deserializare memorie
+    if (it) {
+        auto size = graph->mem_size();
+        graph->serialize(mem, size);
+    }
 
-    log_info("[CFGTrace] Iteration %d", *it);
-
+    log_info("[CFGTrace] Iteration %d", it);
     return TRUE;
 }
 
@@ -271,38 +268,18 @@ PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 PluginReport *DBTFinish()
 {
     log_info("[CFGTrace] Finish is called");
-    auto cfg = CFG(engine_share_buff);
-    auto it = iteration(cfg);
-    cfg += sizeof(it); // skip the number
-
-    if ((*it) == 0) {
-        size_t sz = graph->mem_size();
-        graph->serialize(cfg, sz);
-
-        auto graphviz = graph->graphviz();
-        // TODO(hoenir): this should be removed, only generate once
-        // not for every PFG
-        auto out = fstream("partiaflowgraph.dot", fstream::out);
-        try {
-            graph->generate(graphviz, &out);
-        } catch (const exception &ex) {
-            log_error("%s", ex.what());
-        }
-
-        (*it)++;
-        return nullptr;
+    size_t sz = graph->mem_size();
+    auto mem = cfg_shared_memory(engine_shared_memory);
+    auto smem = cfg_serialize_shared_memory(mem);
+    graph->deserialize(smem, sz);
+	
+	auto graphviz = graph->graphviz();
+    auto out = fstream("partiaflowgraph.dot", fstream::out);
+    try {
+        graph->generate(graphviz, &out);
+    } catch (const exception &ex) {
+        log_error("%s", ex.what());
     }
-
-    auto previous_graph = control_flow_graph();
-    auto sz = previous_graph.mem_size();
-    previous_graph.deserialize(cfg, sz);
-    // TODO(hoenir): finish this method
-    // graph.merge(previous_graph);
-    sz = graph->mem_size();
-    graph->serialize(cfg, sz);
-    (*it)++;
-
-    // TODO(hoenir): how do we know we are at the last iteration?
 
     return nullptr;
 }

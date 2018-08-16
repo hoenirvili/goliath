@@ -481,10 +481,10 @@ GetPluginInterface(char *pluginname, size_t layer, PluginLayer **layers);
 #define BUFFER_SIZE 0x100000
 
 /**
- * engine_share_buff start of shared memory
+ * engine_shared_memory start of shared memory
  * from the engine with the plugin
  */
-extern BYTE *engine_share_buff;
+extern BYTE *engine_shared_memory;
 
 /**
  * cfg_buf_size returns the size of the shared
@@ -493,6 +493,33 @@ extern BYTE *engine_share_buff;
 inline size_t cfg_buf_size()
 {
     return BUFFER_SIZE - SHARED_CFG;
+}
+
+/**
+ * cfg_shared_memory returns the start of the address
+ * where the plugin can read and write to
+ */
+inline BYTE *cfg_shared_memory(BYTE *mem)
+{
+    return mem + SHARED_CFG;
+}
+
+/**
+ * cfg_iteration returns the number of iterations
+ * that the binary was executed in concolic mode
+ */
+inline int cfg_iteration(BYTE *mem)
+{
+    return *(int *)mem;
+}
+
+/**
+ * cfg_serialize_shared_memory returns the start of the address
+ * that the internal control flow graph can load and unload
+ */
+inline BYTE *cfg_serialize_shared_memory(BYTE *mem)
+{
+    return (mem + sizeof(cfg_iteration(mem)));
 }
 
 /**
