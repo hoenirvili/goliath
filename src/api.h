@@ -487,10 +487,10 @@ GetPluginInterface(char *pluginname, size_t layer, PluginLayer **layers);
 extern BYTE *engine_shared_memory;
 
 /**
- * cfg_buf_size returns the size of the shared
+ * cfg_shared_memory_size returns the size of the shared
  * control flow graph memory with the engine
  */
-inline size_t cfg_buf_size()
+inline size_t cfg_shared_memory_size()
 {
     return BUFFER_SIZE - SHARED_CFG;
 }
@@ -508,9 +508,14 @@ inline BYTE *cfg_shared_memory(BYTE *mem)
  * cfg_iteration returns the number of iterations
  * that the binary was executed in concolic mode
  */
-inline int cfg_iteration(BYTE *mem)
+inline int *cfg_iteration(BYTE *mem)
 {
-    return *(int *)mem;
+    return (int *)mem;
+}
+
+inline int *cfg_size(BYTE *mem)
+{
+    return (int *)(mem + sizeof(cfg_iteration(mem)));
 }
 
 /**
@@ -519,7 +524,7 @@ inline int cfg_iteration(BYTE *mem)
  */
 inline BYTE *cfg_serialize_shared_memory(BYTE *mem)
 {
-    return (mem + sizeof(cfg_iteration(mem)));
+    return (mem + sizeof(cfg_iteration(mem)) + sizeof(cfg_size(mem)));
 }
 
 /**

@@ -65,9 +65,11 @@ void execute_command(const string& command, string* process_stderr, string* proc
                 stderr_output += string(buffer, n);
             }
         }
-
-        stderr_output.erase(stderr_output.size() - 2, 2);
-        *process_stderr = stderr_output;
+        
+		if (!stderr_output.empty())
+			stderr_output.erase(stderr_output.size() - 2, 2);
+        
+		*process_stderr = stderr_output;
     }
 
     if (process_exit) {

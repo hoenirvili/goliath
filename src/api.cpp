@@ -2,7 +2,7 @@
 #include "control_flow_graph.h"
 #include "instruction.h"
 #include "log.h"
-#include <Windows.h>
+#include <windows.h>
 #include <array>
 #include <cstdio>
 #include <fstream>
@@ -59,15 +59,23 @@ BOOL DBTInit()
 
     graph = make_unique<control_flow_graph>();
 
-    auto mem = cfg_shared_memory(engine_shared_memory);
+    /*auto mem = cfg_shared_memory(engine_shared_memory);
     auto it = cfg_iteration(mem);
+    if (*it) {
+        auto size = cfg_size(mem);
+        if (!*size) {
+            *size = graph->mem_size();
+        }
+        try {
+			graph->deserialize(mem, *size);
+		}
+		catch (const exception& ex) {
+            log_error("%s", ex.what());
+            return FALSE;
+		}
+    }*/
 
-    if (it) {
-        auto size = graph->mem_size();
-        graph->serialize(mem, size);
-    }
-
-    log_info("[CFGTrace] Iteration %d", it);
+    log_info("[CFGTrace] Iteration %d", 1);
     return TRUE;
 }
 
@@ -156,7 +164,7 @@ static void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept
     custom_params->side_addr = compute_side_addr(custom_params);
 }
 
-PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
+PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers) 
 {
     static int counter = 0;
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
@@ -268,11 +276,19 @@ PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 PluginReport *DBTFinish()
 {
     log_info("[CFGTrace] Finish is called");
-    size_t sz = graph->mem_size();
-    auto mem = cfg_shared_memory(engine_shared_memory);
+   /* auto mem = cfg_shared_memory(engine_shared_memory);
+    auto it = cfg_iteration(mem);
     auto smem = cfg_serialize_shared_memory(mem);
-    graph->deserialize(smem, sz);
+    auto size = cfg_size(mem);
+    *size = graph->mem_size();
 	
+	try {
+        graph->serialize(smem, *size);
+    } catch (const exception &ex){
+        log_error("%s", ex.what());
+        return nullptr;
+	}*/
+
 	auto graphviz = graph->graphviz();
     auto out = fstream("partiaflowgraph.dot", fstream::out);
     try {
@@ -280,6 +296,7 @@ PluginReport *DBTFinish()
     } catch (const exception &ex) {
         log_error("%s", ex.what());
     }
-
+	
+	//(*it)++;
     return nullptr;
 }
