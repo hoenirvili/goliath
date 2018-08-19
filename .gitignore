@@ -49,7 +49,8 @@ test/**/*.idb
 test/**/*.pdb
 
 # Engine
-*.log
+.log
+engine
 
 # Misc
 packages.config
