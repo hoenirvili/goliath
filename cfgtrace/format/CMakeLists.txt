@@ -1,0 +1,1 @@
+add_library(format win32.cpp)

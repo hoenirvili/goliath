@@ -4,7 +4,7 @@
 
 #pragma warning(disable : 4996)
 
-#define DLL_API __declspec(dllexport)
+#define EXPORT __declspec(dllexport)
 
 typedef signed char Int8;
 typedef unsigned char UInt8;
@@ -440,15 +440,6 @@ struct CUSTOM_PARAMS {
     size_t next_addr;
     size_t side_addr;
 };
-
-extern "C" {
-DLL_API BOOL DBTInit();
-DLL_API PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers);
-DLL_API size_t GetLayer();
-DLL_API PluginReport *DBTBranching(void *params, PluginLayer **layers);
-DLL_API PluginReport *DBTAfterExecute(void *params, PluginLayer **layers);
-DLL_API PluginReport *DBTFinish();
-}
 
 PluginLayer *
 GetPluginInterface(char *pluginname, size_t layer, PluginLayer **layers);

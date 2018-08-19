@@ -1,13 +1,13 @@
-#include "log.h"
 #include <cstdarg>
 #include <fstream>
+#include <log/log.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
 using namespace std;
 
-namespace Log
+namespace log
 {
 /**
  * m_prefix list of level and their string representation
@@ -47,4 +47,4 @@ void write(level l,
            << message.get() << std::endl;
 }
 
-}; // namespace Log
+}; // namespace log

@@ -1,0 +1,1 @@
+add_library(command execute.cpp)

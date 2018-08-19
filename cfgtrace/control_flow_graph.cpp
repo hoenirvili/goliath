@@ -1,9 +1,8 @@
 #include "api.h"
 #include "control_flow_graph.h"
-#include "exec.h"
+#include <command/execute.h>
 #include "instruction.h"
-#include "log.h"
-#include "random.h"
+#include <random/random.h>
 #include <algorithm>
 #include <cstddef>
 #include <fstream>
@@ -91,12 +90,12 @@ void control_flow_graph::generate(const string content, ostream *out) const
     (*out) << content << endl;
 
     auto name =
-      to_string(this->start_address_first_node) + "_" + random_string();
+      to_string(this->start_address_first_node) + "_" + random::string();
 
     const string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
     string process_stderr, process_exit;
 
-    execute_command(cmd, &process_stderr, &process_exit);
+    command::execute(cmd, &process_stderr, &process_exit);
 
     string exception_message = "";
     if (!process_stderr.empty()) {

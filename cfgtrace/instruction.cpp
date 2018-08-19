@@ -1,6 +1,6 @@
 #include "api.h"
 #include "instruction.h"
-#include "log.h"
+#include <log/log.h>
 #include <stdexcept>
 #include <string>
 

@@ -1,10 +1,10 @@
-#include "api.h"
-#include "format.h"
-#include "instruction.h"
-#include "log.h"
 #include "node.h"
+#include "api.h"
+#include "instruction.h"
 #include <algorithm>
 #include <cstring>
+#include <format/string.h>
+#include <log/log.h>
 #include <string>
 
 using namespace std;
@@ -151,7 +151,7 @@ std::string Node::graphviz_name() const noexcept
 {
     auto start = this->start_address();
     if (start)
-        return fmt_string("0x%08X", start);
+        return format::string("0x%08X", start);
     return "";
 }
 
@@ -187,12 +187,12 @@ string Node::graphviz_definition() const
     const auto blk = label.c_str();
     const auto colr = color.c_str();
 
-    return fmt_string(graphviz_definition_template, nm, blk, colr);
+    return format::string(graphviz_definition_template, nm, blk, colr);
 }
 
 static inline string relation(size_t start, size_t end)
 {
-    return fmt_string("\"0x%08X\" -> \"0x%08X\"", start, end);
+    return format::string("\"0x%08X\" -> \"0x%08X\"", start, end);
 }
 
 string Node::graphviz_relation() const

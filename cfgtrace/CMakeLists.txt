@@ -1,0 +1,6 @@
+add_subdirectory(command)
+add_subdirectory(engine)
+add_subdirectory(error)
+add_subdirectory(format)
+add_subdirectory(log)
+add_subdirectory(random)

@@ -1,8 +1,13 @@
-#include "format.h"
+#include <format/win32.h>
+#include <windows.h>
+#include <stdexcept>
+
 
 using namespace std;
 
-string fmt_win32_error(DWORD id)
+namespace format
+{
+string win32_error(DWORD id)
 {
     if (id == 0)
         return "";
@@ -34,3 +39,5 @@ string fmt_win32_error(DWORD id)
 
     return error;
 }
+
+}; // namespace format

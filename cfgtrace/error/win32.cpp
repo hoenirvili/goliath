@@ -1,25 +1,29 @@
-#include "format.h"
-#include "win32_error.h"
+#include <error/win32.h>
+#include <format/win32.h>
 #include <stdexcept>
-#include <string>
 #include <windows.h>
 
 using namespace std;
 
-string win32_error::context() const noexcept
+namespace error
+{
+
+string win32::context() const noexcept
 {
     DWORD id = GetLastError();
     if (id == 0)
         return "";
 
-    auto last_string = fmt_win32_error(id);
+    auto last_string = format::win32_error(id);
     if (last_string.empty())
         return "";
 
     return last_string + ":";
 }
 
-const char *win32_error::what() const
+const char *win32::what() const
 {
     return runtime_error::what();
 }
+
+}; // namespace error

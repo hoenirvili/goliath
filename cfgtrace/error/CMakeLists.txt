@@ -1,0 +1,1 @@
+add_library(error win32.cpp)

@@ -1,10 +1,13 @@
 #include "random.h"
 #include <chrono>
+#include <string>
 #include <random>
 
 using namespace std;
 
-string random_string()
+namespace random
+{
+std::string string()
 {
     auto time_point = chrono::high_resolution_clock::now();
     auto since = time_point.time_since_epoch();
@@ -14,3 +17,5 @@ string random_string()
     auto random = mt_rand();
     return to_string(random);
 }
+
+}; // namespace random

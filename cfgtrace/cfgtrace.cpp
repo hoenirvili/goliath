@@ -1,34 +1,21 @@
-#include "api.h"
 #include "control_flow_graph.h"
+#include "engine/types.h"
+#include "engine/engine.h"
 #include "instruction.h"
-#include "log.h"
-#include <windows.h>
-#include <array>
 #include <cstdio>
 #include <fstream>
+#include <logs/log.h>
 #include <memory>
+#include <windows.h>
 
 using namespace std;
 
-PluginLayer *
-GetPluginInterface(const char *pluginname, size_t layer, PluginLayer **layers)
-{
-    PluginLayer *scanner = layers[layer];
+#define PLUGIN_LAYER 2
+#define memsharedname "Local\\VDCApiLog";
 
-    while (scanner) {
-        if (scanner->data && scanner->data->plugin_name &&
-            !strcmp(scanner->data->plugin_name, pluginname))
-            return scanner;
+static control_flow_graph graph;
 
-        scanner = scanner->nextnode;
-    }
-
-    return nullptr;
-}
-
-BYTE *engine_shared_memory;
-
-unique_ptr<control_flow_graph> graph;
+static engine engine;
 
 size_t GetLayer()
 {
@@ -41,8 +28,10 @@ BOOL DBTInit()
       OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
     if (!file_mapping)
         return FALSE;
-
-    engine_shared_memory = (BYTE *)MapViewOfFile(
+	
+	engine = engine(file_mapping);
+    
+	engine_shared_memory = (BYTE *)MapViewOfFile(
       file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
     if (!engine_shared_memory)
         return FALSE;
@@ -57,8 +46,6 @@ BOOL DBTInit()
     log_init(file);
     log_info("[CFGTrace] Init is called");
 
-    graph = make_unique<control_flow_graph>();
-
     /*auto mem = cfg_shared_memory(engine_shared_memory);
     auto it = cfg_iteration(mem);
     if (*it) {
@@ -67,12 +54,12 @@ BOOL DBTInit()
             *size = graph->mem_size();
         }
         try {
-			graph->deserialize(mem, *size);
-		}
-		catch (const exception& ex) {
+            graph->deserialize(mem, *size);
+        }
+        catch (const exception& ex) {
             log_error("%s", ex.what());
             return FALSE;
-		}
+        }
     }*/
 
     log_info("[CFGTrace] Iteration %d", 1);
@@ -164,7 +151,7 @@ static void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept
     custom_params->side_addr = compute_side_addr(custom_params);
 }
 
-PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers) 
+PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 {
     static int counter = 0;
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
@@ -276,27 +263,28 @@ PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 PluginReport *DBTFinish()
 {
     log_info("[CFGTrace] Finish is called");
-   /* auto mem = cfg_shared_memory(engine_shared_memory);
-    auto it = cfg_iteration(mem);
-    auto smem = cfg_serialize_shared_memory(mem);
-    auto size = cfg_size(mem);
-    *size = graph->mem_size();
-	
-	try {
-        graph->serialize(smem, *size);
-    } catch (const exception &ex){
-        log_error("%s", ex.what());
-        return nullptr;
-	}*/
+    /* auto mem = cfg_shared_memory(engine_shared_memory);
+     auto it = cfg_iteration(mem);
+     auto smem = cfg_serialize_shared_memory(mem);
+     auto size = cfg_size(mem);
+     *size = graph->mem_size();
+     
 
-	auto graphviz = graph->graphviz();
+     try {
+         graph->serialize(smem, *size);
+     } catch (const exception &ex){
+         log_error("%s", ex.what());
+         return nullptr;
+     }*/
+
+    auto graphviz = graph->graphviz();
     auto out = fstream("partiaflowgraph.dot", fstream::out);
     try {
         graph->generate(graphviz, &out);
     } catch (const exception &ex) {
         log_error("%s", ex.what());
     }
-	
-	//(*it)++;
+
+    //(*it)++;
     return nullptr;
 }
