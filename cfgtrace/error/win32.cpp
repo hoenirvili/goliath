@@ -1,5 +1,5 @@
-#include <error/win32.h>
-#include <format/win32.h>
+#include "cfgtrace/error/win32.h"
+#include "cfgtrace/format/win32.h"
 #include <stdexcept>
 #include <windows.h>
 

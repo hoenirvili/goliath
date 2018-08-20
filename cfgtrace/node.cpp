@@ -1,10 +1,10 @@
-#include "node.h"
-#include "api.h"
-#include "instruction.h"
+#include "cfgtrace/node.h"
+#include "cfgtrace/api.h"
+#include "cfgtrace/format/string.h"
+#include "cfgtrace/instruction.h"
+#include "cfgtrace/log/log.h"
 #include <algorithm>
 #include <cstring>
-#include <format/string.h>
-#include <log/log.h>
 #include <string>
 
 using namespace std;

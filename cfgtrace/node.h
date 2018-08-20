@@ -1,6 +1,6 @@
 #pragma once
 
-#include "instruction.h"
+#include "cfgtrace/instruction.h"
 #include <string>
 #include <vector>
 

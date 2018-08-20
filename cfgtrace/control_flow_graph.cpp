@@ -1,8 +1,8 @@
-#include "api.h"
-#include "control_flow_graph.h"
-#include <command/execute.h>
-#include "instruction.h"
-#include <random/random.h>
+#include "cfgtrace/control_flow_graph.h"
+#include "cfgtrace/api.h"
+#include "cfgtrace/command/execute.h"
+#include "cfgtrace/instruction.h"
+#include "cfgtrace/random/random.h"
 #include <algorithm>
 #include <cstddef>
 #include <fstream>

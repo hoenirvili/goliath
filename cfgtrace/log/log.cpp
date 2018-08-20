@@ -1,6 +1,6 @@
+#include "cfgtrace/log/log.h"
 #include <cstdarg>
 #include <fstream>
-#include <log/log.h>
 #include <memory>
 #include <string>
 #include <unordered_map>

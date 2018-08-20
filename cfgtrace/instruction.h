@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api.h"
+#include "cfgtrace/api.h"
 #include <string>
 
 /**

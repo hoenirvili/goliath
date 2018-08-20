@@ -1,10 +1,10 @@
-#include "control_flow_graph.h"
-#include "engine/types.h"
-#include "engine/engine.h"
-#include "instruction.h"
+#include "cfgtrace/control_flow_graph.h"
+#include "cfgtrace/engine/engine.h"
+#include "cfgtrace/engine/types.h"
+#include "cfgtrace/instruction.h"
+#include "cfgtrace/logs/log.h"
 #include <cstdio>
 #include <fstream>
-#include <logs/log.h>
 #include <memory>
 #include <windows.h>
 
@@ -28,10 +28,10 @@ BOOL DBTInit()
       OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
     if (!file_mapping)
         return FALSE;
-	
-	engine = engine(file_mapping);
-    
-	engine_shared_memory = (BYTE *)MapViewOfFile(
+
+    engine = engine(file_mapping);
+
+    engine_shared_memory = (BYTE *)MapViewOfFile(
       file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
     if (!engine_shared_memory)
         return FALSE;
@@ -269,6 +269,7 @@ PluginReport *DBTFinish()
      auto size = cfg_size(mem);
      *size = graph->mem_size();
      
+
 
      try {
          graph->serialize(smem, *size);

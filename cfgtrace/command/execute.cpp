@@ -1,6 +1,6 @@
 #include <command/execute.h>
-#include <error/win32.h>
-#include <format/win32.h>
+#include "cfgtrace/error/win32.h"
+#include "cfgtrace/format/win32.h"
 #include <windows.h>
 
 using namespace std;
