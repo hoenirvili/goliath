@@ -77,6 +77,11 @@ bool Node::no_branching() const noexcept
             this->block.size());
 }
 
+/**
+ * ARRAY_SIZE returns the number of elements that an array has
+ */
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+
 // pallet contains all the blues9 color scheme pallet
 static const unsigned int pallet[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 

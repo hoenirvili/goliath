@@ -1,16 +1,24 @@
-add_library(cfgtracelib 
-	cfgtrace.cpp
-	instruction.cpp
-	node.cpp
-	control_flow_graph.cpp
+target_sources(CFGTrace
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/node.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/node.h
+		${CMAKE_CURRENT_SOURCE_DIR}/instruction.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/instruction.h
+		${CMAKE_CURRENT_SOURCE_DIR}/control_flow_graph.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/control_flow_graph.h
+		${CMAKE_CURRENT_SOURCE_DIR}/cfgtrace.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/random/random.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/random/random.h
+		${CMAKE_CURRENT_SOURCE_DIR}/log/log.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/log/log.h
+		${CMAKE_CURRENT_SOURCE_DIR}/format/win32.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/format/win32.h
+		${CMAKE_CURRENT_SOURCE_DIR}/format/string.h
+		${CMAKE_CURRENT_SOURCE_DIR}/error/win32.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/error/win32.h
+		${CMAKE_CURRENT_SOURCE_DIR}/command/execute.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/command/execute.h
+		${CMAKE_CURRENT_SOURCE_DIR}/engine/engine.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/engine/engine.h
+		${CMAKE_CURRENT_SOURCE_DIR}/engine/types.h
 )
-#TODO(hoenir): test this
-target_include_directories(cfgtracelib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_features(CFGTrace PRIVATE cxx_std_17)
-
-add_subdirectory(command)
-add_subdirectory(engine)
-add_subdirectory(error)
-add_subdirectory(format)
-add_subdirectory(log)
-add_subdirectory(random)

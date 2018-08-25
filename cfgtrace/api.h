@@ -441,84 +441,84 @@ struct CUSTOM_PARAMS {
     size_t side_addr;
 };
 
-PluginLayer *
-GetPluginInterface(char *pluginname, size_t layer, PluginLayer **layers);
-
-#define LOGNAME_OFFSET 0x0000
-#define PLUGINS_OFFSET 0x1000
-#define CONTEXT_OFFSET 0x2000
-#define FLAGS_OFFSET 0x3000
-#define PLUGINS_REPORT_OFFSET 0x4000
-#define PLUGINS_REPORT_SIZE_OFFSET 0x5000
-#define PROCESS_STACKTOP_OFFSET 0xC000
-#define SHARED_CFG 0x40000
-
-#define LOGNAME_BUFFER(buf) ((char *)buf + LOGNAME_OFFSET)
-#define PLUGINS_PATH(buf) ((char *)buf + PLUGINS_OFFSET)
-#define CONTEXT_BUF(buf) ((BYTE *)buf + CONTEXT_OFFSET)
-#define FLAGS_BUF(buf) ((size_t *)((BYTE *)buf + FLAGS_OFFSET))
-#define PLUGINS_REPORT_BUF(buf) \
-    ((PluginReport **)((BYTE *)buf + PLUGINS_REPORT_OFFSET))
-
-#define PLUGINS_REPORT_SIZE(buf) \
-    ((size_t *)((BYTE *)buf + PLUGINS_REPORT_SIZE_OFFSET))
-
-#define PROCESS_STACKTOP(buf) \
-    *((size_t *)((BYTE *)buf + PROCESS_STACKTOP_OFFSET))
-
-#define CFG(buf) ((BYTE *)buf + SHARED_CFG)
-
-#define memsharedname "Local\\VDCApiLog"
-#define BUFFER_SIZE 0x100000
+//PluginLayer *
+//GetPluginInterface(char *pluginname, size_t layer, PluginLayer **layers);
+//
+//#define LOGNAME_OFFSET 0x0000
+//#define PLUGINS_OFFSET 0x1000
+//#define CONTEXT_OFFSET 0x2000
+//#define FLAGS_OFFSET 0x3000
+//#define PLUGINS_REPORT_OFFSET 0x4000
+//#define PLUGINS_REPORT_SIZE_OFFSET 0x5000
+//#define PROCESS_STACKTOP_OFFSET 0xC000
+//#define SHARED_CFG 0x40000
+//
+//#define LOGNAME_BUFFER(buf) ((char *)buf + LOGNAME_OFFSET)
+//#define PLUGINS_PATH(buf) ((char *)buf + PLUGINS_OFFSET)
+//#define CONTEXT_BUF(buf) ((BYTE *)buf + CONTEXT_OFFSET)
+//#define FLAGS_BUF(buf) ((size_t *)((BYTE *)buf + FLAGS_OFFSET))
+//#define PLUGINS_REPORT_BUF(buf) \
+//    ((PluginReport **)((BYTE *)buf + PLUGINS_REPORT_OFFSET))
+//
+//#define PLUGINS_REPORT_SIZE(buf) \
+//    ((size_t *)((BYTE *)buf + PLUGINS_REPORT_SIZE_OFFSET))
+//
+//#define PROCESS_STACKTOP(buf) \
+//    *((size_t *)((BYTE *)buf + PROCESS_STACKTOP_OFFSET))
+//
+//#define CFG(buf) ((BYTE *)buf + SHARED_CFG)
+//
+//#define memsharedname "Local\\VDCApiLog"
+//#define BUFFER_SIZE 0x100000
 
 /**
  * engine_shared_memory start of shared memory
  * from the engine with the plugin
  */
-extern BYTE *engine_shared_memory;
-
-/**
- * cfg_shared_memory_size returns the size of the shared
- * control flow graph memory with the engine
- */
-inline size_t cfg_shared_memory_size()
-{
-    return BUFFER_SIZE - SHARED_CFG;
-}
-
-/**
- * cfg_shared_memory returns the start of the address
- * where the plugin can read and write to
- */
-inline BYTE *cfg_shared_memory(BYTE *mem)
-{
-    return mem + SHARED_CFG;
-}
-
-/**
- * cfg_iteration returns the number of iterations
- * that the binary was executed in concolic mode
- */
-inline int *cfg_iteration(BYTE *mem)
-{
-    return (int *)mem;
-}
-
-inline int *cfg_size(BYTE *mem)
-{
-    return (int *)(mem + sizeof(cfg_iteration(mem)));
-}
-
-/**
- * cfg_serialize_shared_memory returns the start of the address
- * that the internal control flow graph can load and unload
- */
-inline BYTE *cfg_serialize_shared_memory(BYTE *mem)
-{
-    return (mem + sizeof(cfg_iteration(mem)) + sizeof(cfg_size(mem)));
-}
-
-/**
- * ARRAY_SIZE returns the number of elements that an array has
- */
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+//extern BYTE *engine_shared_memory;
+//
+///**
+// * cfg_shared_memory_size returns the size of the shared
+// * control flow graph memory with the engine
+// */
+//inline size_t cfg_shared_memory_size()
+//{
+//    return BUFFER_SIZE - SHARED_CFG;
+//}
+//
+///**
+// * cfg_shared_memory returns the start of the address
+// * where the plugin can read and write to
+// */
+//inline BYTE *cfg_shared_memory(BYTE *mem)
+//{
+//    return mem + SHARED_CFG;
+//}
+//
+///**
+// * cfg_iteration returns the number of iterations
+// * that the binary was executed in concolic mode
+// */
+//inline int *cfg_iteration(BYTE *mem)
+//{
+//    return (int *)mem;
+//}
+//
+//inline int *cfg_size(BYTE *mem)
+//{
+//    return (int *)(mem + sizeof(cfg_iteration(mem)));
+//}
+//
+///**
+// * cfg_serialize_shared_memory returns the start of the address
+// * that the internal control flow graph can load and unload
+// */
+//inline BYTE *cfg_serialize_shared_memory(BYTE *mem)
+//{
+//    return (mem + sizeof(cfg_iteration(mem)) + sizeof(cfg_size(mem)));
+//}
+//
+///**
+// * ARRAY_SIZE returns the number of elements that an array has
+// */
+//#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

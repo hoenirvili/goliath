@@ -1,7 +1,7 @@
+#include "cfgtrace/engine/engine.h"
+#include "cfgtrace/engine/types.h"
+#include "cfgtrace/error/win32.h"
 #include <cstdint>
-#include <engine/engine.h>
-#include <engine/types.h>
-#include <error/win32.h>
 #include <stdexcept>
 #include <windows.h>
 
@@ -9,7 +9,6 @@ using namespace std;
 
 namespace engine
 {
-
 engine::engine(HANDLE file_mapping)
 {
     // maps a view of a file mapping into the address space
@@ -21,6 +20,12 @@ engine::engine(HANDLE file_mapping)
           "cannot open a view into the address space of a calling process");
 }
 
+engine& engine::operator=(engine other)
+{
+	this->memory = other.memory;
+    return *this;
+}
+	
 engine::~engine()
 {
 }

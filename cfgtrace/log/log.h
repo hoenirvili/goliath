@@ -3,7 +3,7 @@
 #include <ostream>
 #include <string>
 
-namespace log
+namespace logger
 {
 enum class level : std::uint8_t {
     error,   // error for logging error messages
@@ -20,14 +20,14 @@ void write(level l,
            const char *function,
            const char *format,
            ...);
-}; // namespace log
+}; // namespace logger
 
 #define log_info(format, ...) \
-    Log::write(               \
-      Log::level::info, __FILE__, __LINE__, __FUNCTION__, format, __VA_ARGS__)
+    logger::write(               \
+      logger::level::info, __FILE__, __LINE__, __FUNCTION__, format, __VA_ARGS__)
 
 #define log_error(format, ...)    \
-    Log::write(Log::level::error, \
+    logger::write(logger::level::error, \
                __FILE__,          \
                __LINE__,          \
                __FUNCTION__,      \
@@ -35,11 +35,11 @@ void write(level l,
                __VA_ARGS__)
 
 #define log_warning(format, ...)    \
-    Log::write(Log::level::warning, \
+    logger::write(logger::level::warning, \
                __FILE__,            \
                __LINE__,            \
                __FUNCTION__,        \
                format,              \
                __VA_ARGS__)
 
-#define log_init(writer) Log::init(writer)
+#define log_init(writer) logger::init(writer)

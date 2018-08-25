@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cfgtrace/instruction.h"
-#include "node.h"
+#include "cfgtrace/node.h"
 #include <map>
 #include <memory>
 #include <string>

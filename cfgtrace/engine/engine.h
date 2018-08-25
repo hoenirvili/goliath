@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/types.h>
+#include "cfgtrace/engine/types.h"
 #include <cstdint>
 #include <windows.h>
 
@@ -18,10 +18,12 @@ private:
     const int PROCESS_STACKTOP_OFFSET = 0xC000;
     const int SHARED_CFG = 0x40000;
     const int BUFFER_SIZE = 0x100000;
-    uint8_t *memory = nullptr;
+    uint8_t *memory;
 
 public:
     engine(HANDLE file_mapping);
+    engine() : memory(nullptr){}
+    engine &operator=(engine other);
     ~engine();
 
     PluginLayer *

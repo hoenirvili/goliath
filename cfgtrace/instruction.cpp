@@ -1,6 +1,6 @@
-#include "api.h"
-#include "instruction.h"
-#include <log/log.h>
+#include "cfgtrace/api.h"
+#include "cfgtrace/instruction.h"
+#include "cfgtrace/log/log.h"
 #include <stdexcept>
 #include <string>
 

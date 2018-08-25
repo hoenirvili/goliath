@@ -50,7 +50,7 @@ test/**/*.pdb
 
 # Engine
 .log
-engine
+engine-files
 
 # Misc
 packages.config

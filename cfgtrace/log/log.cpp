@@ -7,7 +7,7 @@
 
 using namespace std;
 
-namespace log
+namespace logger
 {
 /**
  * m_prefix list of level and their string representation

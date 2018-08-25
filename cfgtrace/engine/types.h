@@ -2,7 +2,7 @@
 
 #include <windows.h>
 
-#define EXPORT __declspec(dllexport)
+#define CFGTRACE_EXPORT __declspec(dllexport)
 
 #define INSTRUCT_LENGTH 64
 
