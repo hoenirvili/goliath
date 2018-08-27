@@ -22,10 +22,11 @@ private:
 
 public:
     engine(HANDLE file_mapping);
-    engine() : memory(nullptr){}
+    engine() : memory(nullptr)
+    {
+    }
     engine &operator=(engine other);
     ~engine();
-
     PluginLayer *
     plugin_interface(char *pluginname, size_t layer, PluginLayer **layers);
     char *log_name() const noexcept;
@@ -37,7 +38,6 @@ public:
     size_t process_stacktop() const;
     uint8_t *cfg_memory_region() const noexcept;
     size_t cfg_memory_region_size() const noexcept;
-
     int *cfg_iteration() const;
     int *cfg_size() const;
     uint8_t *cfg_serialize_memory_region() const;

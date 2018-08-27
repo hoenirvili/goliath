@@ -3,37 +3,13 @@
 #include "cfgtrace/engine/types.h"
 
 extern "C" {
-
-/**
- *
- *
- */
 CFGTRACE_EXPORT BOOL DBTInit();
-/**
- *
- *
- */
-CFGTRACE_EXPORT PluginReport *
-DBTBeforeExecute(void *params, PluginLayer **layers);
-/**
- *
- *
- */
+CFGTRACE_EXPORT engine::PluginReport *
+DBTBeforeExecute(void *params, engine::PluginLayer **layers);
 CFGTRACE_EXPORT size_t GetLayer();
-/**
- *
- *
- */
-CFGTRACE_EXPORT PluginReport *DBTBranching(void *params, PluginLayer **layers);
-/**
- *
- *
- */
-CFGTRACE_EXPORT PluginReport *
-DBTAfterExecute(void *params, PluginLayer **layers);
-/**
- *
- *
- */
-CFGTRACE_EXPORT PluginReport *DBTFinish();
+CFGTRACE_EXPORT engine::PluginReport *
+DBTBranching(void *params, engine::PluginLayer **layers);
+CFGTRACE_EXPORT engine::PluginReport *
+DBTAfterExecute(void *params, engine::PluginLayer **layers);
+CFGTRACE_EXPORT engine::PluginReport *DBTFinish();
 }

@@ -1,24 +1,15 @@
-target_sources(CFGTrace
+target_sources(cfgtrace 
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/node.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/node.h
-		${CMAKE_CURRENT_SOURCE_DIR}/instruction.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/instruction.h
 		${CMAKE_CURRENT_SOURCE_DIR}/control_flow_graph.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/control_flow_graph.h
-		${CMAKE_CURRENT_SOURCE_DIR}/cfgtrace.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/random/random.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/random/random.h
-		${CMAKE_CURRENT_SOURCE_DIR}/log/log.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/log/log.h
-		${CMAKE_CURRENT_SOURCE_DIR}/format/win32.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/format/win32.h
-		${CMAKE_CURRENT_SOURCE_DIR}/format/string.h
-		${CMAKE_CURRENT_SOURCE_DIR}/error/win32.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/error/win32.h
-		${CMAKE_CURRENT_SOURCE_DIR}/command/execute.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/command/execute.h
-		${CMAKE_CURRENT_SOURCE_DIR}/engine/engine.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/engine/engine.h
-		${CMAKE_CURRENT_SOURCE_DIR}/engine/types.h
+		${CMAKE_CURRENT_SOURCE_DIR}/instruction.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/instruction.h
+		${CMAKE_CURRENT_SOURCE_DIR}/node.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/node.h
 )
+add_subdirectory(command)
+add_subdirectory(engine)
+add_subdirectory(error)
+add_subdirectory(format)
+add_subdirectory(logger)
+add_subdirectory(random)

@@ -2,7 +2,7 @@
 #include "cfgtrace/engine/engine.h"
 #include "cfgtrace/engine/types.h"
 #include "cfgtrace/instruction.h"
-#include "cfgtrace/log/log.h"
+#include "cfgtrace/logger/logger.h"
 #include <cstdio>
 #include <fstream>
 #include <memory>
@@ -37,8 +37,8 @@ BOOL DBTInit()
     if (!(*file))
         return FALSE;
 
-    log_init(file);
-    log_info("[CFGTrace] Init is called");
+    logger_init(file);
+    logger_info("[CFGTrace] Init is called");
 
     /*auto mem = cfg_shared_memory(engine_shared_memory);
     auto it = cfg_iteration(mem);
@@ -56,50 +56,50 @@ BOOL DBTInit()
         }
     }*/
 
-    log_info("[CFGTrace] Iteration %d", 1);
+    logger_info("[CFGTrace] Iteration %d", 1);
     return TRUE;
 }
 
 static inline bool direct_branch(engine::BRANCH_TYPE type) noexcept
 {
-    return type == JmpType;
+    return type == engine::JmpType;
 }
 
 static inline bool is_ret(engine::BRANCH_TYPE type) noexcept
 {
-    return type == RetType;
+    return type == engine::RetType;
 }
 
 static inline bool is_call(engine::BRANCH_TYPE type) noexcept
 {
-    return type == CallType;
+    return type == engine::CallType;
 }
 
 static inline bool is_branch(engine::BRANCH_TYPE type) noexcept
 {
     switch (type) {
-    case JO:
-    case JC:
-    case JE:
-    case JA:
-    case JS:
-    case JP:
-    case JL:
-    case JG:
-    case JB:
-    case JECXZ:
-    case JmpType:
-    case CallType:
-    case RetType:
-    case JNO:
-    case JNC:
-    case JNE:
-    case JNA:
-    case JNS:
-    case JNP:
-    case JNL:
-    case JNG:
-    case JNB:
+    case engine::JO:
+    case engine::JC:
+    case engine::JE:
+    case engine::JA:
+    case engine::JS:
+    case engine::JP:
+    case engine::JL:
+    case engine::JG:
+    case engine::JB:
+    case engine::JECXZ:
+    case engine::JmpType:
+    case engine::CallType:
+    case engine::RetType:
+    case engine::JNO:
+    case engine::JNC:
+    case engine::JNE:
+    case engine::JNA:
+    case engine::JNS:
+    case engine::JNP:
+    case engine::JNL:
+    case engine::JNG:
+    case engine::JNB:
         return true;
     }
 
@@ -146,7 +146,8 @@ compute_next_and_side_addr(engine::CUSTOM_PARAMS *custom_params) noexcept
     custom_params->side_addr = compute_side_addr(custom_params);
 }
 
-PluginReport *DBTBeforeExecute(void *params, engine::PluginLayer **layers)
+engine::PluginReport *
+DBTBeforeExecute(void *params, engine::PluginLayer **layers)
 {
     static int counter = 0;
     engine::CUSTOM_PARAMS *custom_params = (engine::CUSTOM_PARAMS *)params;
@@ -159,7 +160,7 @@ PluginReport *DBTBeforeExecute(void *params, engine::PluginLayer **layers)
     if (!content)
         return 0;
 
-    auto report = new PluginReport();
+    auto report = new engine::PluginReport();
 
     report->plugin_name = "CFGTrace";
     sprintf(content, "counter=%d", counter++);
@@ -176,7 +177,8 @@ PluginReport *DBTBeforeExecute(void *params, engine::PluginLayer **layers)
     if (auto plugin = main_engine.plugin_interface("APIReporter", 1, layers);
         plugin) {
         instr.api_reporter = (char *)plugin->data->content_before;
-        instr.branch_type = (BRANCH_TYPE)0; // make this a simple instruction
+        instr.branch_type =
+          (engine::BRANCH_TYPE)0; // make this a simple instruction
     }
 
     if (is_branch(instr.branch_type)) {
@@ -184,7 +186,7 @@ PluginReport *DBTBeforeExecute(void *params, engine::PluginLayer **layers)
             try {
                 graph.append_branch_instruction(instr);
             } catch (const exception &ex) {
-                log_error("%s", ex.what());
+                logger_error("%s", ex.what());
             }
         }
 
@@ -194,7 +196,7 @@ PluginReport *DBTBeforeExecute(void *params, engine::PluginLayer **layers)
     try {
         graph.append_instruction(instr);
     } catch (const exception &ex) {
-        log_error("%s", ex.what());
+        logger_error("%s", ex.what());
     }
 
     return report;
@@ -231,7 +233,7 @@ engine::PluginReport *DBTBranching(void *params, engine::PluginLayer **layers)
     try {
         graph.append_branch_instruction(instr);
     } catch (const exception &ex) {
-        log_error("%s", ex.what());
+        logger_error("%s", ex.what());
     }
 
     return report;
@@ -261,14 +263,12 @@ DBTAfterExecute(void *params, engine::PluginLayer **layers)
 
 engine::PluginReport *DBTFinish()
 {
-    log_info("[CFGTrace] Finish is called");
+    logger_info("[CFGTrace] Finish is called");
     /* auto mem = cfg_shared_memory(engine_shared_memory);
      auto it = cfg_iteration(mem);
      auto smem = cfg_serialize_shared_memory(mem);
      auto size = cfg_size(mem);
      *size = graph->mem_size();
-     
-
 
      try {
          graph->serialize(smem, *size);
@@ -282,7 +282,7 @@ engine::PluginReport *DBTFinish()
     try {
         graph.generate(graphviz, &out);
     } catch (const exception &ex) {
-        log_error("%s", ex.what());
+        logger_error("%s", ex.what());
     }
 
     //(*it)++;

@@ -22,11 +22,11 @@ void write(level l,
            ...);
 }; // namespace logger
 
-#define log_info(format, ...) \
+#define logger_info(format, ...) \
     logger::write(               \
       logger::level::info, __FILE__, __LINE__, __FUNCTION__, format, __VA_ARGS__)
 
-#define log_error(format, ...)    \
+#define logger_error(format, ...)    \
     logger::write(logger::level::error, \
                __FILE__,          \
                __LINE__,          \
@@ -34,7 +34,7 @@ void write(level l,
                format,            \
                __VA_ARGS__)
 
-#define log_warning(format, ...)    \
+#define logger_warning(format, ...)    \
     logger::write(logger::level::warning, \
                __FILE__,            \
                __LINE__,            \
@@ -42,4 +42,4 @@ void write(level l,
                format,              \
                __VA_ARGS__)
 
-#define log_init(writer) logger::init(writer)
+#define logger_init(writer) logger::init(writer)

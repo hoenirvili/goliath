@@ -46,22 +46,22 @@ engine::plugin_interface(char *pluginname, size_t layer, PluginLayer **layers)
     return nullptr;
 }
 
-inline char *engine::log_name() const noexcept
+char *engine::log_name() const noexcept
 {
     return reinterpret_cast<char *>(&this->memory[this->LOGNAME_OFFSET]);
 }
 
-inline char *engine::plugin_path() const noexcept
+char *engine::plugin_path() const noexcept
 {
     return reinterpret_cast<char *>(&this->memory[this->PLUGINS_OFFSET]);
 }
 
-inline uint8_t *engine::context() const noexcept
+uint8_t *engine::context() const noexcept
 {
     return &this->memory[this->CONTEXT_OFFSET];
 }
 
-inline size_t *engine::flags() const
+size_t *engine::flags() const
 {
     uint8_t *mem = &this->memory[this->FLAGS_OFFSET];
     if (is_aligned<size_t>(mem))
@@ -70,7 +70,7 @@ inline size_t *engine::flags() const
     return reinterpret_cast<size_t *>(mem);
 }
 
-inline PluginReport **engine::plugin_report() const
+PluginReport **engine::plugin_report() const
 {
     uint8_t *mem = &this->memory[this->PLUGINS_REPORT_SIZE_OFFSET];
     if (!is_aligned<PluginReport *>(mem))
@@ -80,7 +80,7 @@ inline PluginReport **engine::plugin_report() const
     return reinterpret_cast<PluginReport **>(mem);
 }
 
-inline size_t engine::plugin_report_size() const
+size_t engine::plugin_report_size() const
 {
     uint8_t *mem = &this->memory[this->PLUGINS_REPORT_SIZE_OFFSET];
     if (!is_aligned<size_t>(mem))
@@ -90,7 +90,7 @@ inline size_t engine::plugin_report_size() const
     return *reinterpret_cast<size_t *>(mem);
 }
 
-inline size_t engine::process_stacktop() const
+size_t engine::process_stacktop() const
 {
     uint8_t *mem = &this->memory[PROCESS_STACKTOP_OFFSET];
     if (is_aligned<size_t>(mem))
@@ -100,17 +100,17 @@ inline size_t engine::process_stacktop() const
     return *reinterpret_cast<size_t *>(mem);
 }
 
-inline uint8_t *engine::cfg_memory_region() const noexcept
+uint8_t *engine::cfg_memory_region() const noexcept
 {
     return &this->memory[this->SHARED_CFG];
 }
 
-inline size_t engine::cfg_memory_region_size() const noexcept
+size_t engine::cfg_memory_region_size() const noexcept
 {
     return this->BUFFER_SIZE - this->SHARED_CFG;
 }
 
-inline int *engine::cfg_iteration() const
+int *engine::cfg_iteration() const
 {
     uint8_t *mem = this->cfg_memory_region();
     if (!is_aligned<int>(mem))
@@ -119,14 +119,14 @@ inline int *engine::cfg_iteration() const
     return reinterpret_cast<int *>(mem);
 }
 
-inline int *engine::cfg_size() const
+int *engine::cfg_size() const
 {
     uint8_t offset = sizeof(*this->cfg_iteration());
     uint8_t *base = this->cfg_memory_region();
     return reinterpret_cast<int *>(&base[offset]);
 }
 
-inline uint8_t *engine::cfg_serialize_memory_region() const
+uint8_t *engine::cfg_serialize_memory_region() const
 {
     uint8_t *base = this->cfg_memory_region();
     size_t it_offset = sizeof(*this->cfg_iteration());

@@ -1,8 +1,7 @@
 #include "cfgtrace/node.h"
-#include "cfgtrace/api.h"
+#include "cfgtrace/engine/types.h"
 #include "cfgtrace/format/string.h"
 #include "cfgtrace/instruction.h"
-#include "cfgtrace/log/log.h"
 #include <algorithm>
 #include <cstring>
 #include <string>

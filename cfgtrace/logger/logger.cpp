@@ -1,4 +1,4 @@
-#include "cfgtrace/log/log.h"
+#include "cfgtrace/logger/logger.h"
 #include <cstdarg>
 #include <fstream>
 #include <memory>
