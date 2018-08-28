@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cfgtrace/engine/types.h"
+#include "cfgtrace/api/types.h"
 #include <string>
 
 /**
@@ -17,11 +17,11 @@ private:
 
 public:
     std::string api_reporter; /* extra information from APIReporter*/
-    engine::BRANCH_TYPE branch_type;  /* no branch = 0 */
+    BRANCH_TYPE branch_type;  /* no branch = 0 */
 
     instruction(size_t eip,
                 char *content,
-                engine::BRANCH_TYPE branch_type,
+                BRANCH_TYPE branch_type,
                 size_t len,
                 size_t next_node_addr,
                 size_t side_node_addr) noexcept

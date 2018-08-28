@@ -1,5 +1,5 @@
 #include "cfgtrace/engine/engine.h"
-#include "cfgtrace/engine/types.h"
+#include "cfgtrace/api/types.h"
 #include "cfgtrace/error/win32.h"
 #include <cstdint>
 #include <stdexcept>
@@ -20,18 +20,15 @@ engine::engine(HANDLE file_mapping)
           "cannot open a view into the address space of a calling process");
 }
 
-engine& engine::operator=(engine other)
+engine &engine::operator=(engine other)
 {
-	this->memory = other.memory;
+    this->memory = other.memory;
     return *this;
 }
-	
-engine::~engine()
-{
-}
 
-PluginLayer *
-engine::plugin_interface(char *pluginname, size_t layer, PluginLayer **layers)
+PluginLayer *engine::plugin_interface(char *pluginname,
+                                      size_t layer,
+                                      PluginLayer **layers) const noexcept
 {
     PluginLayer *scanner = layers[layer];
 

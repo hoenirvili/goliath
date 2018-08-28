@@ -1,5 +1,4 @@
 #include "cfgtrace/node.h"
-#include "cfgtrace/engine/types.h"
 #include "cfgtrace/format/string.h"
 #include "cfgtrace/instruction.h"
 #include <algorithm>

@@ -1,6 +1,7 @@
+#include "cfgtrace.h"
+#include "cfgtrace/api/types.h"
 #include "cfgtrace/control_flow_graph.h"
 #include "cfgtrace/engine/engine.h"
-#include "cfgtrace/engine/types.h"
 #include "cfgtrace/instruction.h"
 #include "cfgtrace/logger/logger.h"
 #include <cstdio>
@@ -10,17 +11,14 @@
 
 using namespace std;
 
-#define PLUGIN_LAYER 2
-#define memsharedname "Local\\VDCApiLog"
-
-static control_flow_graph graph;
-
-static engine::engine main_engine;
-
 size_t GetLayer()
 {
     return PLUGIN_LAYER;
 }
+
+static control_flow_graph graph;
+
+static engine::engine main_engine;
 
 BOOL DBTInit()
 {
@@ -29,7 +27,12 @@ BOOL DBTInit()
     if (!file_mapping)
         return FALSE;
 
-    main_engine = engine::engine(file_mapping);
+    try {
+        main_engine = engine::engine(file_mapping);
+    } catch (const exception &ex) {
+        (void)ex;
+        return FALSE;
+    }
     const char *logname = main_engine.log_name();
     string name = (!logname) ? string() : string(logname);
 
@@ -39,77 +42,60 @@ BOOL DBTInit()
 
     logger_init(file);
     logger_info("[CFGTrace] Init is called");
-
-    /*auto mem = cfg_shared_memory(engine_shared_memory);
-    auto it = cfg_iteration(mem);
-    if (*it) {
-        auto size = cfg_size(mem);
-        if (!*size) {
-            *size = graph->mem_size();
-        }
-        try {
-            graph->deserialize(mem, *size);
-        }
-        catch (const exception& ex) {
-            log_error("%s", ex.what());
-            return FALSE;
-        }
-    }*/
-
     logger_info("[CFGTrace] Iteration %d", 1);
     return TRUE;
 }
 
-static inline bool direct_branch(engine::BRANCH_TYPE type) noexcept
+static inline bool direct_branch(BRANCH_TYPE type) noexcept
 {
-    return type == engine::JmpType;
+    return type == JmpType;
 }
 
-static inline bool is_ret(engine::BRANCH_TYPE type) noexcept
+static inline bool is_ret(BRANCH_TYPE type) noexcept
 {
-    return type == engine::RetType;
+    return type == RetType;
 }
 
-static inline bool is_call(engine::BRANCH_TYPE type) noexcept
+static inline bool is_call(BRANCH_TYPE type) noexcept
 {
-    return type == engine::CallType;
+    return type == CallType;
 }
 
-static inline bool is_branch(engine::BRANCH_TYPE type) noexcept
+static inline bool is_branch(BRANCH_TYPE type) noexcept
 {
     switch (type) {
-    case engine::JO:
-    case engine::JC:
-    case engine::JE:
-    case engine::JA:
-    case engine::JS:
-    case engine::JP:
-    case engine::JL:
-    case engine::JG:
-    case engine::JB:
-    case engine::JECXZ:
-    case engine::JmpType:
-    case engine::CallType:
-    case engine::RetType:
-    case engine::JNO:
-    case engine::JNC:
-    case engine::JNE:
-    case engine::JNA:
-    case engine::JNS:
-    case engine::JNP:
-    case engine::JNL:
-    case engine::JNG:
-    case engine::JNB:
+    case JO:
+    case JC:
+    case JE:
+    case JA:
+    case JS:
+    case JP:
+    case JL:
+    case JG:
+    case JB:
+    case JECXZ:
+    case JmpType:
+    case CallType:
+    case RetType:
+    case JNO:
+    case JNC:
+    case JNE:
+    case JNA:
+    case JNS:
+    case JNP:
+    case JNL:
+    case JNG:
+    case JNB:
         return true;
     }
 
     return false;
 }
 
-static size_t compute_side_addr(engine::CUSTOM_PARAMS *custom_params)
+static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
 {
-    engine::BRANCH_TYPE type =
-      (engine::BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
+    BRANCH_TYPE type =
+      (BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
 
     if (direct_branch(type))
         return 0;
@@ -134,51 +120,47 @@ static size_t compute_side_addr(engine::CUSTOM_PARAMS *custom_params)
     return false_branch;
 }
 
-static size_t compute_next_addr(engine::CUSTOM_PARAMS *custom_params)
+static size_t compute_next_addr(CUSTOM_PARAMS *custom_params)
 {
     return custom_params->next_addr;
 }
 
-static void
-compute_next_and_side_addr(engine::CUSTOM_PARAMS *custom_params) noexcept
+static void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept
 {
     custom_params->next_addr = compute_next_addr(custom_params);
     custom_params->side_addr = compute_side_addr(custom_params);
 }
 
-engine::PluginReport *
-DBTBeforeExecute(void *params, engine::PluginLayer **layers)
+PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 {
     static int counter = 0;
-    engine::CUSTOM_PARAMS *custom_params = (engine::CUSTOM_PARAMS *)params;
+    CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
     compute_next_and_side_addr(custom_params);
 
-    engine::DISASM *MyDisasm = custom_params->MyDisasm;
+    DISASM *MyDisasm = custom_params->MyDisasm;
 
     char *content =
       (char *)VirtualAlloc(nullptr, 0x4000, MEM_COMMIT, PAGE_READWRITE);
     if (!content)
         return 0;
 
-    auto report = new engine::PluginReport();
+    auto report = new PluginReport();
 
     report->plugin_name = "CFGTrace";
     sprintf(content, "counter=%d", counter++);
     report->content_before = content;
     report->content_after = nullptr;
 
-    auto instr =
-      instruction(MyDisasm->EIP,
-                  MyDisasm->CompleteInstr,
-                  (engine::BRANCH_TYPE)MyDisasm->Instruction.BranchType,
-                  custom_params->instrlen,
-                  custom_params->next_addr,
-                  custom_params->side_addr);
+    auto instr = instruction(MyDisasm->EIP,
+                             MyDisasm->CompleteInstr,
+                             (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
+                             custom_params->instrlen,
+                             custom_params->next_addr,
+                             custom_params->side_addr);
     if (auto plugin = main_engine.plugin_interface("APIReporter", 1, layers);
         plugin) {
         instr.api_reporter = (char *)plugin->data->content_before;
-        instr.branch_type =
-          (engine::BRANCH_TYPE)0; // make this a simple instruction
+        instr.branch_type = (BRANCH_TYPE)0; // make this a simple instruction
     }
 
     if (is_branch(instr.branch_type)) {
@@ -202,32 +184,30 @@ DBTBeforeExecute(void *params, engine::PluginLayer **layers)
     return report;
 }
 
-engine::PluginReport *DBTBranching(void *params, engine::PluginLayer **layers)
+PluginReport *DBTBranching(void *params, PluginLayer **layers)
 {
-    engine::CUSTOM_PARAMS *custom_params = (engine::CUSTOM_PARAMS *)params;
+    CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
     compute_next_and_side_addr(custom_params);
-    engine::DISASM *MyDisasm = custom_params->MyDisasm;
+    DISASM *MyDisasm = custom_params->MyDisasm;
 
     char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
     if (!content)
         return nullptr;
 
-    auto report = new engine::PluginReport();
+    auto report = new PluginReport();
 
     report->plugin_name = "CFGTrace";
     sprintf(content, "BRANCH");
     report->content_before = content;
     report->content_after = nullptr;
 
-    auto instr =
-      instruction(MyDisasm->EIP,
-                  MyDisasm->CompleteInstr,
-                  (engine::BRANCH_TYPE)MyDisasm->Instruction.BranchType,
-                  custom_params->instrlen,
-                  custom_params->next_addr,
-                  custom_params->side_addr);
-    // skip calls
-    if (is_call(instr.branch_type))
+    auto instr = instruction(MyDisasm->EIP,
+                             MyDisasm->CompleteInstr,
+                             (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
+                             custom_params->instrlen,
+                             custom_params->next_addr,
+                             custom_params->side_addr);
+    if (is_call(instr.branch_type)) // skip calls
         return report;
 
     try {
@@ -239,19 +219,18 @@ engine::PluginReport *DBTBranching(void *params, engine::PluginLayer **layers)
     return report;
 }
 
-engine::PluginReport *
-DBTAfterExecute(void *params, engine::PluginLayer **layers)
+PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 {
     static int counter = 1000;
-    engine::CUSTOM_PARAMS *custom_params = (engine::CUSTOM_PARAMS *)params;
+    CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
     compute_next_and_side_addr(custom_params);
-    engine::DISASM *MyDisasm = custom_params->MyDisasm;
+    DISASM *MyDisasm = custom_params->MyDisasm;
 
     char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
     if (!content)
         return 0;
 
-    auto report = new engine::PluginReport();
+    auto report = new PluginReport();
 
     report->plugin_name = "CFGTrace";
     sprintf(content, "counter=%d", counter++);
@@ -261,22 +240,8 @@ DBTAfterExecute(void *params, engine::PluginLayer **layers)
     return report;
 }
 
-engine::PluginReport *DBTFinish()
+PluginReport *DBTFinish()
 {
-    logger_info("[CFGTrace] Finish is called");
-    /* auto mem = cfg_shared_memory(engine_shared_memory);
-     auto it = cfg_iteration(mem);
-     auto smem = cfg_serialize_shared_memory(mem);
-     auto size = cfg_size(mem);
-     *size = graph->mem_size();
-
-     try {
-         graph->serialize(smem, *size);
-     } catch (const exception &ex){
-         log_error("%s", ex.what());
-         return nullptr;
-     }*/
-
     auto graphviz = graph.graphviz();
     auto out = fstream("partiaflowgraph.dot", fstream::out);
     try {
@@ -285,6 +250,5 @@ engine::PluginReport *DBTFinish()
         logger_error("%s", ex.what());
     }
 
-    //(*it)++;
     return nullptr;
 }

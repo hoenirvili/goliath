@@ -2,12 +2,9 @@
 
 #include <windows.h>
 
-#define CFGTRACE_EXPORT __declspec(dllexport)
-
 #define INSTRUCT_LENGTH 64
 
-namespace engine
-{
+#define memsharedname "Local\\VDCApiLog"
 
 typedef signed char Int8;
 typedef unsigned char UInt8;
@@ -19,6 +16,8 @@ typedef signed __int64 Int64;
 typedef unsigned __int64 UInt64;
 typedef signed long IntPtr;
 typedef size_t UIntPtr;
+
+#define PLUGIN_LAYER 2
 
 template <class T>
 bool is_aligned(const void *ptr) noexcept
@@ -415,6 +414,9 @@ struct ExecutionContext {
     size_t stack_top[1];
 };
 
+// TODO(hoenir): replace this with the correct api type
+#define CONTEXT void
+
 struct TranslatorShellData {
     size_t LoadLibFunc;
     size_t GetProcAddr;
@@ -446,5 +448,3 @@ struct CUSTOM_PARAMS {
     size_t next_addr;
     size_t side_addr;
 };
-
-}; // namespace engine

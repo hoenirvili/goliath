@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cfgtrace/engine/types.h"
+#include "cfgtrace/api/types.h"
 #include <cstdint>
 #include <windows.h>
 
@@ -26,9 +26,10 @@ public:
     {
     }
     engine &operator=(engine other);
-    ~engine();
+    ~engine() = default;
     PluginLayer *
-    plugin_interface(char *pluginname, size_t layer, PluginLayer **layers);
+    plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const
+      noexcept;
     char *log_name() const noexcept;
     char *plugin_path() const noexcept;
     uint8_t *context() const noexcept;

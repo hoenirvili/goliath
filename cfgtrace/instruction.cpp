@@ -1,5 +1,5 @@
 #include "cfgtrace/instruction.h"
-#include "cfgtrace/engine/types.h"
+#include "cfgtrace/api/types.h"
 #include "cfgtrace/logger/logger.h"
 #include <stdexcept>
 #include <string>
@@ -9,28 +9,28 @@ using namespace std;
 bool instruction::is_branch() const noexcept
 {
     switch (this->branch_type) {
-    case engine::JO:
-    case engine::JC:
-    case engine::JE:
-    case engine::JA:
-    case engine::JS:
-    case engine::JP:
-    case engine::JL:
-    case engine::JG:
-    case engine::JB:
-    case engine::JECXZ:
-    case engine::JmpType:
-    case engine::CallType:
-    case engine::RetType:
-    case engine::JNO:
-    case engine::JNC:
-    case engine::JNE:
-    case engine::JNA:
-    case engine::JNS:
-    case engine::JNP:
-    case engine::JNL:
-    case engine::JNG:
-    case engine::JNB:
+    case JO:
+    case JC:
+    case JE:
+    case JA:
+    case JS:
+    case JP:
+    case JL:
+    case JG:
+    case JB:
+    case JECXZ:
+    case JmpType:
+    case CallType:
+    case RetType:
+    case JNO:
+    case JNC:
+    case JNE:
+    case JNA:
+    case JNS:
+    case JNP:
+    case JNL:
+    case JNG:
+    case JNB:
         return true;
     }
 
@@ -142,12 +142,12 @@ size_t instruction::false_branch_address() const noexcept
 
 bool instruction::is_call() const noexcept
 {
-    return (this->branch_type == engine::CallType);
+    return (this->branch_type == CallType);
 }
 
 bool instruction::direct_branch() const noexcept
 {
-    return (this->branch_type == engine::JmpType);
+    return (this->branch_type == JmpType);
 }
 
 size_t instruction::pointer_address() const noexcept
@@ -157,7 +157,7 @@ size_t instruction::pointer_address() const noexcept
 
 bool instruction::is_ret() const noexcept
 {
-    return (this->branch_type == engine::RetType);
+    return (this->branch_type == RetType);
 }
 
 bool instruction::validate() const noexcept

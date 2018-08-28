@@ -1,0 +1,10 @@
+add_executable(demo ${CMAKE_CURRENT_SOURCE_DIR}/win_version.cpp)
+target_compile_features(demo PRIVATE cxx_std_17)
+set_target_properties(demo
+	PROPERTIES
+		ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+		LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+		RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+		PDB_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+		LINK_FLAGS "/MANIFEST:NO"
+)

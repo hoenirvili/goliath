@@ -7,7 +7,6 @@ using namespace std;
 
 namespace command
 {
-
 void execute(const string &command,
              string *process_stderr,
              string *process_exit)

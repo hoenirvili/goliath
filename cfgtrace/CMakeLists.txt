@@ -7,9 +7,11 @@ target_sources(cfgtrace
 		${CMAKE_CURRENT_SOURCE_DIR}/node.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/node.h
 )
+
 add_subdirectory(command)
 add_subdirectory(engine)
 add_subdirectory(error)
 add_subdirectory(format)
 add_subdirectory(logger)
 add_subdirectory(random)
+add_subdirectory(api)

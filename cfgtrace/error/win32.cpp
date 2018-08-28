@@ -7,7 +7,6 @@ using namespace std;
 
 namespace error
 {
-
 string win32::context() const noexcept
 {
     DWORD id = GetLastError();

@@ -21,9 +21,10 @@ private:
     std::unique_ptr<Node> get_current_node(size_t start_address) noexcept;
 
 public:
+    control_flow_graph() = default;
+    ~control_flow_graph() = default;
     size_t start_address_first_node = 0;
     std::map<size_t, std::unique_ptr<Node>> nodes;
-
     void generate(std::string content, std::ostream *out) const;
     std::string graphviz();
     void serialize(uint8_t *mem, size_t size) const;
@@ -32,6 +33,4 @@ public:
     bool node_exists(size_t start) const noexcept;
     void append_instruction(instruction instruction);
     void append_branch_instruction(instruction instruction);
-    control_flow_graph() = default;
-    ~control_flow_graph() = default;
 };
