@@ -9,7 +9,7 @@ DWORD get_version(void)
     return 0x0;
 }
 
-int main(void)
+int main()
 {
     DWORD limit = GdiGetBatchLimit();
     bool limit_above = false;
