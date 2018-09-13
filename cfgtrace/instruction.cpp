@@ -1,5 +1,6 @@
 #include "cfgtrace/instruction.h"
 #include "cfgtrace/api/types.h"
+#include "cfgtrace/error/error.h"
 #include "cfgtrace/logger/logger.h"
 #include <stdexcept>
 #include <string>
@@ -37,6 +38,11 @@ bool instruction::is_branch() const noexcept
     return false;
 }
 
+bool instruction::is_leave() const noexcept
+{
+    return this->content == "leave ";
+}
+
 size_t instruction::mem_size() const noexcept
 {
     size_t sz = 0;
@@ -58,7 +64,7 @@ bool instruction::it_fits(size_t size) const noexcept
 void instruction::deserialize(const uint8_t *mem, const size_t size)
 {
     if (!it_fits(size))
-        throw invalid_argument("size provided does not fit");
+        throw ex(invalid_argument, "size provided does not fit");
 
     memcpy(&this->len, mem, sizeof(this->len));
     mem += sizeof(this->len);
@@ -91,7 +97,7 @@ void instruction::deserialize(const uint8_t *mem, const size_t size)
 void instruction::serialize(uint8_t *mem, const size_t size) const
 {
     if (!it_fits(size))
-        throw invalid_argument("size provided does not fit");
+        throw ex(invalid_argument, "size provided does not fit");
 
     memcpy(mem, &this->len, sizeof(this->len));
     mem += sizeof(this->len);

@@ -1,5 +1,6 @@
 #include "cfgtrace/engine/engine.h"
 #include "cfgtrace/api/types.h"
+#include "cfgtrace/error/error.h"
 #include "cfgtrace/error/win32.h"
 #include <cstdint>
 #include <stdexcept>
@@ -16,7 +17,8 @@ engine::engine(HANDLE file_mapping)
     this->memory = (BYTE *)MapViewOfFile(
       file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, BUFFER_SIZE);
     if (this->memory == nullptr)
-        throw error::win32(
+        throw ex(
+          error::win32,
           "cannot open a view into the address space of a calling process");
 }
 
@@ -62,7 +64,8 @@ size_t *engine::flags() const
 {
     uint8_t *mem = &this->memory[this->FLAGS_OFFSET];
     if (is_aligned<size_t>(mem))
-        throw runtime_error("cannot get addr to flags, addr is not aligned");
+        throw ex(runtime_error,
+                 "cannot get addr to flags, addr is not aligned");
 
     return reinterpret_cast<size_t *>(mem);
 }
@@ -71,7 +74,8 @@ PluginReport **engine::plugin_report() const
 {
     uint8_t *mem = &this->memory[this->PLUGINS_REPORT_SIZE_OFFSET];
     if (!is_aligned<PluginReport *>(mem))
-        throw runtime_error(
+        throw ex(
+          runtime_error,
           "cannot get addr to addr to plugin report, addr is not aligned");
 
     return reinterpret_cast<PluginReport **>(mem);
@@ -81,8 +85,8 @@ size_t engine::plugin_report_size() const
 {
     uint8_t *mem = &this->memory[this->PLUGINS_REPORT_SIZE_OFFSET];
     if (!is_aligned<size_t>(mem))
-        throw runtime_error(
-          "cannot get addr to report size, addr is not aligned");
+        throw ex(runtime_error,
+                 "cannot get addr to report size, addr is not aligned");
 
     return *reinterpret_cast<size_t *>(mem);
 }
@@ -91,8 +95,8 @@ size_t engine::process_stacktop() const
 {
     uint8_t *mem = &this->memory[PROCESS_STACKTOP_OFFSET];
     if (is_aligned<size_t>(mem))
-        throw runtime_error(
-          "cannot get process stacktop value, addr is not aligned");
+        throw ex(runtime_error,
+                 "cannot get process stacktop value, addr is not aligned");
 
     return *reinterpret_cast<size_t *>(mem);
 }
@@ -111,7 +115,8 @@ int *engine::cfg_iteration() const
 {
     uint8_t *mem = this->cfg_memory_region();
     if (!is_aligned<int>(mem))
-        throw runtime_error("cannot get iteration value, addr is not aligned");
+        throw ex(runtime_error,
+                 "cannot get iteration value, addr is not aligned");
 
     return reinterpret_cast<int *>(mem);
 }

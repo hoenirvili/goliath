@@ -17,4 +17,5 @@ public:
     ~win32() = default;
     const char *what() const override;
 };
+
 }; // namespace error

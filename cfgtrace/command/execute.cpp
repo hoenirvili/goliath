@@ -1,4 +1,5 @@
 #include "cfgtrace/command/execute.h"
+#include "cfgtrace/error/error.h"
 #include "cfgtrace/error/win32.h"
 #include "cfgtrace/format/win32.h"
 #include <windows.h>
@@ -21,10 +22,10 @@ void execute(const string &command,
     DWORD code = 0;
 
     if (!CreatePipe(&stderr_reader, &stderr_writer, &sa, 0))
-        throw error::win32("CreatePipe failed");
+        throw ex(error::win32, "CreatePipe failed");
 
     if (!SetHandleInformation(stderr_reader, HANDLE_FLAG_INHERIT, 0))
-        throw error::win32("SetHandleInformation failed");
+        throw ex(error::win32, "SetHandleInformation failed");
 
     PROCESS_INFORMATION pi = {0};
     STARTUPINFO si = {0};
@@ -50,10 +51,11 @@ void execute(const string &command,
 
     // the parrent does not need the writer
     if (!CloseHandle(stderr_writer))
-        throw error::win32("cannot close the stderr writer parrent handler");
+        throw ex(error::win32,
+                 "cannot close the stderr writer parrent handler");
 
     if (!success)
-        throw error::win32("CreateProcessA failed");
+        throw ex(error::win32, "CreateProcessA failed");
 
     if (process_stderr) {
         string stderr_output = "";
@@ -79,17 +81,17 @@ void execute(const string &command,
 
     if (process_exit) {
         if (!GetExitCodeProcess(pi.hProcess, &code))
-            throw error::win32("cannot get exit code");
+            throw ex(error::win32, "cannot get exit code");
         if (code)
             *process_exit = format::win32_error(code);
     }
 
     if (!CloseHandle(pi.hProcess))
-        throw error::win32("cannot close process handler");
+        throw ex(error::win32, "cannot close process handler");
     if (!CloseHandle(pi.hThread))
-        throw error::win32("cannot close thread handler");
+        throw ex(error::win32, "cannot close thread handler");
 
     if (!CloseHandle(stderr_reader))
-        throw error::win32("cannot close stderr handler");
+        throw ex(error::win32, "cannot close stderr handler");
 }
 }; // namespace command

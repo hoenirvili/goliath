@@ -42,6 +42,7 @@ public:
     bool validate() const noexcept;
     bool is_call() const noexcept;
     bool is_branch() const noexcept;
+    bool is_leave() const noexcept;
     bool direct_branch() const noexcept;
     std::string str() const noexcept;
     size_t true_branch_address() const noexcept;

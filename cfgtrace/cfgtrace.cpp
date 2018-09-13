@@ -92,6 +92,7 @@ static inline bool is_branch(BRANCH_TYPE type) noexcept
     return false;
 }
 
+// TODO(hoenir): add this to instruction.cpp
 static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
 {
     BRANCH_TYPE type =
@@ -163,8 +164,8 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
         instr.branch_type = (BRANCH_TYPE)0; // make this a simple instruction
     }
 
-    if (is_branch(instr.branch_type)) {
-        if (is_call(instr.branch_type)) {
+    if (instr.is_branch()) {
+        if (instr.is_call()) {
             try {
                 graph.append_branch_instruction(instr);
             } catch (const exception &ex) {
@@ -207,7 +208,10 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
                              custom_params->instrlen,
                              custom_params->next_addr,
                              custom_params->side_addr);
-    if (is_call(instr.branch_type)) // skip calls
+    if (instr.is_call()) // skip calls
+        return report;
+
+    if (instr.is_leave())
         return report;
 
     try {

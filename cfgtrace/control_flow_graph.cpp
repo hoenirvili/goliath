@@ -1,5 +1,6 @@
 #include "cfgtrace/control_flow_graph.h"
 #include "cfgtrace/command/execute.h"
+#include "cfgtrace/error/error.h"
 #include "cfgtrace/instruction.h"
 #include "cfgtrace/random/random.h"
 #include <algorithm>
@@ -42,7 +43,7 @@ string control_flow_graph::graphviz()
 void control_flow_graph::serialize(uint8_t *mem, size_t size) const
 {
     if (!this->it_fits(size))
-        throw invalid_argument("cannot serialise control flow graph");
+        throw ex(invalid_argument, "cannot serialise control flow graph");
 
     memcpy(mem, &start_address_first_node, sizeof(&start_address_first_node));
     mem += sizeof(start_address_first_node);
@@ -64,7 +65,7 @@ void control_flow_graph::serialize(uint8_t *mem, size_t size) const
 void control_flow_graph::deserialize(const uint8_t *mem, size_t size)
 {
     if (!this->it_fits(size))
-        throw invalid_argument("cannot deserialize control flow graph");
+        throw ex(invalid_argument, "cannot deserialize control flow graph");
 
     memcpy(&start_address_first_node, mem, sizeof(&start_address_first_node));
     mem += sizeof(start_address_first_node);
@@ -106,7 +107,7 @@ void control_flow_graph::generate(const string content, ostream *out) const
     }
 
     if (!exception_message.empty())
-        throw runtime_error(exception_message);
+        throw ex(runtime_error, exception_message);
 }
 
 bool control_flow_graph::node_exists(size_t address) const noexcept
@@ -145,10 +146,10 @@ size_t control_flow_graph::set_and_get_current_address(size_t eip) noexcept
 void control_flow_graph::append_instruction(instruction instruction)
 {
     if (!instruction.validate())
-        throw invalid_argument("invalid instruction passed");
+        throw ex(invalid_argument, "invalid instruction passed");
 
     if (instruction.is_branch())
-        throw invalid_argument("cannot append instruction that is branch");
+        throw ex(invalid_argument, "cannot append instruction that is branch");
 
     size_t current =
       this->set_and_get_current_address(instruction.pointer_address());
@@ -157,36 +158,36 @@ void control_flow_graph::append_instruction(instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow_graph::append_node_neighbours(
+void control_flow_graph::append_node_neighbors(
   const unique_ptr<Node> &node) noexcept
 {
     size_t true_address = node->true_neighbour();
     size_t false_address = node->false_neighbour();
 
     if (true_address != 0) {
-        auto tnode = get_current_node(true_address);
-        this->nodes[true_address] = move(tnode);
+        auto true_node = get_current_node(true_address);
+        this->nodes[true_address] = move(true_node);
     }
 
     if (false_address != 0) {
-        auto fnode = get_current_node(false_address);
-        this->nodes[false_address] = move(fnode);
+        auto false_node = get_current_node(false_address);
+        this->nodes[false_address] = move(false_node);
     }
 }
 
 void control_flow_graph::append_branch_instruction(instruction instruction)
 {
     if (!instruction.validate())
-        throw invalid_argument("invalid instruction passed");
+        throw ex(invalid_argument, "invalid instruction passed");
 
     if (!instruction.is_branch())
-        throw invalid_argument("cannot append non branch instruction");
+        throw ex(invalid_argument, "cannot append non branch instruction");
 
     size_t current =
       this->set_and_get_current_address(instruction.pointer_address());
     auto node = this->get_current_node(current);
     node->append_branch_instruction(instruction);
-    this->append_node_neighbours(node);
+    this->append_node_neighbors(node);
     this->unset_current_address(node);
     this->nodes[current] = move(node);
 }

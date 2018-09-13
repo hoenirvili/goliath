@@ -15,7 +15,7 @@ private:
     bool node_contains_address(size_t address) const noexcept;
     void set_nodes_max_occurrences() noexcept;
     void unset_current_address(const std::unique_ptr<Node> &node) noexcept;
-    void append_node_neighbours(const std::unique_ptr<Node> &node) noexcept;
+    void append_node_neighbors(const std::unique_ptr<Node> &node) noexcept;
     bool it_fits(const size_t size) const noexcept;
     size_t set_and_get_current_address(size_t eip) noexcept;
     std::unique_ptr<Node> get_current_node(size_t start_address) noexcept;

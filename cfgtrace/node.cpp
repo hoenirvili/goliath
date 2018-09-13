@@ -1,4 +1,5 @@
 #include "cfgtrace/node.h"
+#include "cfgtrace/error/error.h"
 #include "cfgtrace/format/string.h"
 #include "cfgtrace/instruction.h"
 #include <algorithm>
@@ -224,7 +225,7 @@ bool Node::it_fits(size_t size) const noexcept
 void Node::deserialize(const uint8_t *mem, const size_t size)
 {
     if (!this->it_fits(size))
-        throw invalid_argument("cannot deserialize node");
+        throw ex(invalid_argument, "cannot deserialize node");
 
     memcpy(&this->_start_address, mem, sizeof(this->_start_address));
     mem += sizeof(this->_start_address);
@@ -265,7 +266,7 @@ void Node::deserialize(const uint8_t *mem, const size_t size)
 void Node::serialize(uint8_t *mem, const size_t size) const
 {
     if (!this->it_fits(size))
-        throw invalid_argument("cannot serialize node");
+        throw ex(invalid_argument, "cannot serialize node");
 
     memcpy(mem, &this->_start_address, sizeof(this->_start_address));
     mem += sizeof(this->_start_address);
