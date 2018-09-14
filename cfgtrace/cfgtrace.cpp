@@ -42,8 +42,22 @@ BOOL DBTInit()
 
     logger_init(file);
     logger_info("[CFGTrace] Init is called");
-    logger_info("[CFGTrace] Iteration %d", 1);
-    return TRUE;
+    
+	auto it = main_engine.cfg_iteration();
+	logger_info("[CFGTrace] Iteration %d", *it);
+	
+	if (*it) {
+        auto mem = main_engine.cfg_serialize_memory_region();
+		auto mem_size = main_engine.cfg_size();
+        try {
+			graph.deserialize(mem, *mem_size);
+        } catch (const exception &ex) {
+            logger_error("%s", ex.what());
+            return FALSE;
+		}
+    }
+	
+	return TRUE;
 }
 
 static inline bool direct_branch(BRANCH_TYPE type) noexcept
@@ -92,7 +106,7 @@ static inline bool is_branch(BRANCH_TYPE type) noexcept
     return false;
 }
 
-// TODO(hoenir): add this to instruction.cpp
+// TODO(hoenir): the engine should fix this
 static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
 {
     BRANCH_TYPE type =
@@ -114,7 +128,6 @@ static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
 
         return false_branch;
     }
-
     if (!is_call(type) && !is_ret(type))
         return custom_params->side_addr;
 
@@ -158,8 +171,8 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
                              custom_params->instrlen,
                              custom_params->next_addr,
                              custom_params->side_addr);
-    if (auto plugin = main_engine.plugin_interface("APIReporter", 1, layers);
-        plugin) {
+    auto plugin = main_engine.plugin_interface("APIReporter", 1, layers);
+    if (plugin) {
         instr.api_reporter = (char *)plugin->data->content_before;
         instr.branch_type = (BRANCH_TYPE)0; // make this a simple instruction
     }
@@ -172,7 +185,6 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
                 logger_error("%s", ex.what());
             }
         }
-
         return report;
     }
 
@@ -211,7 +223,11 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
     if (instr.is_call()) // skip calls
         return report;
 
-    if (instr.is_leave())
+	// TODO(hoenir): why the engine treats leave instruction as a branch instruction?
+	// this does not make sense because leave instruction means:
+	// move EBP ESP 
+	// pop EBP
+    if (instr.is_leave()) // skip leave instructions
         return report;
 
     try {
@@ -253,6 +269,18 @@ PluginReport *DBTFinish()
     } catch (const exception &ex) {
         logger_error("%s", ex.what());
     }
+
+	auto mem = main_engine.cfg_serialize_memory_region();
+	auto it = main_engine.cfg_iteration();
+    (*it)++;
+	auto size = main_engine.cfg_size();
+	*size = graph.mem_size();
+	
+	try {
+        graph.serialize(mem, *size);
+	} catch (const exception &ex) {
+        logger_error("%s", ex.what());
+	}
 
     return nullptr;
 }

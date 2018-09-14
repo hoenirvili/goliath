@@ -10,6 +10,13 @@ using namespace std;
 
 namespace engine
 {
+/*
+	memory layout x86 - 32bit
+	int 4 bytes => number of iterations
+	int 4 bytes => the size of the hole control flow graph in memory
+	control_flow_graph  => the hole control_flow_graph in memory
+*/
+
 engine::engine(HANDLE file_mapping)
 {
     // maps a view of a file mapping into the address space
