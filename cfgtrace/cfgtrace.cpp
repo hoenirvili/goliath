@@ -10,7 +10,7 @@
 #include <windows.h>
 
 using namespace std;
-
+	
 size_t GetLayer()
 {
     return PLUGIN_LAYER;
@@ -58,6 +58,7 @@ BOOL DBTInit()
     }
 	
 	return TRUE;
+		
 }
 
 static inline bool direct_branch(BRANCH_TYPE type) noexcept
@@ -223,7 +224,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
     if (instr.is_call()) // skip calls
         return report;
 
-	// TODO(hoenir): why the engine treats leave instruction as a branch instruction?
+	// TODO(hoenir): why the engine treats *leave* instruction as a branch instruction?
 	// this does not make sense because leave instruction means:
 	// move EBP ESP 
 	// pop EBP
@@ -270,14 +271,23 @@ PluginReport *DBTFinish()
         logger_error("%s", ex.what());
     }
 
+	// TODO(honeir): do we still need volatile ?
 	auto mem = main_engine.cfg_serialize_memory_region();
-	auto it = main_engine.cfg_iteration();
+	volatile auto it = main_engine.cfg_iteration();
     (*it)++;
-	auto size = main_engine.cfg_size();
+	volatile auto size = main_engine.cfg_size();
 	*size = graph.mem_size();
+	// TODO(hoenir): this should bail out or we should attempt to
+	// tell the engine we need more more memory.. for now we should 
+	// squeeze the hole cfg in 2MB.
+	auto total_memory = main_engine.cfg_memory_region_size();
+	if ((*size) > total_memory) {
+        logger_error("memory is full, cannot write more");
+		return nullptr;
+    }
 	
 	try {
-        graph.serialize(mem, *size);
+        graph.serialize(mem);
 	} catch (const exception &ex) {
         logger_error("%s", ex.what());
 	}

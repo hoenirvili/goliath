@@ -118,21 +118,21 @@ size_t engine::cfg_memory_region_size() const noexcept
     return this->BUFFER_SIZE - this->SHARED_CFG;
 }
 
-int *engine::cfg_iteration() const
+size_t *engine::cfg_iteration() const
 {
     uint8_t *mem = this->cfg_memory_region();
-    if (!is_aligned<int>(mem))
+    if (!is_aligned<size_t>(mem))
         throw ex(runtime_error,
                  "cannot get iteration value, addr is not aligned");
 
-    return reinterpret_cast<int *>(mem);
+    return reinterpret_cast<size_t *>(mem);
 }
 
-int *engine::cfg_size() const
+size_t *engine::cfg_size() const
 {
-    uint8_t offset = sizeof(*this->cfg_iteration());
     uint8_t *base = this->cfg_memory_region();
-    return reinterpret_cast<int *>(&base[offset]);
+    uint8_t offset = sizeof(*this->cfg_iteration());
+    return reinterpret_cast<size_t *>(&base[offset]);
 }
 
 uint8_t *engine::cfg_serialize_memory_region() const

@@ -61,11 +61,8 @@ bool instruction::it_fits(size_t size) const noexcept
     return (size >= this->mem_size());
 }
 
-void instruction::deserialize(const uint8_t *mem, const size_t size)
+void instruction::deserialize(const uint8_t *mem)
 {
-    if (!it_fits(size))
-        throw ex(invalid_argument, "size provided does not fit");
-
     memcpy(&this->len, mem, sizeof(this->len));
     mem += sizeof(this->len);
 
@@ -94,11 +91,8 @@ void instruction::deserialize(const uint8_t *mem, const size_t size)
     mem += sizeof(this->branch_type);
 }
 
-void instruction::serialize(uint8_t *mem, const size_t size) const
+void instruction::serialize(uint8_t *mem) const
 {
-    if (!it_fits(size))
-        throw ex(invalid_argument, "size provided does not fit");
-
     memcpy(mem, &this->len, sizeof(this->len));
     mem += sizeof(this->len);
 

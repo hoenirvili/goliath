@@ -40,34 +40,31 @@ string control_flow_graph::graphviz()
     return digraph + "\n}";
 }
 
-void control_flow_graph::serialize(uint8_t *mem, size_t size) const
+// copy from the control flow graph to the block of memory
+void control_flow_graph::serialize(uint8_t *mem) const
 {
-    if (!this->it_fits(size))
-        throw ex(invalid_argument, "cannot serialise control flow graph");
-
-    memcpy(mem, &start_address_first_node, sizeof(&start_address_first_node));
-    mem += sizeof(start_address_first_node);
-
-    size_t n = this->nodes.size();
-    memcpy(mem, &n, sizeof(n));
+    memcpy(&mem,
+           &this->start_address_first_node,
+           sizeof(this->start_address_first_node));
+    mem += sizeof(this->start_address_first_node);
+	
+	size_t n = this->nodes.size();
+    memcpy(&mem, &n, sizeof(n));
     mem += sizeof(n);
-
-    for (auto &item : this->nodes) {
-        auto key = item.first;
-        memcpy(mem, &key, sizeof(key));
-        mem += sizeof(key);
-        size_t sz = item.second->mem_size();
-        item.second->serialize(mem, sz);
-        mem += sz;
+    
+	for (const auto &item : this->nodes) {
+        memcpy(&mem, &item.first, sizeof(item.first));
+        mem += sizeof(item.first);
+		item.second->serialize(mem);
+        mem += item.second->mem_size();
     }
 }
 
 void control_flow_graph::deserialize(const uint8_t *mem, size_t size)
 {
-    if (!this->it_fits(size))
-        throw ex(invalid_argument, "cannot deserialize control flow graph");
-
-    memcpy(&start_address_first_node, mem, sizeof(&start_address_first_node));
+    memcpy(&this->start_address_first_node,
+           &mem,
+           sizeof(this->start_address_first_node));
     mem += sizeof(start_address_first_node);
 
     size_t n = 0;
@@ -78,10 +75,12 @@ void control_flow_graph::deserialize(const uint8_t *mem, size_t size)
         size_t key = 0;
         memcpy(&key, mem, sizeof(key));
         mem += sizeof(key);
-        auto node = unique_ptr<Node>();
-        auto sz = node->mem_size();
-        node->deserialize(mem, sz);
-        this->nodes[key] = move(node);
+
+        auto node = make_unique<Node>();
+		node->deserialize(mem);
+        mem += node->mem_size();
+
+		this->nodes[key] = move(node);
     }
 }
 

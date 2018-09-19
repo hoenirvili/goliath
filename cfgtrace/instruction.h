@@ -31,10 +31,9 @@ public:
           len(len),
           next_node_addr(next_node_addr),
           side_node_addr(side_node_addr)
-    {
-    }
-    void deserialize(const uint8_t *mem, const size_t size);
-    void serialize(uint8_t *mem, const size_t size) const;
+    {}
+    void deserialize(const uint8_t *mem);
+    void serialize(uint8_t *mem) const;
     bool it_fits(size_t size) const noexcept;
     instruction() = default;
     ~instruction() = default;

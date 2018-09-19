@@ -21,13 +21,14 @@ private:
     std::unique_ptr<Node> get_current_node(size_t start_address) noexcept;
 
 public:
-    control_flow_graph() = default;
-    ~control_flow_graph() = default;
     size_t start_address_first_node = 0;
     std::map<size_t, std::unique_ptr<Node>> nodes;
+    
+	control_flow_graph() = default;
+    ~control_flow_graph() = default;
     void generate(std::string content, std::ostream *out) const;
     std::string graphviz();
-    void serialize(uint8_t *mem, size_t size) const;
+    void serialize(uint8_t *mem) const;
     void deserialize(const uint8_t *mem, size_t size);
     size_t mem_size() const noexcept;
     bool node_exists(size_t start) const noexcept;
