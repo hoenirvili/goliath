@@ -40,31 +40,28 @@ string control_flow_graph::graphviz()
     return digraph + "\n}";
 }
 
-// copy from the control flow graph to the block of memory
-void control_flow_graph::serialize(uint8_t *mem) const
+void control_flow_graph::load_to_memory(uint8_t *mem) const noexcept
 {
-    memcpy(&mem,
+    memcpy(mem,
            &this->start_address_first_node,
            sizeof(this->start_address_first_node));
     mem += sizeof(this->start_address_first_node);
 	
-	size_t n = this->nodes.size();
-    memcpy(&mem, &n, sizeof(n));
+	const size_t n = this->nodes.size();
+    memcpy(mem, &n, sizeof(n));
     mem += sizeof(n);
     
 	for (const auto &item : this->nodes) {
-        memcpy(&mem, &item.first, sizeof(item.first));
-        mem += sizeof(item.first);
-		item.second->serialize(mem);
-        mem += item.second->mem_size();
+		memcpy(mem, &item.first, sizeof(item.first));
+		mem += sizeof(item.first);
+		item.second->load_to_memory(mem);
     }
 }
 
-void control_flow_graph::deserialize(const uint8_t *mem, size_t size)
+void control_flow_graph::load_from_memory(const uint8_t *mem) noexcept
 {
-    memcpy(&this->start_address_first_node,
-           &mem,
-           sizeof(this->start_address_first_node));
+    memcpy(&this->start_address_first_node, mem,
+			sizeof(this->start_address_first_node));
     mem += sizeof(start_address_first_node);
 
     size_t n = 0;
@@ -77,7 +74,7 @@ void control_flow_graph::deserialize(const uint8_t *mem, size_t size)
         mem += sizeof(key);
 
         auto node = make_unique<Node>();
-		node->deserialize(mem);
+		node->load_from_memory(mem);
         mem += node->mem_size();
 
 		this->nodes[key] = move(node);
@@ -157,8 +154,7 @@ void control_flow_graph::append_instruction(instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow_graph::append_node_neighbors(
-  const unique_ptr<Node> &node) noexcept
+void control_flow_graph::append_node_neighbors(const unique_ptr<Node> &node) noexcept
 {
     size_t true_address = node->true_neighbour();
     size_t false_address = node->false_neighbour();
@@ -191,8 +187,7 @@ void control_flow_graph::append_branch_instruction(instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow_graph::unset_current_address(
-  const unique_ptr<Node> &node) noexcept
+void control_flow_graph::unset_current_address(const unique_ptr<Node> &node) noexcept
 {
     if (node->done())
         this->current_pointer = 0;
@@ -200,18 +195,12 @@ void control_flow_graph::unset_current_address(
 
 size_t control_flow_graph::mem_size() const noexcept
 {
-    size_t size = 0;
-    size += sizeof(this->start_address_first_node);
-    size += sizeof(this->nodes.size());
-
-    size += sizeof(size_t);
+	size_t size = sizeof(this->start_address_first_node);
+    size += sizeof(size_t); // how many nodes we have
     for (const auto &item : this->nodes) {
-        const auto address = item.first;
-
-        size += sizeof(address);
+        size += sizeof(item.first);
         size += item.second->mem_size();
     }
-
     return size;
 }
 

@@ -49,12 +49,7 @@ BOOL DBTInit()
 	if (*it) {
         auto mem = main_engine.cfg_serialize_memory_region();
 		auto mem_size = main_engine.cfg_size();
-        try {
-			graph.deserialize(mem, *mem_size);
-        } catch (const exception &ex) {
-            logger_error("%s", ex.what());
-            return FALSE;
-		}
+		graph.load_from_memory(mem);
     }
 	
 	return TRUE;
@@ -264,7 +259,7 @@ PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 PluginReport *DBTFinish()
 {
     auto graphviz = graph.graphviz();
-    auto out = fstream("partiaflowgraph.dot", fstream::out);
+	auto out = fstream("partiaflowgraph.dot", fstream::out);
     try {
         graph.generate(graphviz, &out);
     } catch (const exception &ex) {
@@ -285,12 +280,7 @@ PluginReport *DBTFinish()
         logger_error("memory is full, cannot write more");
 		return nullptr;
     }
-	
-	try {
-        graph.serialize(mem);
-	} catch (const exception &ex) {
-        logger_error("%s", ex.what());
-	}
-
-    return nullptr;
+	graph.load_to_memory(mem);
+    
+	return nullptr;
 }

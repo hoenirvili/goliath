@@ -222,7 +222,7 @@ bool Node::it_fits(size_t size) const noexcept
     return (size >= this->mem_size());
 }
 
-void Node::deserialize(const uint8_t *mem)
+void Node::load_from_memory(const uint8_t *mem) noexcept
 {
     memcpy(&this->_start_address, mem, sizeof(this->_start_address));
     mem += sizeof(this->_start_address);
@@ -232,9 +232,9 @@ void Node::deserialize(const uint8_t *mem)
     memcpy(&n, mem, sizeof(n));
     mem += sizeof(n);
 
-    for (size_t i = 0; i < n; i++) {
+    for (auto i = 0u; i < n; i++) {
         auto instr = instruction();
-        instr.deserialize(mem);
+        instr.load_from_memory(mem);
         mem += instr.mem_size();
 		// push the newly completed instruction back
         this->block.push_back(instr);
@@ -249,33 +249,31 @@ void Node::deserialize(const uint8_t *mem)
     memcpy(&this->true_branch_address, mem, sizeof(this->true_branch_address));
     mem += sizeof(this->true_branch_address);
 
-    memcpy(
-      &this->false_branch_address, mem, sizeof(this->false_branch_address));
+    memcpy(&this->false_branch_address, mem, 
+			sizeof(this->false_branch_address));
     mem += sizeof(this->false_branch_address);
 
     memcpy(&this->occurrences, mem, sizeof(this->occurrences));
     mem += sizeof(this->occurrences);
-
-    size_t block_size = 0;
-    memcpy(&block_size, mem, sizeof(block_size));
-    mem += sizeof(block_size);
 }
 
-void Node::serialize(uint8_t *mem) const
+void Node::load_to_memory(uint8_t *mem) const noexcept
 {
     memcpy(mem, &this->_start_address, sizeof(this->_start_address));
     mem += sizeof(this->_start_address);
 
-    // how many instruction we have?
-    size_t n = this->block.size();
+    const size_t n = this->block.size();
     memcpy(mem, &n, sizeof(n));
     mem += sizeof(n);
 
-    for (auto &item : this->block) {
-        size_t sz = item.mem_size();
+	size_t sz = 0;
+    for (const auto &item : this->block) {
+        sz = item.mem_size();
 		memcpy(mem, &sz, sizeof(sz));
-        item.serialize(mem);
-        mem += sz;
+		mem += sizeof(sz);
+		
+		item.load_to_memory(mem);
+		mem += sz;
 	}
 
     memcpy(mem, &this->is_done, sizeof(this->is_done));
@@ -287,8 +285,8 @@ void Node::serialize(uint8_t *mem) const
     memcpy(mem, &this->true_branch_address, sizeof(this->true_branch_address));
     mem += sizeof(this->true_branch_address);
 
-    memcpy(
-      mem, &this->false_branch_address, sizeof(this->false_branch_address));
+    memcpy(mem, &this->false_branch_address, 
+		sizeof(this->false_branch_address));
     mem += sizeof(this->false_branch_address);
 
     memcpy(mem, &this->occurrences, sizeof(this->occurrences));
@@ -297,12 +295,10 @@ void Node::serialize(uint8_t *mem) const
 
 size_t Node::mem_size() const noexcept
 {
-    size_t size = 0;
-    size += sizeof(this->_start_address);
-    size += sizeof(size_t);
+    size_t size = sizeof(this->_start_address);
+    size += sizeof(size_t); // how many blocks
 	for (const auto &item : this->block)
 		size += item.mem_size();
-    
 	size += sizeof(this->is_done);
     size += sizeof(this->max_occurrences);
     size += sizeof(this->true_branch_address);

@@ -14,7 +14,9 @@ private:
     size_t side_node_addr;
     size_t eip;          /* current instruction pointer */
     std::string content; /* complete instruction */
-
+	
+	const size_t guard_value = 6632;
+	bool is_guard_present(const uint8_t *mem) const noexcept;
 public:
     std::string api_reporter; /* extra information from APIReporter*/
     BRANCH_TYPE branch_type;  /* no branch = 0 */
@@ -32,8 +34,8 @@ public:
           next_node_addr(next_node_addr),
           side_node_addr(side_node_addr)
     {}
-    void deserialize(const uint8_t *mem);
-    void serialize(uint8_t *mem) const;
+    void load_from_memory(const uint8_t *mem) noexcept;
+    void load_to_memory(uint8_t *mem) const noexcept;
     bool it_fits(size_t size) const noexcept;
     instruction() = default;
     ~instruction() = default;

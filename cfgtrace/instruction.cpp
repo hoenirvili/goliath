@@ -61,7 +61,13 @@ bool instruction::it_fits(size_t size) const noexcept
     return (size >= this->mem_size());
 }
 
-void instruction::deserialize(const uint8_t *mem)
+bool instruction::is_guard_present(const uint8_t *mem) const noexcept
+{
+	return (memcmp(&this->guard_value, mem, 
+			sizeof(this->guard_value)) == 0);
+}
+
+void instruction::load_from_memory(const uint8_t *mem) noexcept
 {
     memcpy(&this->len, mem, sizeof(this->len));
     mem += sizeof(this->len);
@@ -75,23 +81,32 @@ void instruction::deserialize(const uint8_t *mem)
     memcpy(&this->eip, mem, sizeof(this->eip));
     mem += sizeof(this->eip);
 
-    // content
-    char *cmem = (char *)mem;
-    size_t cmem_size = strlen(cmem);
-    this->content = string(cmem, cmem_size);
-    mem += cmem_size + 1; // skip also the \0
 
-    // api_reporter
-    cmem = (char *)mem;
-    cmem_size = strlen(cmem);
-    this->api_reporter = string(cmem, cmem_size);
-    mem += cmem_size + 1; // skip also the \0
+	if (!this->is_guard_present(mem)) {
+		// content
+		char *cmem = (char *)mem;
+		size_t cmem_size = strlen(cmem);
+		this->content = string(cmem, cmem_size);
+		mem += cmem_size + 1; // skip also the \0
+	} else {
+		mem += sizeof(this->guard_value);
+	}
+
+	if (!this->is_guard_present(mem)) {
+		// api_reporter
+		char *cmem = (char *)mem;
+		size_t cmem_size = strlen(cmem);
+		this->api_reporter = string(cmem, cmem_size);
+		mem += cmem_size + 1; // skip also the \0
+	} else {
+		mem += sizeof(this->guard_value);
+	}
 
     memcpy(&this->branch_type, mem, sizeof(this->branch_type));
     mem += sizeof(this->branch_type);
 }
 
-void instruction::serialize(uint8_t *mem) const
+void instruction::load_to_memory(uint8_t *mem) const noexcept
 {
     memcpy(mem, &this->len, sizeof(this->len));
     mem += sizeof(this->len);
@@ -105,17 +120,27 @@ void instruction::serialize(uint8_t *mem) const
     memcpy(mem, &this->eip, sizeof(this->eip));
     mem += sizeof(this->eip);
 
-    // content
-    size_t cmem_size = this->content.size() + 1;
-    memcpy(mem, this->content.c_str(), cmem_size);
-    mem += cmem_size;
+	// content if any
+	if (!this->content.empty()) {
+		const size_t cmem_size = this->content.size() + 1;
+		memcpy(mem, this->content.c_str(), cmem_size);
+		mem += cmem_size;
+	} else {
+		memcpy(mem, &this->guard_value, sizeof(this->guard_value));
+		mem += sizeof(guard_value);
+	}
 
-    // api_reporter
-    cmem_size = this->api_reporter.size() + 1;
-    memcpy(mem, this->api_reporter.c_str(), cmem_size);
-    mem += cmem_size;
-
-    memcpy(mem, &this->branch_type, sizeof(this->branch_type));
+	// api_reporter if any
+	if (!this->api_reporter.empty()) {
+		const size_t rep_size = this->api_reporter.size() + 1;
+		memcpy(mem, this->api_reporter.c_str(), rep_size);
+		mem += rep_size;
+	} else {
+		memcpy(mem, &this->guard_value, sizeof(this->guard_value));
+		mem += sizeof(guard_value);
+	}
+    
+	memcpy(mem, &this->branch_type, sizeof(this->branch_type));
     mem += sizeof(this->branch_type);
 }
 
