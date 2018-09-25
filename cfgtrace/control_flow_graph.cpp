@@ -55,6 +55,7 @@ void control_flow_graph::load_to_memory(uint8_t *mem) const noexcept
 		memcpy(mem, &item.first, sizeof(item.first));
 		mem += sizeof(item.first);
 		item.second->load_to_memory(mem);
+		mem += item.second->mem_size();
     }
 }
 

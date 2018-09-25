@@ -266,14 +266,9 @@ void Node::load_to_memory(uint8_t *mem) const noexcept
     memcpy(mem, &n, sizeof(n));
     mem += sizeof(n);
 
-	size_t sz = 0;
     for (const auto &item : this->block) {
-        sz = item.mem_size();
-		memcpy(mem, &sz, sizeof(sz));
-		mem += sizeof(sz);
-		
 		item.load_to_memory(mem);
-		mem += sz;
+		mem += item.mem_size();
 	}
 
     memcpy(mem, &this->is_done, sizeof(this->is_done));
@@ -296,9 +291,12 @@ void Node::load_to_memory(uint8_t *mem) const noexcept
 size_t Node::mem_size() const noexcept
 {
     size_t size = sizeof(this->_start_address);
-    size += sizeof(size_t); // how many blocks
-	for (const auto &item : this->block)
-		size += item.mem_size();
+    size += sizeof(this->block.size()); 
+	for (const auto &item : this->block) {
+		auto item_size = item.mem_size();
+		size += sizeof(item_size);
+		size += item_size;
+	}
 	size += sizeof(this->is_done);
     size += sizeof(this->max_occurrences);
     size += sizeof(this->true_branch_address);

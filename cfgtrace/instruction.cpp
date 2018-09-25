@@ -47,9 +47,15 @@ size_t instruction::mem_size() const noexcept
 {
     size_t sz = 0;
     sz += sizeof(this->eip);
-    sz += this->api_reporter.size();
-    sz += this->content.size();
-    sz += sizeof(this->branch_type);
+	if (this->api_reporter.empty())
+		sz += sizeof(this->guard_value);
+	else
+		sz += this->api_reporter.size();
+	if (this->content.empty())
+		sz += sizeof(this->guard_value);
+	else 
+		sz += this->content.size();
+	sz += sizeof(this->branch_type);
     sz += sizeof(this->len);
     sz += sizeof(this->next_node_addr);
     sz += sizeof(this->side_node_addr);
