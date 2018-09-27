@@ -3,6 +3,7 @@
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/instruction.h"
 #include "cfgtrace/random/random.h"
+#include "cfgtrace/engine/engine.h"
 #include <algorithm>
 #include <cstddef>
 #include <fstream>
@@ -82,12 +83,11 @@ void control_flow_graph::load_from_memory(const uint8_t *mem) noexcept
     }
 }
 
-void control_flow_graph::generate(const string content, ostream *out) const
+void control_flow_graph::generate(const string content, ostream *out, int it) const
 {
     (*out) << content << endl;
 
-    auto name =
-      to_string(this->start_address_first_node) + "_" + random::string();
+    auto name = to_string(it) + "_" + random::string();
 
     const string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
     string process_stderr, process_exit;
@@ -95,13 +95,11 @@ void control_flow_graph::generate(const string content, ostream *out) const
     command::execute(cmd, &process_stderr, &process_exit);
 
     string exception_message = "";
-    if (!process_stderr.empty()) {
+    if (!process_stderr.empty())
         exception_message += process_exit;
-    }
 
-    if (!process_exit.empty()) {
+    if (!process_exit.empty())
         exception_message += " " + process_exit;
-    }
 
     if (!exception_message.empty())
         throw ex(runtime_error, exception_message);

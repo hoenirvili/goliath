@@ -50,11 +50,11 @@ size_t instruction::mem_size() const noexcept
 	if (this->api_reporter.empty())
 		sz += sizeof(this->guard_value);
 	else
-		sz += this->api_reporter.size();
+		sz += this->api_reporter.size() + 1; // with the \0
 	if (this->content.empty())
 		sz += sizeof(this->guard_value);
 	else 
-		sz += this->content.size();
+		sz += this->content.size() + 1; // with the \0
 	sz += sizeof(this->branch_type);
     sz += sizeof(this->len);
     sz += sizeof(this->next_node_addr);
@@ -90,26 +90,24 @@ void instruction::load_from_memory(const uint8_t *mem) noexcept
 
 	if (!this->is_guard_present(mem)) {
 		// content
-		char *cmem = (char *)mem;
+		const char *cmem = reinterpret_cast<const char*>(mem);
 		size_t cmem_size = strlen(cmem);
 		this->content = string(cmem, cmem_size);
 		mem += cmem_size + 1; // skip also the \0
-	} else {
+	} else
 		mem += sizeof(this->guard_value);
-	}
 
 	if (!this->is_guard_present(mem)) {
 		// api_reporter
-		char *cmem = (char *)mem;
+		const char *cmem = reinterpret_cast<const char *>(mem);
 		size_t cmem_size = strlen(cmem);
 		this->api_reporter = string(cmem, cmem_size);
 		mem += cmem_size + 1; // skip also the \0
-	} else {
+	} else
 		mem += sizeof(this->guard_value);
-	}
 
     memcpy(&this->branch_type, mem, sizeof(this->branch_type));
-    mem += sizeof(this->branch_type);
+    mem += sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
 }
 
 void instruction::load_to_memory(uint8_t *mem) const noexcept
@@ -128,7 +126,7 @@ void instruction::load_to_memory(uint8_t *mem) const noexcept
 
 	// content if any
 	if (!this->content.empty()) {
-		const size_t cmem_size = this->content.size() + 1;
+		const size_t cmem_size = this->content.size() + 1; // add also the \0 in mem
 		memcpy(mem, this->content.c_str(), cmem_size);
 		mem += cmem_size;
 	} else {
@@ -138,7 +136,7 @@ void instruction::load_to_memory(uint8_t *mem) const noexcept
 
 	// api_reporter if any
 	if (!this->api_reporter.empty()) {
-		const size_t rep_size = this->api_reporter.size() + 1;
+		const size_t rep_size = this->api_reporter.size() + 1; // add also the \0 in mem
 		memcpy(mem, this->api_reporter.c_str(), rep_size);
 		mem += rep_size;
 	} else {
@@ -147,7 +145,7 @@ void instruction::load_to_memory(uint8_t *mem) const noexcept
 	}
     
 	memcpy(mem, &this->branch_type, sizeof(this->branch_type));
-    mem += sizeof(this->branch_type);
+    mem += sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
 }
 
 std::string instruction::str() const noexcept

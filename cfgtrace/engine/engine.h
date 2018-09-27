@@ -21,7 +21,10 @@ private:
     uint8_t *memory;
 
 public:
-    engine(HANDLE file_mapping);
+	// TODO(hoenir): should we change into std::byte maybe instead of
+	// using uint8_t* as a ptr to a block of memory ?
+
+    explicit engine(HANDLE file_mapping);
     engine() : memory(nullptr) {}
     engine &operator=(engine other);
     ~engine() = default;

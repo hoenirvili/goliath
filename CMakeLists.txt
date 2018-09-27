@@ -4,9 +4,8 @@ project (
 	VERSION 0.1 
 	DESCRIPTION "Control flow graph generator plugin" 
 	LANGUAGES CXX
-	#HOMEPAGE_URL "https://github.com/hoenirvili/CFGTrace"
+	HOMEPAGE_URL "https://github.com/hoenirvili/CFGTrace"
 )
-
 add_library(cfgtrace SHARED cfgtrace/cfgtrace.cpp include/cfgtrace.h)
 target_include_directories(cfgtrace PUBLIC include/)
 target_include_directories(cfgtrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -22,13 +21,6 @@ set_target_properties(cfgtrace
 		PDB_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin"
 		LINK_FLAGS "/MANIFEST:NO"
 )
-
 add_subdirectory(cfgtrace)
 add_subdirectory(demo)
-
-enable_testing()
-add_executable(cfgtracetest test/tester.cpp)
-target_compile_features(cfgtracetest PRIVATE cxx_std_17)
-add_test(CFGTracetest cfgtracetest
-	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/test/"
-)
+add_subdirectory(tests)

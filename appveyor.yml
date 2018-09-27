@@ -1,0 +1,13 @@
+version: 1.0.{build}
+configuration:
+- Debug
+- Release
+platform: x86
+clone_folder: c:\project\source
+install:
+- ps: vcpkg install catch2:x86-windows
+build:
+  parallel: true
+  verbosity: normal
+build_script:
+- ps: ./build.bat

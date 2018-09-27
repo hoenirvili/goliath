@@ -10,7 +10,7 @@
 #include <windows.h>
 
 using namespace std;
-	
+
 size_t GetLayer()
 {
     return PLUGIN_LAYER;
@@ -42,18 +42,16 @@ BOOL DBTInit()
 
     logger_init(file);
     logger_info("[CFGTrace] Init is called");
-    
-	auto it = main_engine.cfg_iteration();
-	logger_info("[CFGTrace] Iteration %d", *it);
-	
-	if (*it) {
+    auto it = main_engine.cfg_iteration();
+    if (*it) {
         auto mem = main_engine.cfg_serialize_memory_region();
-		auto mem_size = main_engine.cfg_size();
-		graph.load_from_memory(mem);
+        auto mem_size = main_engine.cfg_size();
+        graph.load_from_memory(mem);
     }
-	
-	return TRUE;
-		
+    (*it)++;
+    logger_info("[CFGTrace] Iinit is called for iteration %d", *it);
+
+    return TRUE;
 }
 
 static inline bool direct_branch(BRANCH_TYPE type) noexcept
@@ -219,10 +217,10 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
     if (instr.is_call()) // skip calls
         return report;
 
-	// TODO(hoenir): why the engine treats *leave* instruction as a branch instruction?
-	// this does not make sense because leave instruction means:
-	// move EBP ESP 
-	// pop EBP
+    // TODO(hoenir): why the engine treats *leave* instruction as a branch
+    // instruction? this does not make sense because leave instruction means:
+    // move EBP ESP
+    // pop EBP
     if (instr.is_leave()) // skip leave instructions
         return report;
 
@@ -258,29 +256,30 @@ PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 
 PluginReport *DBTFinish()
 {
+    logger_info("[CFGTrace] Finish is called");
     auto graphviz = graph.graphviz();
-	auto out = fstream("partiaflowgraph.dot", fstream::out);
+    auto it = main_engine.cfg_iteration();
+    logger_info("[CFGTrace] Finish is called for iteration %d", *it);
+    auto out = fstream("partiaflowgraph.dot", fstream::out);
     try {
-        graph.generate(graphviz, &out);
+        graph.generate(graphviz, &out, *it);
     } catch (const exception &ex) {
         logger_error("%s", ex.what());
     }
+    // TODO(honeir): do we still need volatile ?
+    auto mem = main_engine.cfg_serialize_memory_region();
+    volatile auto size = main_engine.cfg_size();
+    *size = graph.mem_size();
 
-	// TODO(honeir): do we still need volatile ?
-	auto mem = main_engine.cfg_serialize_memory_region();
-	volatile auto it = main_engine.cfg_iteration();
-    (*it)++;
-	volatile auto size = main_engine.cfg_size();
-	*size = graph.mem_size();
-	// TODO(hoenir): this should bail out or we should attempt to
-	// tell the engine we need more more memory.. for now we should 
-	// squeeze the hole cfg in 2MB.
-	auto total_memory = main_engine.cfg_memory_region_size();
-	if ((*size) > total_memory) {
+    // TODO(hoenir): this should bail out or we should attempt to
+    // tell the engine we need more more memory.. for now we should
+    // squeeze the hole cfg in 2MB.
+    auto total_memory = main_engine.cfg_memory_region_size();
+    if ((*size) > total_memory) {
         logger_error("memory is full, cannot write more");
-		return nullptr;
+        return nullptr;
     }
-	graph.load_to_memory(mem);
-    
-	return nullptr;
+    graph.load_to_memory(mem);
+
+    return nullptr;
 }

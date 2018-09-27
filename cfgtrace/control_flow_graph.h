@@ -26,7 +26,7 @@ public:
     
 	control_flow_graph() = default;
     ~control_flow_graph() = default;
-    void generate(std::string content, std::ostream *out) const;
+    void generate(std::string content, std::ostream *out, int it) const;
     std::string graphviz();
     void load_to_memory(uint8_t *mem) const noexcept;
     void load_from_memory(const uint8_t *mem) noexcept;
