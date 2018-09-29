@@ -1,18 +1,51 @@
 version: 1.0.{build}
+
+branches:
+  only:
+    - master
+
+image: Visual Studio 2017
+
+clone_folder: c:\projects\cfgtrace
+
+configuration:
+  - Debug
+
 platform: x86
+
 install:
-- ps: vcpkg install catch2:x86-windows
-- mkdir C:\projects\deps
-- cd C:\projects\deps
-- set NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip"
-- appveyor DownloadFile %NINJA_URL% -FileName ninja.zip
-- 7z x ninja.zip -oC:\projects\deps\ninja > nul
-- set PATH=C:\projects\deps\ninja;%PATH%
-- ninja --version
+  # All external dependencies are installed in C:\projects\deps
+  - mkdir C:\projects\deps
+  - cd C:\projects\deps
+  # Install Ninja
+  - set NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip"
+  - appveyor DownloadFile %NINJA_URL% -FileName ninja.zip
+  - 7z x ninja.zip -oC:\projects\deps\ninja > nul
+  - set PATH=C:\projects\deps\ninja;%PATH%
+  - ninja --version
+  # Install Catch2
+  - set CATCH2_URL="https://github.com/catchorg/Catch2.git"
+  - git clone %CATCH2_URL% catch
+  - cd catch
+  - cmake -Bbuild -H. -DBUILD_TESTING=OFF
+  - cmake --build build/ --target install
+  # Install ctest
+  - ctest --version
+
 build:
   parallel: true
   verbosity: detailed
+
 before_build:
-- cd C:\projects\cfgtrace`
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x86 10.0.16299.0
+  - cd C:\projects\cfgtrace
+
 build_script:
-- ps: ./build.ps1
+  - cmake -DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H.
+  - ninja -C build -j8 cfgtrace
+  - ninja -C build -j8 demo
+
+test_script:
+  - ninja -C build -j8 cfgtracetest
+  - cd build
+  - ctest -VV -j8 -C Release --build-and-test

@@ -27,3 +27,5 @@ add_subdirectory(demo)
 # Enable testing for the project
 enable_testing()
 add_subdirectory(tests)
+# test also the concrete implementation
+target_include_directories(cfgtracetest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -21,14 +21,18 @@ private:
     uint8_t *memory;
 
 public:
-	// TODO(hoenir): should we change into std::byte maybe instead of
-	// using uint8_t* as a ptr to a block of memory ?
-
+    // TODO(hoenir): should we change into std::byte maybe instead of
+    // using uint8_t* as a ptr to a block of memory ?
+    // TODO(hoenir): file_mapping should be destroyed?
     explicit engine(HANDLE file_mapping);
-    engine() : memory(nullptr) {}
+    engine() : memory(nullptr)
+    {
+    }
     engine &operator=(engine other);
     ~engine() = default;
-    PluginLayer *plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const noexcept;
+    PluginLayer *
+    plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const
+      noexcept;
     char *log_name() const noexcept;
     char *plugin_path() const noexcept;
     uint8_t *context() const noexcept;

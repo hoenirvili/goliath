@@ -4,7 +4,7 @@ function Invoke-CmdScript {
     )
     If (Test-Path env:VSCMD_VER) { Return }
     $cmdLine = """$scriptName"" $args & set"
-    Write-Output "[Running batch script] : "$cmdLine
+    Write-Output "[Running batch script] "$cmdLine
     & $Env:SystemRoot\system32\cmd.exe /c $cmdLine |
         select-string '^([^=]*)=(.*)$' | foreach-object {
         $varName = $_.Matches[0].Groups[1].Value
@@ -18,3 +18,4 @@ $process = Start-Process cmake -ArgumentList "-DCMAKE_BUILD_TYPE=Release -G Ninj
 $process.WaitForExit()
 ninja -C build -j8 cfgtrace
 ninja -C build -j8 demo
+ninja -C build -j8 cfgtracetest
