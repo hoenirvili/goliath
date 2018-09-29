@@ -4,7 +4,7 @@ install:
 - ps: vcpkg install catch2:x86-windows
 - mkdir C:\projects\deps
 - cd C:\projects\deps
-- set NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.6.0/ninja-win.zip"
+- set NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip"
 - appveyor DownloadFile %NINJA_URL% -FileName ninja.zip
 - 7z x ninja.zip -oC:\projects\deps\ninja > nul
 - set PATH=C:\projects\deps\ninja;%PATH%
@@ -12,5 +12,7 @@ install:
 build:
   parallel: true
   verbosity: detailed
+before_build:
+- cd C:\projects\cfgtrace
 build_script:
 - ps: ./build.ps1
