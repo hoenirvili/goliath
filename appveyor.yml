@@ -13,6 +13,6 @@ build:
   parallel: true
   verbosity: detailed
 before_build:
-- cd C:\projects\cfgtrace
+- cd C:\projects\cfgtrace`
 build_script:
 - ps: ./build.ps1

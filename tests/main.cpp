@@ -1,4 +1,6 @@
-int main()
+#include <catch2/catch.hpp>
+
+int main(void)
 {
-    return 2;
+    return 0;
 }

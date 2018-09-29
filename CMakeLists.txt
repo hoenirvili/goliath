@@ -21,6 +21,9 @@ set_target_properties(cfgtrace
 		PDB_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin"
 		LINK_FLAGS "/MANIFEST:NO"
 )
+
 add_subdirectory(cfgtrace)
 add_subdirectory(demo)
+# Enable testing for the project
+enable_testing()
 add_subdirectory(tests)
