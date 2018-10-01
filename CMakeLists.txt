@@ -6,6 +6,7 @@ project (
 	LANGUAGES CXX
 	HOMEPAGE_URL "https://github.com/hoenirvili/CFGTrace"
 )
+
 add_library(cfgtrace SHARED cfgtrace/cfgtrace.cpp include/cfgtrace.h)
 target_include_directories(cfgtrace PUBLIC include/)
 target_include_directories(cfgtrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
