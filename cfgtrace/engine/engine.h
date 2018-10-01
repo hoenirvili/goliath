@@ -9,18 +9,19 @@ namespace engine
 class engine
 {
 private:
-    const int LOGNAME_OFFSET = 0x0000;
-    const int PLUGINS_OFFSET = 0x1000;
-    const int CONTEXT_OFFSET = 0x2000;
-    const int FLAGS_OFFSET = 0x3000;
-    const int PLUGINS_REPORT_OFFSET = 0x4000;
-    const int PLUGINS_REPORT_SIZE_OFFSET = 0x5000;
-    const int PROCESS_STACKTOP_OFFSET = 0xC000;
-    const int SHARED_CFG = 0x40000;
-    const int BUFFER_SIZE = 0x100000;
     uint8_t *memory;
 
 public:
+    static constexpr int LOGNAME_OFFSET = 0x0000;
+    static constexpr int PLUGINS_OFFSET = 0x1000;
+    static constexpr int CONTEXT_OFFSET = 0x2000;
+    static constexpr int FLAGS_OFFSET = 0x3000;
+    static constexpr int PLUGINS_REPORT_OFFSET = 0x4000;
+    static constexpr int PLUGINS_REPORT_SIZE_OFFSET = 0x5000;
+    static constexpr int PROCESS_STACKTOP_OFFSET = 0xC000;
+    static constexpr int SHARED_CFG = 0x40000;
+    static constexpr int BUFFER_SIZE = 0x100000;
+
     // TODO(hoenir): should we change into std::byte maybe instead of
     // using uint8_t* as a ptr to a block of memory ?
     // TODO(hoenir): file_mapping should be destroyed?
@@ -30,9 +31,7 @@ public:
     }
     engine &operator=(engine other);
     ~engine() = default;
-    PluginLayer *
-    plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const
-      noexcept;
+    PluginLayer *plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const noexcept;
     char *log_name() const noexcept;
     char *plugin_path() const noexcept;
     uint8_t *context() const noexcept;

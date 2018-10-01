@@ -8,9 +8,7 @@ using namespace std;
 
 namespace command
 {
-void execute(const string &command,
-             string *process_stderr,
-             string *process_exit)
+void execute(const string &command, string *process_stderr, string *process_exit)
 {
     SECURITY_ATTRIBUTES sa = {
       sizeof(SECURITY_ATTRIBUTES), // nLength
@@ -39,20 +37,19 @@ void execute(const string &command,
 
     success = CreateProcessA(NULL,                   // name
                              (LPSTR)command.c_str(), // command line
-                             NULL, // process security attributes
-                             NULL, // primary thread security attributes
-                             TRUE, // handles are inherited
-                             0,    // creation flags
-                             NULL, // use parent's environment
-                             NULL, // use parent's current directory
-                             &si,  // STARTUPINFO pointer
-                             &pi   // receives PROCESS_INFORMATION
+                             NULL,                   // process security attributes
+                             NULL,                   // primary thread security attributes
+                             TRUE,                   // handles are inherited
+                             0,                      // creation flags
+                             NULL,                   // use parent's environment
+                             NULL,                   // use parent's current directory
+                             &si,                    // STARTUPINFO pointer
+                             &pi                     // receives PROCESS_INFORMATION
     );
 
     // the parrent does not need the writer
     if (!CloseHandle(stderr_writer))
-        throw ex(error::win32,
-                 "cannot close the stderr writer parrent handler");
+        throw ex(error::win32, "cannot close the stderr writer parrent handler");
 
     if (!success)
         throw ex(error::win32, "CreateProcessA failed");
@@ -64,8 +61,7 @@ void execute(const string &command,
             for (;;) {
                 char buffer[0xff] = {0};
                 DWORD n;
-                if (!PeekNamedPipe(stderr_reader, NULL, 0, NULL, &n, NULL) ||
-                    !n)
+                if (!PeekNamedPipe(stderr_reader, NULL, 0, NULL, &n, NULL) || !n)
                     break;
                 if (!ReadFile(stderr_reader, buffer, 0xff, &n, NULL) || !n)
                     break;

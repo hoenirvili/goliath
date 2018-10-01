@@ -1,9 +1,9 @@
 #include "cfgtrace/control_flow_graph.h"
 #include "cfgtrace/command/execute.h"
+#include "cfgtrace/engine/engine.h"
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/instruction.h"
 #include "cfgtrace/random/random.h"
-#include "cfgtrace/engine/engine.h"
 #include <algorithm>
 #include <cstddef>
 #include <fstream>
@@ -43,27 +43,24 @@ string control_flow_graph::graphviz()
 
 void control_flow_graph::load_to_memory(uint8_t *mem) const noexcept
 {
-    memcpy(mem,
-           &this->start_address_first_node,
-           sizeof(this->start_address_first_node));
+    memcpy(mem, &this->start_address_first_node, sizeof(this->start_address_first_node));
     mem += sizeof(this->start_address_first_node);
-	
-	const size_t n = this->nodes.size();
+
+    const size_t n = this->nodes.size();
     memcpy(mem, &n, sizeof(n));
     mem += sizeof(n);
-    
-	for (const auto &item : this->nodes) {
-		memcpy(mem, &item.first, sizeof(item.first));
-		mem += sizeof(item.first);
-		item.second->load_to_memory(mem);
-		mem += item.second->mem_size();
+
+    for (const auto &item : this->nodes) {
+        memcpy(mem, &item.first, sizeof(item.first));
+        mem += sizeof(item.first);
+        item.second->load_to_memory(mem);
+        mem += item.second->mem_size();
     }
 }
 
 void control_flow_graph::load_from_memory(const uint8_t *mem) noexcept
 {
-    memcpy(&this->start_address_first_node, mem,
-			sizeof(this->start_address_first_node));
+    memcpy(&this->start_address_first_node, mem, sizeof(this->start_address_first_node));
     mem += sizeof(start_address_first_node);
 
     size_t n = 0;
@@ -76,10 +73,10 @@ void control_flow_graph::load_from_memory(const uint8_t *mem) noexcept
         mem += sizeof(key);
 
         auto node = make_unique<Node>();
-		node->load_from_memory(mem);
+        node->load_from_memory(mem);
         mem += node->mem_size();
 
-		this->nodes[key] = move(node);
+        this->nodes[key] = move(node);
     }
 }
 
@@ -110,8 +107,7 @@ bool control_flow_graph::node_exists(size_t address) const noexcept
     return (this->nodes.find(address) != this->nodes.end());
 }
 
-unique_ptr<Node>
-control_flow_graph::get_current_node(size_t start_address) noexcept
+unique_ptr<Node> control_flow_graph::get_current_node(size_t start_address) noexcept
 {
     if (this->node_exists(start_address))
         return move(this->nodes[start_address]);
@@ -146,8 +142,7 @@ void control_flow_graph::append_instruction(instruction instruction)
     if (instruction.is_branch())
         throw ex(invalid_argument, "cannot append instruction that is branch");
 
-    size_t current =
-      this->set_and_get_current_address(instruction.pointer_address());
+    size_t current = this->set_and_get_current_address(instruction.pointer_address());
     auto node = this->get_current_node(current);
     node->append_instruction(instruction);
     this->nodes[current] = move(node);
@@ -177,8 +172,7 @@ void control_flow_graph::append_branch_instruction(instruction instruction)
     if (!instruction.is_branch())
         throw ex(invalid_argument, "cannot append non branch instruction");
 
-    size_t current =
-      this->set_and_get_current_address(instruction.pointer_address());
+    size_t current = this->set_and_get_current_address(instruction.pointer_address());
     auto node = this->get_current_node(current);
     node->append_branch_instruction(instruction);
     this->append_node_neighbors(node);
@@ -194,7 +188,7 @@ void control_flow_graph::unset_current_address(const unique_ptr<Node> &node) noe
 
 size_t control_flow_graph::mem_size() const noexcept
 {
-	size_t size = sizeof(this->start_address_first_node);
+    size_t size = sizeof(this->start_address_first_node);
     size += sizeof(size_t); // how many nodes we have
     for (const auto &item : this->nodes) {
         size += sizeof(item.first);

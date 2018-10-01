@@ -13,16 +13,11 @@ string win32_error(DWORD id)
 
     LPSTR buffer = nullptr;
 
-    auto flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-      FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK;
+    auto flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
+      FORMAT_MESSAGE_MAX_WIDTH_MASK;
 
-    size_t size = FormatMessageA(flags,
-                                 nullptr,
-                                 id,
-                                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                                 (LPSTR)(&buffer),
-                                 0,
-                                 nullptr);
+    size_t size =
+      FormatMessageA(flags, nullptr, id, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)(&buffer), 0, nullptr);
     if (size == 0)
         throw system_error(id, system_category(), "FormatMessageA failed");
     if (buffer == nullptr)

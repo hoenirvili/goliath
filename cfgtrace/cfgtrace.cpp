@@ -16,14 +16,13 @@ size_t GetLayer()
     return PLUGIN_LAYER;
 }
 
-static control_flow_graph graph;
+control_flow_graph graph;
 
 static engine::engine main_engine;
 
 BOOL DBTInit()
 {
-    HANDLE file_mapping =
-      OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
+    HANDLE file_mapping = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
     if (!file_mapping)
         return FALSE;
 
@@ -35,12 +34,16 @@ BOOL DBTInit()
     }
     const char *logname = main_engine.log_name();
     string name = (!logname) ? string() : string(logname);
-
-    auto *file = new fstream(name, fstream::app);
-    if (!(*file))
+    if (name.empty())
         return FALSE;
 
-    logger_init(file);
+    auto file = new fstream(name, fstream::app);
+    if (!file) {
+        delete file;
+        return FALSE;
+    }
+
+    logger::init(file);
     logger_info("[CFGTrace] Init is called");
     auto it = main_engine.cfg_iteration();
     if (*it) {
@@ -103,8 +106,7 @@ static inline bool is_branch(BRANCH_TYPE type) noexcept
 // TODO(hoenir): the engine should fix this
 static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
 {
-    BRANCH_TYPE type =
-      (BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
+    BRANCH_TYPE type = (BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
 
     if (direct_branch(type))
         return 0;
@@ -116,8 +118,7 @@ static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
 
     size_t false_branch = eip + len;
     if (is_call(type)) {
-        if (custom_params->next_addr == custom_params->side_addr &&
-            custom_params->next_addr == false_branch)
+        if (custom_params->next_addr == custom_params->side_addr && custom_params->next_addr == false_branch)
             return 0;
 
         return false_branch;
@@ -147,8 +148,7 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 
     DISASM *MyDisasm = custom_params->MyDisasm;
 
-    char *content =
-      (char *)VirtualAlloc(nullptr, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+    char *content = (char *)VirtualAlloc(nullptr, 0x4000, MEM_COMMIT, PAGE_READWRITE);
     if (!content)
         return 0;
 

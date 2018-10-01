@@ -243,14 +243,7 @@ enum INSTRUCTION_TYPE {
 
 };
 
-enum EFLAGS_STATES {
-    TE_ = 1,
-    MO_ = 2,
-    RE_ = 4,
-    SE_ = 8,
-    UN_ = 0x10,
-    PR_ = 0x20
-};
+enum EFLAGS_STATES { TE_ = 1, MO_ = 2, RE_ = 4, SE_ = 8, UN_ = 0x10, PR_ = 0x20 };
 
 enum BRANCH_TYPE {
     JO = 1,

@@ -23,8 +23,8 @@ private:
 public:
     size_t start_address_first_node = 0;
     std::map<size_t, std::unique_ptr<Node>> nodes;
-    
-	control_flow_graph() = default;
+
+    control_flow_graph() = default;
     ~control_flow_graph() = default;
     void generate(std::string content, std::ostream *out, int it) const;
     std::string graphviz();

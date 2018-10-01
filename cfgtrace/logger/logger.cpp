@@ -25,12 +25,7 @@ void init(ostream *os) noexcept
     out.reset(os);
 }
 
-void write(level l,
-           const char *file,
-           const int line,
-           const char *function,
-           const char *format,
-           ...)
+void write(level l, const char *file, const int line, const char *function, const char *format, ...)
 {
     if (!out)
         return;
@@ -43,8 +38,7 @@ void write(level l,
     auto message = make_unique<char[]>(len);
     vsnprintf(message.get(), len, format, list);
     va_end(list);
-    (*out) << file << ":" << line << ":" << function << " " << _prefix << " "
-           << message.get() << std::endl;
+    (*out) << file << ":" << line << ":" << function << " " << _prefix << " " << message.get() << std::endl;
 }
 
-}; // namespace log
+}; // namespace logger

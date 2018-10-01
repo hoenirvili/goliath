@@ -37,7 +37,9 @@ public:
     bool contains_address(size_t eip) const noexcept;
     size_t true_neighbour() const noexcept;
     size_t false_neighbour() const noexcept;
-    Node(size_t start_address) : _start_address(start_address) {}
+    Node(size_t start_address) : _start_address(start_address)
+    {
+    }
     Node() = default;
     ~Node() = default;
 };
