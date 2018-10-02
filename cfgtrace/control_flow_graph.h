@@ -22,6 +22,7 @@ private:
 
 public:
     size_t start_address_first_node = 0;
+
     std::map<size_t, std::unique_ptr<Node>> nodes;
 
     control_flow_graph() = default;

@@ -5,14 +5,9 @@
 
 namespace logger
 {
-enum class level : std::uint8_t {
-    error,   // error for logging error messages
-    warning, // warning for logging warning messages
-    info     // info for logging information messages
+enum class level : uint8_t { error, warning, info };
 
-};
-
-void init(std::ostream *os) noexcept;
+void init(std::ostream *writer) noexcept;
 
 void write(level l, const char *file, const int line, const char *function, const char *format, ...);
 }; // namespace logger

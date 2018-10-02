@@ -11,9 +11,9 @@ class instruction
 private:
     size_t len;            /* instruction length */
     size_t next_node_addr; /* next node address */
-    size_t side_node_addr;
-    size_t eip;          /* current instruction pointer */
-    std::string content; /* complete instruction */
+    size_t side_node_addr; /* else node address */
+    size_t eip;            /* current instruction pointer */
+    std::string content;   /* complete instruction */
 
     const size_t guard_value = 6632;
     bool is_guard_present(const uint8_t *mem) const noexcept;

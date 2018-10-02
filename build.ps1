@@ -14,9 +14,9 @@ function Invoke-CmdScript {
 }
 
 Invoke-CmdScript "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x86 10.0.16299.0
-#$process = Start-Process cmake -ArgumentList "-DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H." -NoNewWindow -PassThru 
-$process = Start-Process cmake -ArgumentList "-G `"Visual Studio 15 2017`" -Bbuild/ -H." -NoNewWindow -PassThru
+$process = Start-Process cmake -ArgumentList "-DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H." -NoNewWindow -PassThru 
+#$process = Start-Process cmake -ArgumentList "-G `"Visual Studio 15 2017`" -Bbuild/ -H." -NoNewWindow -PassThru
 $process.WaitForExit()
-#ninja -C build -j8 cfgtrace
-#ninja -C build -j8 demo
-#ninja -C build -j8 cfgtracetest
+ninja -C build -j8 cfgtrace
+ninja -C build -j8 demo
+ninja -C build -j8 cfgtracetest

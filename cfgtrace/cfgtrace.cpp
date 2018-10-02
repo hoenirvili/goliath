@@ -16,7 +16,7 @@ size_t GetLayer()
     return PLUGIN_LAYER;
 }
 
-control_flow_graph graph;
+static unique_ptr<control_flow_graph> graph;
 
 static engine::engine main_engine;
 
@@ -42,14 +42,16 @@ BOOL DBTInit()
         delete file;
         return FALSE;
     }
+    if (!graph)
+        graph = make_unique<control_flow_graph>();
 
-    logger::init(file);
+    logger_init(file);
     logger_info("[CFGTrace] Init is called");
     auto it = main_engine.cfg_iteration();
     if (*it) {
         auto mem = main_engine.cfg_serialize_memory_region();
         auto mem_size = main_engine.cfg_size();
-        graph.load_from_memory(mem);
+        graph->load_from_memory(mem);
     }
     (*it)++;
     logger_info("[CFGTrace] Iinit is called for iteration %d", *it);
@@ -174,7 +176,7 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
     if (instr.is_branch()) {
         if (instr.is_call()) {
             try {
-                graph.append_branch_instruction(instr);
+                graph->append_branch_instruction(instr);
             } catch (const exception &ex) {
                 logger_error("%s", ex.what());
             }
@@ -183,7 +185,7 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
     }
 
     try {
-        graph.append_instruction(instr);
+        graph->append_instruction(instr);
     } catch (const exception &ex) {
         logger_error("%s", ex.what());
     }
@@ -225,7 +227,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
         return report;
 
     try {
-        graph.append_branch_instruction(instr);
+        graph->append_branch_instruction(instr);
     } catch (const exception &ex) {
         logger_error("%s", ex.what());
     }
@@ -257,19 +259,19 @@ PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 PluginReport *DBTFinish()
 {
     logger_info("[CFGTrace] Finish is called");
-    auto graphviz = graph.graphviz();
+    auto graphviz = graph->graphviz();
     auto it = main_engine.cfg_iteration();
     logger_info("[CFGTrace] Finish is called for iteration %d", *it);
     auto out = fstream("partiaflowgraph.dot", fstream::out);
     try {
-        graph.generate(graphviz, &out, *it);
+        graph->generate(graphviz, &out, *it);
     } catch (const exception &ex) {
         logger_error("%s", ex.what());
     }
     // TODO(honeir): do we still need volatile ?
     auto mem = main_engine.cfg_serialize_memory_region();
     volatile auto size = main_engine.cfg_size();
-    *size = graph.mem_size();
+    *size = graph->mem_size();
 
     // TODO(hoenir): this should bail out or we should attempt to
     // tell the engine we need more more memory.. for now we should
@@ -279,7 +281,7 @@ PluginReport *DBTFinish()
         logger_error("memory is full, cannot write more");
         return nullptr;
     }
-    graph.load_to_memory(mem);
+    graph->load_to_memory(mem);
 
     return nullptr;
 }

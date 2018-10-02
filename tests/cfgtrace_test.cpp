@@ -67,28 +67,27 @@ TEST_CASE("The plugin is assumed to be run in layer 2", "[GetLayer]")
     REQUIRE(layer == PLUGIN_LAYER);
 }
 
-// TEST_CASE("When the internal virtual memory is not initialised by the engine",
-//          "[DBTInit]")
-//{
-//    BOOL state = DBTInit();
-//    REQUIRE(state == FALSE);
-//}
+TEST_CASE("When the internal virtual memory is not initialised by the engine", "[DBTInit]")
+{
+    BOOL state = DBTInit();
+    REQUIRE(state == FALSE);
+}
 
 TEST_CASE("When the internal virtual memory has been initialised by the engine", "[DBTInit]")
 {
     virtual_memory vm = virtual_memory();
 
-    /*SECTION("file_mapping is now constructed but log name is not available")
+    SECTION("file_mapping is now constructed but log name is not available")
     {
         BOOL state = DBTInit();
         REQUIRE(state == FALSE);
-    }*/
+    }
 
-    /*vm.enable_log_name();
-    
+    vm.enable_log_name();
+
     SECTION("file_mapping is constructed and log name is available")
     {
         BOOL state = DBTInit();
         REQUIRE(state == TRUE);
-    }*/
+    }
 }
