@@ -3,6 +3,8 @@
 #include <cfgtrace/api/types.h>
 #include <cfgtrace/engine/engine.h>
 #include <cstdlib>
+#include <sstream>
+#include <string_view>
 #include <windows.h>
 
 class virtual_memory
@@ -73,6 +75,28 @@ TEST_CASE("When the internal virtual memory is not initialised by the engine", "
     REQUIRE(state == FALSE);
 }
 
+class fake_output_streamer
+{
+public:
+    std::ostringstream oss;
+
+    fake_output_streamer() = default;
+    ~fake_output_streamer() = default;
+
+    std::ostream *impl() noexcept
+    {
+        return &this->oss;
+    }
+
+    void check(std::string_view message)
+    {
+        auto string = oss.str();
+        auto n = string.find(message, 0);
+        bool state = (n != std::string::npos);
+        REQUIRE(state == true);
+    };
+};
+
 TEST_CASE("When the internal virtual memory has been initialised by the engine", "[DBTInit]")
 {
     virtual_memory vm = virtual_memory();
@@ -85,9 +109,14 @@ TEST_CASE("When the internal virtual memory has been initialised by the engine",
 
     vm.enable_log_name();
 
+    // create a new fake output streamer to redirect logger messages
+    // fake_output_streamer fom = fake_output_streamer();
+    // logger_init(fom.impl());
     SECTION("file_mapping is constructed and log name is available")
     {
         BOOL state = DBTInit();
         REQUIRE(state == TRUE);
+        // fom.check("[CFGTrace] Init is called");
+        // fom.check("[CFGTrace] [CFGTrace] Iinit is called for iteration 1");
     }
 }

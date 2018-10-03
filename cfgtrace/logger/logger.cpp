@@ -1,28 +1,27 @@
 #include "cfgtrace/logger/logger.h"
 #include <cstdarg>
 #include <fstream>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 using namespace std;
 
 namespace logger
 {
+static ostream *out = nullptr;
+
 void init(ostream *os) noexcept
 {
-    unique_ptr<ostream> out;
-    out.reset(os);
+    if (out)
+        return;
+
+    out = os;
 }
 
 void write(level l, const char *file, const int line, const char *function, const char *format, ...)
 {
-    return;
-    // if (!out)
-    //    return;
-
-    static const unordered_map<level, string> table = {
-      {level::error, "ERROR"}, {level::warning, "WARNING"}, {level::info, "INFO"}};
+    const map<level, string> table = {{level::error, "ERROR"}, {level::warning, "WARNING"}, {level::info, "INFO"}};
 
     auto _prefix = "|" + table.at(l) + "|";
     file = strrchr(file, '\\') ? strrchr(file, '\\') + 1 : file;
@@ -32,7 +31,15 @@ void write(level l, const char *file, const int line, const char *function, cons
     auto message = make_unique<char[]>(len);
     vsnprintf(message.get(), len, format, list);
     va_end(list);
-    //(*out) << file << ":" << line << ":" << function << " " << _prefix << " " << message.get() << std::endl;
+    (*out) << file << ":" << line << ":" << function << " " << _prefix << " " << message.get() << std::endl;
+}
+
+void clean() noexcept
+{
+    if (!out)
+        return;
+    delete out;
+    out = nullptr;
 }
 
 }; // namespace logger

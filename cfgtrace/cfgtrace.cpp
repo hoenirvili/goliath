@@ -16,7 +16,7 @@ size_t GetLayer()
     return PLUGIN_LAYER;
 }
 
-static unique_ptr<control_flow_graph> graph;
+static control_flow_graph *graph;
 
 static engine::engine main_engine;
 
@@ -37,21 +37,15 @@ BOOL DBTInit()
     if (name.empty())
         return FALSE;
 
+    // TODO(hoenir): memory leak
     auto file = new fstream(name, fstream::app);
-    if (!file) {
-        delete file;
-        return FALSE;
-    }
-    if (!graph)
-        graph = make_unique<control_flow_graph>();
-
-    logger_init(file);
+    logger::init(file);
     logger_info("[CFGTrace] Init is called");
     auto it = main_engine.cfg_iteration();
     if (*it) {
         auto mem = main_engine.cfg_serialize_memory_region();
         auto mem_size = main_engine.cfg_size();
-        graph->load_from_memory(mem);
+        // graph->load_from_memory(mem);
     }
     (*it)++;
     logger_info("[CFGTrace] Iinit is called for iteration %d", *it);
@@ -227,7 +221,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
         return report;
 
     try {
-        graph->append_branch_instruction(instr);
+        //->append_branch_instruction(instr);
     } catch (const exception &ex) {
         logger_error("%s", ex.what());
     }
@@ -284,4 +278,52 @@ PluginReport *DBTFinish()
     graph->load_to_memory(mem);
 
     return nullptr;
+}
+
+BOOL WINAPI DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved)
+{
+    (void)dll;
+    (void)reserved;
+
+    switch (reason) {
+    case DLL_PROCESS_ATTACH:
+        /**
+         * The DLL is being loaded into the virtual address space of
+         * the current process as a result of the process starting up or
+         * as a result of a call to LoadLibrary.DLLs can use this
+         * opportunity to initialize any instance data or to use the
+         * TlsAlloc function to allocate a thread local storage(TLS)
+         * index.The lpReserved parameter indicates whether the DLL is
+         * being loaded statically or dynamically.
+         */
+        if (!graph)
+            graph = new control_flow_graph();
+
+        return TRUE;
+    case DLL_THREAD_ATTACH:
+        break;
+        /**
+         * The DLL is being unloaded from the virtual address space of
+         * the calling process because it was loaded unsuccessfully or
+         * the reference count has reached zero (the processes has either
+         * terminated or called FreeLibrary one time for each time it called LoadLibrary).
+         * The lpReserved parameter indicates whether the DLL is being
+         * unloaded as a result of a FreeLibrary call, a failure to load, or
+         * process termination The DLL can use this opportunity to call
+         * the TlsFree function to free any TLS indices allocated by using
+         * TlsAlloc and to free any thread local data Note that the thread
+         * that receives the DLL_PROCESS_DETACH notification is not necessarily
+         * the same thread that received the DLL_PROCESS_ATTACH
+         * notification.
+         */
+        if (graph)
+            delete graph;
+
+        logger::clean();
+    case DLL_THREAD_DETACH:
+        break;
+    case DLL_PROCESS_DETACH:
+        break;
+    }
+    return TRUE;
 }

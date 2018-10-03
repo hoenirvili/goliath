@@ -25,8 +25,8 @@ public:
 
     std::map<size_t, std::unique_ptr<Node>> nodes;
 
-    control_flow_graph() = default;
-    ~control_flow_graph() = default;
+    control_flow_graph(){};
+    ~control_flow_graph(){};
     void generate(std::string content, std::ostream *out, int it) const;
     std::string graphviz();
     void load_to_memory(uint8_t *mem) const noexcept;

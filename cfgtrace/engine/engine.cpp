@@ -26,10 +26,17 @@ engine::engine(HANDLE file_mapping)
         throw ex(error::win32, "cannot open a view into the address space of a calling process");
 }
 
-engine &engine::operator=(engine other)
+engine &engine::operator=(engine &other)
 {
     this->memory = other.memory;
+    other.memory = nullptr;
     return *this;
+}
+
+engine::~engine()
+{
+    if (this->memory)
+        UnmapViewOfFile(this->memory);
 }
 
 PluginLayer *engine::plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const noexcept

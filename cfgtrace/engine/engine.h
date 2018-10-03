@@ -9,7 +9,7 @@ namespace engine
 class engine
 {
 private:
-    uint8_t *memory;
+    uint8_t *memory = nullptr;
 
 public:
     static constexpr int LOGNAME_OFFSET = 0x0000;
@@ -26,11 +26,9 @@ public:
     // using uint8_t* as a ptr to a block of memory ?
     // TODO(hoenir): file_mapping should be destroyed?
     explicit engine(HANDLE file_mapping);
-    engine() : memory(nullptr)
-    {
-    }
-    engine &operator=(engine other);
-    ~engine() = default;
+    engine() = default;
+    engine &operator=(engine &other);
+    ~engine();
     PluginLayer *plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const noexcept;
     char *log_name() const noexcept;
     char *plugin_path() const noexcept;

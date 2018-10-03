@@ -27,7 +27,7 @@ install:
   - set CATCH2_URL="https://github.com/catchorg/Catch2.git"
   - git clone %CATCH2_URL% catch
   - cd catch
-  - cmake -Bbuild -H. -DBUILD_TESTING=OFF
+  - cmake -DBUILD_TESTING=OFF -Bbuild -H.
   - cmake --build build/ --target install
   # Install ctest
   - ctest --version
@@ -41,7 +41,7 @@ before_build:
   - cd C:\projects\cfgtrace
 
 build_script:
-  - cmake -DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H.
+  - cmake DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H.
   - ninja -C build -j8 cfgtrace
   - ninja -C build -j8 demo
 
