@@ -15,7 +15,7 @@ private:
     size_t eip;            /* current instruction pointer */
     std::string content;   /* complete instruction */
 
-    const size_t guard_value = 6632;
+    const size_t guard_value = 6632; /* magic value */
     bool is_guard_present(const uint8_t *mem) const noexcept;
 
 public:

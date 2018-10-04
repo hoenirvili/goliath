@@ -1,22 +1,19 @@
 #include "cfgtrace/logger/logger.h"
 #include <cstdarg>
-#include <fstream>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <string>
 
 using namespace std;
 
 namespace logger
 {
-static ostream *out = nullptr;
+static unique_ptr<ostream> out;
 
 void init(ostream *os) noexcept
 {
-    if (out)
-        return;
-
-    out = os;
+    out.reset(os);
 }
 
 void write(level l, const char *file, const int line, const char *function, const char *format, ...)
@@ -32,14 +29,6 @@ void write(level l, const char *file, const int line, const char *function, cons
     vsnprintf(message.get(), len, format, list);
     va_end(list);
     (*out) << file << ":" << line << ":" << function << " " << _prefix << " " << message.get() << std::endl;
-}
-
-void clean() noexcept
-{
-    if (!out)
-        return;
-    delete out;
-    out = nullptr;
 }
 
 }; // namespace logger

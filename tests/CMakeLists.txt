@@ -7,6 +7,7 @@ add_executable(cfgtracetest
 target_compile_features(cfgtracetest PRIVATE cxx_std_17)
 target_link_libraries(cfgtracetest PRIVATE Catch2::Catch2)
 target_link_libraries(cfgtracetest PRIVATE cfgtrace)
+target_compile_options(cfgtracetest PRIVATE "/MD")
 
 # make the RUNTIME_OUTPUT_DIRECTORY the same with the main SHARED lib location
 get_target_property(OUTPUT cfgtrace RUNTIME_OUTPUT_DIRECTORY)

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ostream>
-#include <string>
 
 namespace logger
 {
@@ -10,9 +9,6 @@ enum class level : uint8_t { error, warning, info };
 void init(std::ostream *os) noexcept;
 
 void write(level l, const char *file, const int line, const char *function, const char *format, ...);
-
-void clean() noexcept;
-
 }; // namespace logger
 
 #define logger_info(format, ...) \

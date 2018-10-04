@@ -16,7 +16,7 @@ size_t GetLayer()
     return PLUGIN_LAYER;
 }
 
-static control_flow_graph *graph;
+static unique_ptr<control_flow_graph> graph;
 
 static engine::engine main_engine;
 
@@ -37,9 +37,15 @@ BOOL DBTInit()
     if (name.empty())
         return FALSE;
 
-    // TODO(hoenir): memory leak
-    auto file = new fstream(name, fstream::app);
-    logger::init(file);
+    auto file = make_unique<fstream>(name, fstream::app);
+    if (!(*file))
+        return FALSE;
+
+    logger::init(file.release());
+
+    if (!graph)
+        graph = make_unique<control_flow_graph>();
+
     logger_info("[CFGTrace] Init is called");
     auto it = main_engine.cfg_iteration();
     if (*it) {
@@ -221,7 +227,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
         return report;
 
     try {
-        //->append_branch_instruction(instr);
+        graph->append_branch_instruction(instr);
     } catch (const exception &ex) {
         logger_error("%s", ex.what());
     }
@@ -296,12 +302,8 @@ BOOL WINAPI DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved)
          * index.The lpReserved parameter indicates whether the DLL is
          * being loaded statically or dynamically.
          */
-        if (!graph)
-            graph = new control_flow_graph();
-
-        return TRUE;
-    case DLL_THREAD_ATTACH:
         break;
+    case DLL_THREAD_ATTACH:
         /**
          * The DLL is being unloaded from the virtual address space of
          * the calling process because it was loaded unsuccessfully or
@@ -316,10 +318,7 @@ BOOL WINAPI DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved)
          * the same thread that received the DLL_PROCESS_ATTACH
          * notification.
          */
-        if (graph)
-            delete graph;
-
-        logger::clean();
+        break;
     case DLL_THREAD_DETACH:
         break;
     case DLL_PROCESS_DETACH:

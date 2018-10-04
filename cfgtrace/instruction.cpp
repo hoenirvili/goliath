@@ -146,7 +146,7 @@ void instruction::load_to_memory(uint8_t *mem) const noexcept
     mem += sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
 }
 
-std::string instruction::str() const noexcept
+string instruction::str() const noexcept
 {
     if (this->api_reporter.empty())
         return this->content;

@@ -12,6 +12,7 @@ target_include_directories(cfgtrace PUBLIC include/)
 target_include_directories(cfgtrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(cfgtrace PRIVATE cxx_std_17)
 target_compile_definitions(cfgtrace PRIVATE _CRT_SECURE_NO_WARNINGS)
+target_compile_options(cfgtrace PRIVATE "/MD")
 set_target_properties(cfgtrace
 	PROPERTIES
 		SUFFIX ".aap"

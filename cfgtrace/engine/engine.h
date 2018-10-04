@@ -42,5 +42,5 @@ public:
     size_t *cfg_iteration() const;
     size_t *cfg_size() const;
     uint8_t *cfg_serialize_memory_region() const;
-};
+}; // class engine
 }; // namespace engine

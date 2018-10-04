@@ -4,8 +4,6 @@
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/instruction.h"
 #include "cfgtrace/random/random.h"
-#include <algorithm>
-#include <cstddef>
 #include <fstream>
 #include <stdexcept>
 #include <string>

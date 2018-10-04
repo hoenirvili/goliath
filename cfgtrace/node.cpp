@@ -2,8 +2,6 @@
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/format/string.h"
 #include "cfgtrace/instruction.h"
-#include <algorithm>
-#include <cstring>
 #include <string>
 
 using namespace std;
@@ -83,7 +81,7 @@ bool Node::no_branching() const noexcept
 // pallet contains all the blues9 color scheme pallet
 static const unsigned int pallet[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-static float inline precent(float is, float of) noexcept
+static double inline precent(double is, double of) noexcept
 {
     return ((is / of) * 100);
 }
@@ -98,12 +96,12 @@ static unsigned int pick_color(unsigned int max, unsigned int value) noexcept
         return 1;
 
     size_t n = ARRAY_SIZE(pallet);
-    const float split_in = 100.0f / n;
-    auto interval = vector<float>(n);
+    const double split_in = 100.0 / n;
+    auto interval = vector<double>(n);
 
     for (size_t i = 0; i < n; i++) {
         interval[i] = split_in * (i + 1);
-        if (interval[i] == 100.0f) // don't make this 100.0f
+        if (interval[i] == 100.0) // don't make this 100.0f
             interval[i]--;
     }
 
@@ -137,7 +135,7 @@ size_t Node::start_address() const noexcept
     return this->_start_address;
 }
 
-std::string Node::graphviz_color() const noexcept
+string Node::graphviz_color() const noexcept
 {
     if (this->no_branching())
         return "color = \"plum1\"";
@@ -150,7 +148,7 @@ std::string Node::graphviz_color() const noexcept
     return str;
 }
 
-std::string Node::graphviz_name() const noexcept
+string Node::graphviz_name() const noexcept
 {
     auto start = this->start_address();
     if (start)
@@ -158,7 +156,7 @@ std::string Node::graphviz_name() const noexcept
     return "";
 }
 
-std::string Node::graphviz_label() const noexcept
+string Node::graphviz_label() const noexcept
 {
     string code_block = graphviz_name() + "\\l";
 
@@ -166,7 +164,7 @@ std::string Node::graphviz_label() const noexcept
         code_block += "\\l";
 
     for (const auto &instruction : this->block) {
-        std::string bl = instruction.str();
+        string bl = instruction.str();
         code_block += bl + "\\l";
     }
 
