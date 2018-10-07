@@ -19,12 +19,12 @@ typedef size_t UIntPtr;
 
 #define PLUGIN_LAYER 2
 
-template <class T>
-bool is_aligned(const void *ptr) noexcept
-{
-    auto iptr = reinterpret_cast<std::uintptr_t>(ptr);
-    return !(iptr % alignof(T));
-}
+// template <class T>
+// bool is_aligned(const void *ptr) noexcept
+//{
+//    auto iptr = reinterpret_cast<std::uintptr_t>(ptr);
+//    return !(iptr % alignof(T));
+//}
 
 #pragma pack(1)
 typedef struct {
@@ -436,6 +436,7 @@ struct CUSTOM_PARAMS {
     TranslatorShellData *tdata;
     size_t stack_trace;
     size_t translate_loops;
+    size_t cfg;
     size_t instrlen;
     size_t symbolic_gradient;
     size_t next_addr;

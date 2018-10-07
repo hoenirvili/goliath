@@ -39,7 +39,7 @@ string control_flow_graph::graphviz()
     return digraph + "\n}";
 }
 
-void control_flow_graph::load_to_memory(uint8_t *mem) const noexcept
+void control_flow_graph::load_to_memory(std::byte *mem) const noexcept
 {
     memcpy(mem, &this->start_address_first_node, sizeof(this->start_address_first_node));
     mem += sizeof(this->start_address_first_node);
@@ -56,7 +56,7 @@ void control_flow_graph::load_to_memory(uint8_t *mem) const noexcept
     }
 }
 
-void control_flow_graph::load_from_memory(const uint8_t *mem) noexcept
+void control_flow_graph::load_from_memory(const std::byte *mem) noexcept
 {
     memcpy(&this->start_address_first_node, mem, sizeof(this->start_address_first_node));
     mem += sizeof(start_address_first_node);

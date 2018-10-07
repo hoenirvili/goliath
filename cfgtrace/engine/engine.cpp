@@ -6,8 +6,6 @@
 #include <stdexcept>
 #include <windows.h>
 
-using namespace std;
-
 namespace engine
 {
 /*
@@ -21,7 +19,7 @@ engine::engine(HANDLE file_mapping)
 {
     // maps a view of a file mapping into the address space
     // of a calling process
-    this->memory = (BYTE *)MapViewOfFile(file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, engine::BUFFER_SIZE);
+    this->memory = (std::byte *)MapViewOfFile(file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, engine::BUFFER_SIZE);
     if (this->memory == nullptr)
         throw ex(error::win32, "cannot open a view into the address space of a calling process");
 }
@@ -63,48 +61,69 @@ char *engine::plugin_path() const noexcept
     return reinterpret_cast<char *>(&this->memory[engine::PLUGINS_OFFSET]);
 }
 
-uint8_t *engine::context() const noexcept
+std::byte *engine::context() const noexcept
 {
     return &this->memory[engine::CONTEXT_OFFSET];
 }
 
 size_t *engine::flags() const
 {
-    uint8_t *mem = &this->memory[engine::FLAGS_OFFSET];
-    if (is_aligned<size_t>(mem))
-        throw ex(runtime_error, "cannot get addr to flags, addr is not aligned");
+    void *start = &this->memory[engine::FLAGS_OFFSET];
+    size_t space = sizeof(size_t);
+    if (!std::align(alignof(size_t), sizeof(size_t), start, space))
+        throw ex(std::runtime_error, "cannot get addr to flags, addr is not aligned");
 
-    return reinterpret_cast<size_t *>(mem);
+    return new (start) size_t;
 }
 
 PluginReport **engine::plugin_report() const
 {
-    uint8_t *mem = &this->memory[engine::PLUGINS_REPORT_SIZE_OFFSET];
-    if (!is_aligned<PluginReport *>(mem))
-        throw ex(runtime_error, "cannot get addr to addr to plugin report, addr is not aligned");
+    void *start = &this->memory[engine::PLUGINS_REPORT_SIZE_OFFSET];
+    size_t space = sizeof(PluginReport *);
+    if (!std::align(alignof(PluginReport **), sizeof(PluginReport *), start, space))
+        throw ex(std::runtime_error, "cannot get addr to addr to plugin report, addr is not aligned");
 
-    return reinterpret_cast<PluginReport **>(mem);
+    return new (start) PluginReport *;
 }
 
 size_t engine::plugin_report_size() const
 {
-    uint8_t *mem = &this->memory[engine::PLUGINS_REPORT_SIZE_OFFSET];
-    if (!is_aligned<size_t>(mem))
-        throw ex(runtime_error, "cannot get addr to report size, addr is not aligned");
+    void *start = &this->memory[engine::PLUGINS_REPORT_SIZE_OFFSET];
+    size_t space = sizeof(size_t);
+    if (!std::align(alignof(size_t), sizeof(size_t), start, space))
+        throw ex(std::runtime_error, "cannot get addr to report size, addr is not aligned");
 
-    return *reinterpret_cast<size_t *>(mem);
+    size_t *size = new (start) size_t;
+    return *size;
 }
 
 size_t engine::process_stacktop() const
 {
-    uint8_t *mem = &this->memory[engine::PROCESS_STACKTOP_OFFSET];
-    if (is_aligned<size_t>(mem))
-        throw ex(runtime_error, "cannot get process stacktop value, addr is not aligned");
+    void *start = &this->memory[engine::PROCESS_STACKTOP_OFFSET];
+    size_t space = sizeof(size_t);
+    if (!std::align(alignof(size_t), sizeof(size_t), start, space))
+        throw ex(std::runtime_error, "cannot get process stacktop value, addr is not aligned");
 
-    return *reinterpret_cast<size_t *>(mem);
+    size_t *size = new (start) size_t;
+    return *size;
 }
 
-uint8_t *engine::cfg_memory_region() const noexcept
+char *engine::thread_info() const noexcept
+{
+    return reinterpret_cast<char *>(&this->memory[engine::THREAD_INFO_OFFSET]);
+}
+
+char *engine::protected_pids() const noexcept
+{
+    return reinterpret_cast<char *>(&this->memory[engine::PROTECTED_PIDS_OFFSET]);
+}
+
+char *engine::protected_files() const noexcept
+{
+    return reinterpret_cast<char *>(&this->memory[engine::PROTECTED_FILES_OFFSET]);
+}
+
+std::byte *engine::cfg_memory_region() const noexcept
 {
     return &this->memory[engine::SHARED_CFG];
 }
@@ -116,23 +135,29 @@ size_t engine::cfg_memory_region_size() const noexcept
 
 size_t *engine::cfg_iteration() const
 {
-    uint8_t *mem = this->cfg_memory_region();
-    if (!is_aligned<size_t>(mem))
-        throw ex(runtime_error, "cannot get iteration value, addr is not aligned");
+    void *start = this->cfg_memory_region();
+    size_t space = sizeof(size_t);
+    if (!std::align(alignof(size_t), sizeof(size_t), start, space))
+        throw ex(std::runtime_error, "cannot get iteration value, addr is not aligned");
 
-    return reinterpret_cast<size_t *>(mem);
+    return new (start) size_t;
 }
 
 size_t *engine::cfg_size() const
 {
-    uint8_t *base = this->cfg_memory_region();
-    uint8_t offset = sizeof(*this->cfg_iteration());
-    return reinterpret_cast<size_t *>(&base[offset]);
+    std::byte *base = this->cfg_memory_region();
+    size_t offset = sizeof(*this->cfg_iteration());
+    void *start = &base[offset];
+    size_t space = sizeof(size_t);
+    if (!std::align(alignof(size_t), sizeof(size_t), start, space))
+        throw ex(std::runtime_error, "cannot get the size of cfg, addr is not aligned");
+
+    return new (start) size_t;
 }
 
-uint8_t *engine::cfg_serialize_memory_region() const
+std::byte *engine::cfg_serialize_memory_region() const
 {
-    uint8_t *base = this->cfg_memory_region();
+    std::byte *base = this->cfg_memory_region();
     size_t it_offset = sizeof(*this->cfg_iteration());
     size_t size_offset = sizeof(*this->cfg_size());
     return &base[it_offset + size_offset];

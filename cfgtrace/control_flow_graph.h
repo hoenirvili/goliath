@@ -29,8 +29,8 @@ public:
     ~control_flow_graph(){};
     void generate(std::string content, std::ostream *out, int it) const;
     std::string graphviz();
-    void load_to_memory(uint8_t *mem) const noexcept;
-    void load_from_memory(const uint8_t *mem) noexcept;
+    void load_to_memory(std::byte *mem) const noexcept;
+    void load_from_memory(const std::byte *mem) noexcept;
     size_t mem_size() const noexcept;
     bool node_exists(size_t start) const noexcept;
     void append_instruction(instruction instruction);

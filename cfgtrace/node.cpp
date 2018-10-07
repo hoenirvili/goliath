@@ -219,7 +219,7 @@ bool Node::it_fits(size_t size) const noexcept
     return (size >= this->mem_size());
 }
 
-void Node::load_from_memory(const uint8_t *mem) noexcept
+void Node::load_from_memory(const std::byte *mem) noexcept
 {
     memcpy(&this->_start_address, mem, sizeof(this->_start_address));
     mem += sizeof(this->_start_address);
@@ -253,7 +253,7 @@ void Node::load_from_memory(const uint8_t *mem) noexcept
     mem += sizeof(this->occurrences);
 }
 
-void Node::load_to_memory(uint8_t *mem) const noexcept
+void Node::load_to_memory(std::byte *mem) const noexcept
 {
     memcpy(mem, &this->_start_address, sizeof(this->_start_address));
     mem += sizeof(this->_start_address);

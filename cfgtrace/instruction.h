@@ -16,7 +16,7 @@ private:
     std::string content;   /* complete instruction */
 
     const size_t guard_value = 6632; /* magic value */
-    bool is_guard_present(const uint8_t *mem) const noexcept;
+    bool is_guard_present(const std::byte *mem) const noexcept;
 
 public:
     std::string api_reporter; /* extra information from APIReporter*/
@@ -36,8 +36,8 @@ public:
           side_node_addr(side_node_addr)
     {
     }
-    void load_from_memory(const uint8_t *mem) noexcept;
-    void load_to_memory(uint8_t *mem) const noexcept;
+    void load_from_memory(const std::byte *mem) noexcept;
+    void load_to_memory(std::byte *mem) const noexcept;
     bool it_fits(size_t size) const noexcept;
     instruction() = default;
     ~instruction() = default;

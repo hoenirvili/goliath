@@ -51,7 +51,7 @@ BOOL DBTInit()
     if (*it) {
         auto mem = main_engine.cfg_serialize_memory_region();
         auto mem_size = main_engine.cfg_size();
-        // graph->load_from_memory(mem);
+        graph->load_from_memory(mem);
     }
     (*it)++;
     logger_info("[CFGTrace] Iinit is called for iteration %d", *it);

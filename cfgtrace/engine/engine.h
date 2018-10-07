@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cfgtrace/api/types.h"
-#include <cstdint>
+#include <cstddef>
 #include <windows.h>
 
 namespace engine
@@ -9,7 +9,7 @@ namespace engine
 class engine
 {
 private:
-    uint8_t *memory = nullptr;
+    std::byte *memory = nullptr;
 
 public:
     static constexpr int LOGNAME_OFFSET = 0x0000;
@@ -18,13 +18,13 @@ public:
     static constexpr int FLAGS_OFFSET = 0x3000;
     static constexpr int PLUGINS_REPORT_OFFSET = 0x4000;
     static constexpr int PLUGINS_REPORT_SIZE_OFFSET = 0x5000;
+    static constexpr int THREAD_INFO_OFFSET = 0x20000;
     static constexpr int PROCESS_STACKTOP_OFFSET = 0xC000;
+    static constexpr int PROTECTED_PIDS_OFFSET = 0x28000;
+    static constexpr int PROTECTED_FILES_OFFSET = 0x29000;
     static constexpr int SHARED_CFG = 0x40000;
     static constexpr int BUFFER_SIZE = 0x100000;
 
-    // TODO(hoenir): should we change into std::byte maybe instead of
-    // using uint8_t* as a ptr to a block of memory ?
-    // TODO(hoenir): file_mapping should be destroyed?
     explicit engine(HANDLE file_mapping);
     engine() = default;
     engine &operator=(engine &other);
@@ -32,15 +32,19 @@ public:
     PluginLayer *plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const noexcept;
     char *log_name() const noexcept;
     char *plugin_path() const noexcept;
-    uint8_t *context() const noexcept;
+    std::byte *context() const noexcept;
     size_t *flags() const;
     PluginReport **plugin_report() const;
     size_t plugin_report_size() const;
     size_t process_stacktop() const;
-    uint8_t *cfg_memory_region() const noexcept;
+    char *thread_info() const noexcept;
+    char *protected_pids() const noexcept;
+    char *protected_files() const noexcept;
+    std::byte *cfg_memory_region() const noexcept;
     size_t cfg_memory_region_size() const noexcept;
     size_t *cfg_iteration() const;
     size_t *cfg_size() const;
-    uint8_t *cfg_serialize_memory_region() const;
+    std::byte *cfg_serialize_memory_region() const;
 }; // class engine
+
 }; // namespace engine

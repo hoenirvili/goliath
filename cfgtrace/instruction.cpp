@@ -67,12 +67,12 @@ bool instruction::it_fits(size_t size) const noexcept
     return (size >= this->mem_size());
 }
 
-bool instruction::is_guard_present(const uint8_t *mem) const noexcept
+bool instruction::is_guard_present(const std::byte *mem) const noexcept
 {
     return (memcmp(&this->guard_value, mem, sizeof(this->guard_value)) == 0);
 }
 
-void instruction::load_from_memory(const uint8_t *mem) noexcept
+void instruction::load_from_memory(const std::byte *mem) noexcept
 {
     memcpy(&this->len, mem, sizeof(this->len));
     mem += sizeof(this->len);
@@ -108,7 +108,7 @@ void instruction::load_from_memory(const uint8_t *mem) noexcept
     mem += sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
 }
 
-void instruction::load_to_memory(uint8_t *mem) const noexcept
+void instruction::load_to_memory(std::byte *mem) const noexcept
 {
     memcpy(mem, &this->len, sizeof(this->len));
     mem += sizeof(this->len);

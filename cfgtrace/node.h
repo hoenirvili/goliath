@@ -31,8 +31,8 @@ public:
     void append_branch_instruction(instruction instruction) noexcept;
     std::string graphviz_definition() const;
     std::string graphviz_relation() const;
-    void load_to_memory(uint8_t *mem) const noexcept;
-    void load_from_memory(const uint8_t *mem) noexcept;
+    void load_to_memory(std::byte *mem) const noexcept;
+    void load_from_memory(const std::byte *mem) noexcept;
     size_t mem_size() const noexcept;
     bool contains_address(size_t eip) const noexcept;
     size_t true_neighbour() const noexcept;
