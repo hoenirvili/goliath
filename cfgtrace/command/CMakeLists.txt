@@ -1,5 +1,5 @@
 target_sources(cfgtrace
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/execute.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/execute.h
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/command/execute.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/command/execute.h
 )

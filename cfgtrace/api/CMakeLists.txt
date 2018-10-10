@@ -1,4 +1,4 @@
 target_sources(cfgtrace
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/types.h
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/api/types.h
 )

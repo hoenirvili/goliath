@@ -16,7 +16,7 @@ size_t GetLayer()
     return PLUGIN_LAYER;
 }
 
-static unique_ptr<control_flow_graph> graph;
+static control_flow_graph *graph;
 
 static engine::engine main_engine;
 
@@ -32,25 +32,21 @@ BOOL DBTInit()
         (void)ex;
         return FALSE;
     }
-    const char *logname = main_engine.log_name();
-    string name = (!logname) ? string() : string(logname);
-    if (name.empty())
+
+    const char *lname = main_engine.log_name();
+    if (!lname)
         return FALSE;
 
-    auto file = make_unique<fstream>(name, fstream::app);
+    auto file = make_unique<fstream>(lname, fstream::app);
     if (!(*file))
         return FALSE;
 
     logger::init(file.release());
 
-    if (!graph)
-        graph = make_unique<control_flow_graph>();
-
     logger_info("[CFGTrace] Init is called");
     auto it = main_engine.cfg_iteration();
     if (*it) {
         auto mem = main_engine.cfg_serialize_memory_region();
-        auto mem_size = main_engine.cfg_size();
         graph->load_from_memory(mem);
     }
     (*it)++;
@@ -195,6 +191,7 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 
 PluginReport *DBTBranching(void *params, PluginLayer **layers)
 {
+    (void)layers;
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
     compute_next_and_side_addr(custom_params);
     DISASM *MyDisasm = custom_params->MyDisasm;
@@ -237,10 +234,10 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
 
 PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
 {
+    (void)layers;
     static int counter = 1000;
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
     compute_next_and_side_addr(custom_params);
-    DISASM *MyDisasm = custom_params->MyDisasm;
 
     char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
     if (!content)
@@ -268,7 +265,7 @@ PluginReport *DBTFinish()
     } catch (const exception &ex) {
         logger_error("%s", ex.what());
     }
-    // TODO(honeir): do we still need volatile ?
+    // TODO(hoenir): do we still need volatile ?
     auto mem = main_engine.cfg_serialize_memory_region();
     volatile auto size = main_engine.cfg_size();
     *size = graph->mem_size();
@@ -302,7 +299,10 @@ BOOL WINAPI DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved)
          * index.The lpReserved parameter indicates whether the DLL is
          * being loaded statically or dynamically.
          */
+        if (!graph)
+            graph = new control_flow_graph();
         break;
+
     case DLL_THREAD_ATTACH:
         /**
          * The DLL is being unloaded from the virtual address space of
@@ -320,6 +320,10 @@ BOOL WINAPI DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved)
          */
         break;
     case DLL_THREAD_DETACH:
+        if (graph)
+            delete graph;
+
+        graph = nullptr;
         break;
     case DLL_PROCESS_DETACH:
         break;

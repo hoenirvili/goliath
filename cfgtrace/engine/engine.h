@@ -27,7 +27,7 @@ public:
 
     explicit engine(HANDLE file_mapping);
     engine() = default;
-    engine &operator=(engine &other);
+    engine &operator=(engine &&other);
     ~engine();
     PluginLayer *plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const noexcept;
     char *log_name() const noexcept;

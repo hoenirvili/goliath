@@ -1,5 +1,5 @@
 target_sources(cfgtrace
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/logger.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/logger.h
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/logger/logger.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/logger/logger.h
 )

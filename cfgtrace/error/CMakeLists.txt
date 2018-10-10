@@ -1,6 +1,6 @@
 target_sources(cfgtrace
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/win32.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/win32.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/error.h
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/error/win32.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/error/win32.h
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/error/error.h
 )

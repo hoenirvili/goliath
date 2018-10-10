@@ -1,14 +1,18 @@
 #pragma once
 
+#include "cfgtrace/error/error.h"
 #include <ostream>
 
 namespace logger
 {
 enum class level : uint8_t { error, warning, info };
 
-void init(std::ostream *os) noexcept;
+PRIVATE_API void init(std::ostream *w) noexcept;
 
-void write(level l, const char *file, const int line, const char *function, const char *format, ...);
+PRIVATE_API void write(level l, const char *file, const int line, const char *function, const char *format, ...);
+
+PRIVATE_API void clean() noexcept;
+
 }; // namespace logger
 
 #define logger_info(format, ...) \

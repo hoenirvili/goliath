@@ -1,5 +1,5 @@
 target_sources(cfgtrace
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/random.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/random.h
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/random/random.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/random/random.h
 )

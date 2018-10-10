@@ -1,11 +1,11 @@
 target_sources(cfgtrace 
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/control_flow_graph.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/control_flow_graph.h
-		${CMAKE_CURRENT_SOURCE_DIR}/instruction.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/instruction.h
-		${CMAKE_CURRENT_SOURCE_DIR}/node.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/node.h
+		${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/control_flow_graph.cpp
+		${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/control_flow_graph.h
+		${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/instruction.cpp
+		${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/instruction.h
+		${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/node.cpp
+		${CFGTRACE_ROOT_DIRECTORY}/cfgtrace/node.h
 )
 
 add_subdirectory(command)

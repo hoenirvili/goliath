@@ -4,6 +4,13 @@
 
 #define INSTRUCT_LENGTH 64
 
+#define PUBLIC_API extern "C" __declspec(dllexport)
+#ifdef TEST_EXPORT
+#define PRIVATE_API PUBLIC_API
+#else
+#define PRIVATE_API
+#endif
+
 #define memsharedname "Local\\VDCApiLog"
 
 typedef signed char Int8;

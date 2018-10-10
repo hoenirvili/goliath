@@ -24,7 +24,7 @@ engine::engine(HANDLE file_mapping)
         throw ex(error::win32, "cannot open a view into the address space of a calling process");
 }
 
-engine &engine::operator=(engine &other)
+engine &engine::operator=(engine &&other)
 {
     this->memory = other.memory;
     other.memory = nullptr;

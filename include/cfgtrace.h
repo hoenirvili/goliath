@@ -2,13 +2,9 @@
 
 #include "cfgtrace/api/types.h"
 
-#define CFGTRACE_EXPORT __declspec(dllexport)
-
-extern "C" {
-CFGTRACE_EXPORT BOOL DBTInit();
-CFGTRACE_EXPORT PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers);
-CFGTRACE_EXPORT size_t GetLayer();
-CFGTRACE_EXPORT PluginReport *DBTBranching(void *params, PluginLayer **layers);
-CFGTRACE_EXPORT PluginReport *DBTAfterExecute(void *params, PluginLayer **layers);
-CFGTRACE_EXPORT PluginReport *DBTFinish();
-};
+PUBLIC_API BOOL DBTInit();
+PUBLIC_API PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers);
+PUBLIC_API size_t GetLayer();
+PUBLIC_API PluginReport *DBTBranching(void *params, PluginLayer **layers);
+PUBLIC_API PluginReport *DBTAfterExecute(void *params, PluginLayer **layers);
+PUBLIC_API PluginReport *DBTFinish();
