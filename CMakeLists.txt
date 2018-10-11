@@ -62,9 +62,9 @@ set_target_properties(cfgtrace
 		RUNTIME_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
 		PDB_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
 		COMPILE_FEATURES cxx_std_17
-		COMPILE_OPTIONS "/MD;$<$<CONFIG:Debug>:/W4>"
 		COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS;$<$<BOOL:${BUILD_TESTS}>:${TEST_EXPORT}>"
 )
+
 add_subdirectory(cfgtrace)
 print_target_properties(cfgtrace)
 add_library(cfgtrace ALIAS cfgtrace)

@@ -8,26 +8,24 @@
 #include <stdexcept>
 #include <string>
 
-using namespace std;
-
 // digraph_prefix template
 constexpr const char *digraph_prefix = R"(
 digraph control_flow_graph {
 	node [
-		shape = box 
+		shape = box
 		color = black
 		arrowhead = diamond
 		style = filled
 		fontname = "Source Code Pro"
 		arrowtail = normal
-	]	
+	]
 )";
 
-string control_flow_graph::graphviz()
+std::string control_flow_graph::graphviz()
 {
     this->set_nodes_max_occurrences();
 
-    string definitions = "";
+    std::string definitions = "";
     for (const auto &item : this->nodes)
         definitions += item.second->graphviz_definition();
 
@@ -70,26 +68,26 @@ void control_flow_graph::load_from_memory(const std::byte *mem) noexcept
         memcpy(&key, mem, sizeof(key));
         mem += sizeof(key);
 
-        auto node = make_unique<Node>();
+        auto node = std::make_unique<Node>();
         node->load_from_memory(mem);
         mem += node->mem_size();
 
-        this->nodes[key] = move(node);
+        this->nodes[key] = std::move(node);
     }
 }
 
-void control_flow_graph::generate(const string content, ostream *out, int it) const
+void control_flow_graph::generate(const std::string content, std::ostream *out, int it) const
 {
-    (*out) << content << endl;
+    (*out) << content << std::endl;
 
-    auto name = to_string(it) + "_" + random::string();
+    auto name = std::to_string(it) + "_" + random::string();
 
-    const string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
-    string process_stderr, process_exit;
+    const std::string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
+    std::string process_stderr, process_exit;
 
     command::execute(cmd, &process_stderr, &process_exit);
 
-    string exception_message = "";
+    std::string exception_message = "";
     if (!process_stderr.empty())
         exception_message += process_exit;
 
@@ -97,7 +95,7 @@ void control_flow_graph::generate(const string content, ostream *out, int it) co
         exception_message += " " + process_exit;
 
     if (!exception_message.empty())
-        throw ex(runtime_error, exception_message);
+        throw ex(std::runtime_error, exception_message);
 }
 
 bool control_flow_graph::node_exists(size_t address) const noexcept
@@ -105,11 +103,11 @@ bool control_flow_graph::node_exists(size_t address) const noexcept
     return (this->nodes.find(address) != this->nodes.end());
 }
 
-unique_ptr<Node> control_flow_graph::get_current_node(size_t start_address) noexcept
+std::unique_ptr<Node> control_flow_graph::get_current_node(size_t start_address) noexcept
 {
     if (this->node_exists(start_address))
         return move(this->nodes[start_address]);
-    return make_unique<Node>(start_address);
+    return std::make_unique<Node>(start_address);
 }
 
 bool control_flow_graph::node_contains_address(size_t address) const noexcept
@@ -135,10 +133,10 @@ size_t control_flow_graph::set_and_get_current_address(size_t eip) noexcept
 void control_flow_graph::append_instruction(instruction instruction)
 {
     if (!instruction.validate())
-        throw ex(invalid_argument, "invalid instruction passed");
+        throw ex(std::invalid_argument, "invalid instruction passed");
 
     if (instruction.is_branch())
-        throw ex(invalid_argument, "cannot append instruction that is branch");
+        throw ex(std::invalid_argument, "cannot append instruction that is branch");
 
     size_t current = this->set_and_get_current_address(instruction.pointer_address());
     auto node = this->get_current_node(current);
@@ -146,7 +144,7 @@ void control_flow_graph::append_instruction(instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow_graph::append_node_neighbors(const unique_ptr<Node> &node) noexcept
+void control_flow_graph::append_node_neighbors(const std::unique_ptr<Node> &node) noexcept
 {
     size_t true_address = node->true_neighbour();
     size_t false_address = node->false_neighbour();
@@ -165,10 +163,10 @@ void control_flow_graph::append_node_neighbors(const unique_ptr<Node> &node) noe
 void control_flow_graph::append_branch_instruction(instruction instruction)
 {
     if (!instruction.validate())
-        throw ex(invalid_argument, "invalid instruction passed");
+        throw ex(std::invalid_argument, "invalid instruction passed");
 
     if (!instruction.is_branch())
-        throw ex(invalid_argument, "cannot append non branch instruction");
+        throw ex(std::invalid_argument, "cannot append non branch instruction");
 
     size_t current = this->set_and_get_current_address(instruction.pointer_address());
     auto node = this->get_current_node(current);
@@ -178,7 +176,7 @@ void control_flow_graph::append_branch_instruction(instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow_graph::unset_current_address(const unique_ptr<Node> &node) noexcept
+void control_flow_graph::unset_current_address(const std::unique_ptr<Node> &node) noexcept
 {
     if (node->done())
         this->current_pointer = 0;

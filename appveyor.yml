@@ -41,12 +41,12 @@ before_build:
   - cd C:\projects\cfgtrace
 
 build_script:
-  - cmake -DBUILD_DEMO=ON -DDBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H.
-  - ninja -C build -j8 cfgtrace
-  - ninja -C build -j8 first_demo
-  - ninja -C build -j8 second_demo
+  - cmake -DBUILD_DEMO=ON -DDBUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H.
+  - ninja -v -C build -j2 cfgtrace
+  - ninja -v -C build -j2 first_demo
+  - ninja -v -C build -j2 second_demo
 
 test_script:
-  - ninja -C build -j8 cfgtracetest
+  - ninja -v -C build -j2 cfgtracetest
   - cd build
-  - ctest -VV -j8 -C Release --build-and-test
+  - ctest -VV -j2 -C Debug --build-and-test

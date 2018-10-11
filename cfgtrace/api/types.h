@@ -4,13 +4,6 @@
 
 #define INSTRUCT_LENGTH 64
 
-#define PUBLIC_API extern "C" __declspec(dllexport)
-#ifdef TEST_EXPORT
-#define PRIVATE_API PUBLIC_API
-#else
-#define PRIVATE_API
-#endif
-
 #define memsharedname "Local\\VDCApiLog"
 
 typedef signed char Int8;
@@ -25,13 +18,6 @@ typedef signed long IntPtr;
 typedef size_t UIntPtr;
 
 #define PLUGIN_LAYER 2
-
-// template <class T>
-// bool is_aligned(const void *ptr) noexcept
-//{
-//    auto iptr = reinterpret_cast<std::uintptr_t>(ptr);
-//    return !(iptr % alignof(T));
-//}
 
 #pragma pack(1)
 typedef struct {

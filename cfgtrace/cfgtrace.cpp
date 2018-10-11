@@ -9,8 +9,6 @@
 #include <memory>
 #include <windows.h>
 
-using namespace std;
-
 size_t GetLayer()
 {
     return PLUGIN_LAYER;
@@ -28,7 +26,7 @@ BOOL DBTInit()
 
     try {
         main_engine = engine::engine(file_mapping);
-    } catch (const exception &ex) {
+    } catch (const std::exception &ex) {
         (void)ex;
         return FALSE;
     }
@@ -37,7 +35,7 @@ BOOL DBTInit()
     if (!lname)
         return FALSE;
 
-    auto file = make_unique<fstream>(lname, fstream::app);
+    auto file = std::make_unique<std::fstream>(lname, std::fstream::app);
     if (!(*file))
         return FALSE;
 
@@ -173,7 +171,7 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
         if (instr.is_call()) {
             try {
                 graph->append_branch_instruction(instr);
-            } catch (const exception &ex) {
+            } catch (const std::exception &ex) {
                 logger_error("%s", ex.what());
             }
         }
@@ -182,7 +180,7 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 
     try {
         graph->append_instruction(instr);
-    } catch (const exception &ex) {
+    } catch (const std::exception &ex) {
         logger_error("%s", ex.what());
     }
 
@@ -225,7 +223,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
 
     try {
         graph->append_branch_instruction(instr);
-    } catch (const exception &ex) {
+    } catch (const std::exception &ex) {
         logger_error("%s", ex.what());
     }
 
@@ -259,10 +257,10 @@ PluginReport *DBTFinish()
     auto graphviz = graph->graphviz();
     auto it = main_engine.cfg_iteration();
     logger_info("[CFGTrace] Finish is called for iteration %d", *it);
-    auto out = fstream("partiaflowgraph.dot", fstream::out);
+    auto out = std::fstream("partiaflowgraph.dot", std::fstream::out);
     try {
         graph->generate(graphviz, &out, *it);
-    } catch (const exception &ex) {
+    } catch (const std::exception &ex) {
         logger_error("%s", ex.what());
     }
     // TODO(hoenir): do we still need volatile ?

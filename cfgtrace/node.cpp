@@ -4,8 +4,6 @@
 #include "cfgtrace/instruction.h"
 #include <string>
 
-using namespace std;
-
 void Node::mark_done() noexcept
 {
     this->is_done = true;
@@ -89,6 +87,7 @@ static double inline precent(double is, double of) noexcept
  * pick_color
  * for a given number of max occurrences and a fixed value
  * return the color pallet number in graphviz format
+ * TODO(hoenir): this is still broken in certain cases
  */
 static unsigned int pick_color(unsigned int max, unsigned int value) noexcept
 {
@@ -97,7 +96,7 @@ static unsigned int pick_color(unsigned int max, unsigned int value) noexcept
 
     size_t n = ARRAY_SIZE(pallet);
     const double split_in = 100.0 / n;
-    auto interval = vector<double>(n);
+    auto interval = std::vector<double>(n);
 
     for (size_t i = 0; i < n; i++) {
         interval[i] = split_in * (i + 1);
@@ -135,20 +134,20 @@ size_t Node::start_address() const noexcept
     return this->_start_address;
 }
 
-string Node::graphviz_color() const noexcept
+std::string Node::graphviz_color() const noexcept
 {
     if (this->no_branching())
         return "color = \"plum1\"";
 
     auto color = pick_color(this->max_occurrences, this->occurrences);
-    auto str = "colorscheme = blues9\n\t\tcolor = " + to_string(color);
+    auto str = "colorscheme = blues9\n\t\tcolor = " + std::to_string(color);
     if (color >= 7)
         str += "\n\t\tfontcolor = white";
     str += "\n";
     return str;
 }
 
-string Node::graphviz_name() const noexcept
+std::string Node::graphviz_name() const noexcept
 {
     auto start = this->start_address();
     if (start)
@@ -156,15 +155,15 @@ string Node::graphviz_name() const noexcept
     return "";
 }
 
-string Node::graphviz_label() const noexcept
+std::string Node::graphviz_label() const noexcept
 {
-    string code_block = graphviz_name() + "\\l";
+    std::string code_block = graphviz_name() + "\\l";
 
     if (this->block.size())
         code_block += "\\l";
 
     for (const auto &instruction : this->block) {
-        string bl = instruction.str();
+        std::string bl = instruction.str();
         code_block += bl + "\\l";
     }
 
@@ -178,7 +177,7 @@ static const char *graphviz_definition_template = R"(
 	]
 )";
 
-string Node::graphviz_definition() const
+std::string Node::graphviz_definition() const
 {
     const auto name = this->graphviz_name();
     const auto label = this->graphviz_label();
@@ -191,14 +190,14 @@ string Node::graphviz_definition() const
     return format::string(graphviz_definition_template, nm, blk, colr);
 }
 
-static inline string relation(size_t start, size_t end)
+static inline std::string relation(size_t start, size_t end)
 {
     return format::string("\"0x%08X\" -> \"0x%08X\"", start, end);
 }
 
-string Node::graphviz_relation() const
+std::string Node::graphviz_relation() const
 {
-    string str = "";
+    std::string str = "";
 
     size_t start = this->start_address();
     if (this->true_branch_address) {

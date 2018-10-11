@@ -3,11 +3,9 @@
 #include <stdexcept>
 #include <windows.h>
 
-using namespace std;
-
 namespace error
 {
-string win32::context() const noexcept
+std::string win32::context() const noexcept
 {
     DWORD id = GetLastError();
     if (id == 0)

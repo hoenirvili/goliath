@@ -22,12 +22,12 @@ public:
     std::string api_reporter; /* extra information from APIReporter*/
     BRANCH_TYPE branch_type;  /* no branch = 0 */
 
-    instruction(size_t eip,
-                char *content,
-                BRANCH_TYPE branch_type,
-                size_t len,
-                size_t next_node_addr,
-                size_t side_node_addr) noexcept
+    explicit instruction(size_t eip,
+                         char *content,
+                         BRANCH_TYPE branch_type,
+                         size_t len,
+                         size_t next_node_addr,
+                         size_t side_node_addr) noexcept
         : eip(eip),
           content(content),
           branch_type(branch_type),

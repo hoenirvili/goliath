@@ -5,8 +5,6 @@
 #include <stdexcept>
 #include <string>
 
-using namespace std;
-
 bool instruction::is_branch() const noexcept
 {
     switch (this->branch_type) {
@@ -90,7 +88,7 @@ void instruction::load_from_memory(const std::byte *mem) noexcept
         // content
         const char *cmem = reinterpret_cast<const char *>(mem);
         size_t cmem_size = strlen(cmem);
-        this->content = string(cmem, cmem_size);
+        this->content = std::string(cmem, cmem_size);
         mem += cmem_size + 1; // skip also the \0
     } else
         mem += sizeof(this->guard_value);
@@ -99,7 +97,7 @@ void instruction::load_from_memory(const std::byte *mem) noexcept
         // api_reporter
         const char *cmem = reinterpret_cast<const char *>(mem);
         size_t cmem_size = strlen(cmem);
-        this->api_reporter = string(cmem, cmem_size);
+        this->api_reporter = std::string(cmem, cmem_size);
         mem += cmem_size + 1; // skip also the \0
     } else
         mem += sizeof(this->guard_value);
@@ -146,7 +144,7 @@ void instruction::load_to_memory(std::byte *mem) const noexcept
     mem += sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
 }
 
-string instruction::str() const noexcept
+std::string instruction::str() const noexcept
 {
     if (this->api_reporter.empty())
         return this->content;

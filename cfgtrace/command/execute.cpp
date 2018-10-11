@@ -2,13 +2,13 @@
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/error/win32.h"
 #include "cfgtrace/format/win32.h"
+#include <string>
+#include <string_view>
 #include <windows.h>
-
-using namespace std;
 
 namespace command
 {
-void execute(const string &command, string *process_stderr, string *process_exit)
+void execute(std::string_view command, std::string *process_stderr, std::string *process_exit)
 {
     SECURITY_ATTRIBUTES sa = {
       sizeof(SECURITY_ATTRIBUTES), // nLength
@@ -35,16 +35,16 @@ void execute(const string &command, string *process_stderr, string *process_exit
     si.hStdInput = INVALID_HANDLE_VALUE;
     si.dwFlags = STARTF_USESTDHANDLES;
 
-    success = CreateProcessA(NULL,                   // name
-                             (LPSTR)command.c_str(), // command line
-                             NULL,                   // process security attributes
-                             NULL,                   // primary thread security attributes
-                             TRUE,                   // handles are inherited
-                             0,                      // creation flags
-                             NULL,                   // use parent's environment
-                             NULL,                   // use parent's current directory
-                             &si,                    // STARTUPINFO pointer
-                             &pi                     // receives PROCESS_INFORMATION
+    success = CreateProcessA(NULL,                  // name
+                             (LPSTR)command.data(), // command line
+                             NULL,                  // process security attributes
+                             NULL,                  // primary thread security attributes
+                             TRUE,                  // handles are inherited
+                             0,                     // creation flags
+                             NULL,                  // use parent's environment
+                             NULL,                  // use parent's current directory
+                             &si,                   // STARTUPINFO pointer
+                             &pi                    // receives PROCESS_INFORMATION
     );
 
     // the parrent does not need the writer
@@ -55,7 +55,7 @@ void execute(const string &command, string *process_stderr, string *process_exit
         throw ex(error::win32, "CreateProcessA failed");
 
     if (process_stderr) {
-        string stderr_output = "";
+        std::string stderr_output = "";
         for (success = false; !success;) {
             success = WaitForSingleObject(pi.hProcess, 50) == WAIT_OBJECT_0;
             for (;;) {
@@ -65,7 +65,7 @@ void execute(const string &command, string *process_stderr, string *process_exit
                     break;
                 if (!ReadFile(stderr_reader, buffer, 0xff, &n, NULL) || !n)
                     break;
-                stderr_output += string(buffer, n);
+                stderr_output += std::string(buffer, n);
             }
         }
 
