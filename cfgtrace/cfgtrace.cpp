@@ -31,15 +31,19 @@ BOOL DBTInit()
         return FALSE;
     }
 
-    const char *lname = main_engine.log_name();
-    if (!lname)
-        return FALSE;
+    if (!logger::is_writer_set()) {
+        const char *lname = main_engine.log_name();
+        if (!lname)
+            return FALSE;
 
-    auto file = std::make_unique<std::fstream>(lname, std::fstream::app);
-    if (!(*file))
-        return FALSE;
+        std::fstream *file = new std::fstream(lname, std::ios_base::app);
+        if (!(*file)) {
+            delete file;
+            return FALSE;
+        }
 
-    logger::init(file.release());
+        logger::set_writer(file);
+    }
 
     logger_info("[CFGTrace] Init is called");
     auto it = main_engine.cfg_iteration();
@@ -278,6 +282,7 @@ PluginReport *DBTFinish()
     }
     graph->load_to_memory(mem);
 
+    logger::unset_writer();
     return nullptr;
 }
 
@@ -320,8 +325,8 @@ BOOL WINAPI DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved)
     case DLL_THREAD_DETACH:
         if (graph)
             delete graph;
-
         graph = nullptr;
+
         break;
     case DLL_PROCESS_DETACH:
         break;

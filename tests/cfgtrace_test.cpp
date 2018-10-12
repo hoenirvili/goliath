@@ -33,8 +33,7 @@ TEST_CASE("When the internal virtual memory log is initialised", "[DBTInit]")
     vm.enable_log_name();
     fake_output_streamer fom = fake_output_streamer();
     std::ostream *w = fom.writer();
-    logger::init(w);
-
+    logger::set_writer(w);
     SECTION("file_mapping is constructed and log name is available")
     {
         BOOL state = DBTInit();
@@ -42,6 +41,5 @@ TEST_CASE("When the internal virtual memory log is initialised", "[DBTInit]")
         fom.check("[CFGTrace] Init is called");
         fom.check("[CFGTrace] Iinit is called for iteration 1");
     }
-
-    logger::clean();
+    logger::unset_writer();
 }

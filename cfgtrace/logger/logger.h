@@ -8,11 +8,13 @@ namespace logger
 {
 enum class level : uint8_t { error, warning, info };
 
-void init(std::ostream *w) noexcept;
+bool is_writer_set() noexcept;
 
-void write(level l, const char *file, const int line, const char *function, const char *format, ...);
+void set_writer(std::ostream *w);
 
-void clean() noexcept;
+void write(level l, const char *file, const int line, const char *function, const char *format, ...) noexcept;
+
+void unset_writer() noexcept;
 
 }; // namespace logger
 

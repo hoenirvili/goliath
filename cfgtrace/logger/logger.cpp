@@ -2,26 +2,26 @@
 #include <cstdarg>
 #include <map>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 
 namespace logger
 {
-/**
- *
- */
-static std::ostream *out;
+static std::ostream *w;
 
-void init(std::ostream *os) noexcept
+bool is_writer_set() noexcept
 {
-    if (!out)
-        out = os;
-    else
-        delete os;
+    return (w);
 }
 
-void write(level l, const char *file, const int line, const char *function, const char *format, ...)
+void set_writer(std::ostream *writer)
 {
-    if (!out)
+    w = writer;
+}
+
+void write(level l, const char *file, const int line, const char *function, const char *format, ...) noexcept
+{
+    if (!w)
         return;
 
     const std::map<level, std::string> table = {
@@ -34,12 +34,12 @@ void write(level l, const char *file, const int line, const char *function, cons
     auto message = std::make_unique<char[]>(len);
     vsnprintf(message.get(), len, format, list);
     va_end(list);
-    (*out) << file << ":" << line << ":" << function << " " << _prefix << " " << message.get() << std::endl;
+    (*w) << file << ":" << line << ":" << function << " " << _prefix << " " << message.get() << std::endl;
 }
 
-void clean() noexcept
+void unset_writer() noexcept
 {
-    delete out;
+    delete w;
 }
 
 }; // namespace logger
