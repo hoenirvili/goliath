@@ -40,7 +40,7 @@ TEST_CASE("When the internal virtual memory log is initialised", "[DBTInit]")
         BOOL state = DBTInit();
         REQUIRE(state == TRUE);
         fom.check("[CFGTrace] Init is called");
-        fom.check("[CFGTrace] [CFGTrace] Iinit is called for iteration 1");
+        fom.check("[CFGTrace] Iinit is called for iteration 1");
     }
 
     logger::clean();

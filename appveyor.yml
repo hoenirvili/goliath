@@ -48,5 +48,5 @@ build_script:
 
 test_script:
   - ninja -v -C build -j2 cfgtracetest
-  - cd build
-  - ctest -VV -j2 -C Debug --build-and-test
+  - cd build/tests
+  - ctest -VV -j2 -C Debug

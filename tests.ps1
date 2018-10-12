@@ -1,3 +1,3 @@
-ninja -C build -j8 cfgtracetest
-$process = Start-Process ctest -ArgumentList "-VV -j8 -C Release --build-and-test" -NoNewWindow -PassThru -WorkingDirectory "build"
+ninja -C build -j2cfgtracetest
+$process = Start-Process ctest -ArgumentList "-VV -j2 -C Debug" -NoNewWindow -PassThru -WorkingDirectory "build/tests"
 $process.WaitForExit()
