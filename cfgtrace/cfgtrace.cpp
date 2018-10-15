@@ -1,8 +1,8 @@
 #include "cfgtrace.h"
 #include "cfgtrace/api/types.h"
-#include "cfgtrace/control_flow_graph.h"
+#include "cfgtrace/assembly/instruction.h"
 #include "cfgtrace/engine/engine.h"
-#include "cfgtrace/instruction.h"
+#include "cfgtrace/graph/control_flow.h"
 #include "cfgtrace/logger/logger.h"
 #include <cstdio>
 #include <fstream>
@@ -14,9 +14,22 @@ size_t GetLayer()
     return PLUGIN_LAYER;
 }
 
-static control_flow_graph *graph;
+static std::unique_ptr<graph::control_flow> control_flow_graph;
 
-static engine::engine main_engine;
+static PluginReport *create_plugin_report()
+{
+    char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
+    if (!content)
+        return nullptr;
+
+    auto report = new PluginReport();
+    report->plugin_name = "CFGTrace";
+    report->content_before = content;
+    report->content_after = nullptr;
+    return report;
+}
+
+static engine::engine _engine;
 
 BOOL DBTInit()
 {
@@ -25,14 +38,13 @@ BOOL DBTInit()
         return FALSE;
 
     try {
-        main_engine = engine::engine(file_mapping);
-    } catch (const std::exception &ex) {
-        (void)ex;
+        _engine = engine::engine(file_mapping);
+    } catch (...) {
         return FALSE;
     }
 
     if (!logger::is_writer_set()) {
-        const char *lname = main_engine.log_name();
+        const char *lname = _engine.log_name();
         if (!lname)
             return FALSE;
 
@@ -45,127 +57,35 @@ BOOL DBTInit()
         logger::set_writer(file);
     }
 
+    if (!control_flow_graph)
+        control_flow_graph = std::make_unique<graph::control_flow>();
+
     logger_info("[CFGTrace] Init is called");
-    auto it = main_engine.cfg_iteration();
+    size_t *it = _engine.cfg_iteration();
     if (*it) {
-        auto mem = main_engine.cfg_serialize_memory_region();
-        graph->load_from_memory(mem);
+        auto mem = _engine.cfg_serialize_memory_region();
+        control_flow_graph->load_from_memory(mem);
     }
     (*it)++;
-    logger_info("[CFGTrace] Iinit is called for iteration %d", *it);
+    logger_info("[CFGTrace] Init is called for iteration %d", *it);
 
     return TRUE;
 }
 
-static inline bool direct_branch(BRANCH_TYPE type) noexcept
-{
-    return type == JmpType;
-}
-
-static inline bool is_ret(BRANCH_TYPE type) noexcept
-{
-    return type == RetType;
-}
-
-static inline bool is_call(BRANCH_TYPE type) noexcept
-{
-    return type == CallType;
-}
-
-static inline bool is_branch(BRANCH_TYPE type) noexcept
-{
-    switch (type) {
-    case JO:
-    case JC:
-    case JE:
-    case JA:
-    case JS:
-    case JP:
-    case JL:
-    case JG:
-    case JB:
-    case JECXZ:
-    case JmpType:
-    case CallType:
-    case RetType:
-    case JNO:
-    case JNC:
-    case JNE:
-    case JNA:
-    case JNS:
-    case JNP:
-    case JNL:
-    case JNG:
-    case JNB:
-        return true;
-    }
-
-    return false;
-}
-
-// TODO(hoenir): the engine should fix this
-static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
-{
-    BRANCH_TYPE type = (BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
-
-    if (direct_branch(type))
-        return 0;
-    if (is_ret(type))
-        return 0;
-
-    size_t eip = custom_params->MyDisasm->EIP;
-    size_t len = custom_params->instrlen;
-
-    size_t false_branch = eip + len;
-    if (is_call(type)) {
-        if (custom_params->next_addr == custom_params->side_addr && custom_params->next_addr == false_branch)
-            return 0;
-
-        return false_branch;
-    }
-    if (!is_call(type) && !is_ret(type))
-        return custom_params->side_addr;
-
-    return false_branch;
-}
-
-static size_t compute_next_addr(CUSTOM_PARAMS *custom_params)
-{
-    return custom_params->next_addr;
-}
-
-static void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept
-{
-    custom_params->next_addr = compute_next_addr(custom_params);
-    custom_params->side_addr = compute_side_addr(custom_params);
-}
-
 PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 {
-    static int counter = 0;
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
-    compute_next_and_side_addr(custom_params);
+    assembly::compute_next_and_side_addr(custom_params);
 
     DISASM *MyDisasm = custom_params->MyDisasm;
 
-    char *content = (char *)VirtualAlloc(nullptr, 0x4000, MEM_COMMIT, PAGE_READWRITE);
-    if (!content)
-        return 0;
-
-    auto report = new PluginReport();
-
-    report->plugin_name = "CFGTrace";
-    sprintf(content, "counter=%d", counter++);
-    report->content_before = content;
-    report->content_after = nullptr;
-
-    auto instr = instruction(MyDisasm->EIP,
-                             MyDisasm->CompleteInstr,
-                             (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
-                             custom_params->instrlen,
-                             custom_params->next_addr,
-                             custom_params->side_addr);
-    auto plugin = main_engine.plugin_interface("APIReporter", 1, layers);
+    auto instr = assembly::instruction(MyDisasm->EIP,
+                                       MyDisasm->CompleteInstr,
+                                       (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
+                                       custom_params->instrlen,
+                                       custom_params->next_addr,
+                                       custom_params->side_addr);
+    auto plugin = _engine.plugin_interface("APIReporter", 1, layers);
     if (plugin) {
         instr.api_reporter = (char *)plugin->data->content_before;
         instr.branch_type = (BRANCH_TYPE)0; // make this a simple instruction
@@ -174,162 +94,81 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
     if (instr.is_branch()) {
         if (instr.is_call()) {
             try {
-                graph->append_branch_instruction(instr);
+                control_flow_graph->append_branch_instruction(instr);
             } catch (const std::exception &ex) {
                 logger_error("%s", ex.what());
             }
         }
-        return report;
+        return create_plugin_report();
     }
 
     try {
-        graph->append_instruction(instr);
+        control_flow_graph->append_instruction(instr);
     } catch (const std::exception &ex) {
         logger_error("%s", ex.what());
     }
 
-    return report;
+    return create_plugin_report();
 }
 
 PluginReport *DBTBranching(void *params, PluginLayer **layers)
 {
     (void)layers;
     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
-    compute_next_and_side_addr(custom_params);
+    assembly::compute_next_and_side_addr(custom_params);
     DISASM *MyDisasm = custom_params->MyDisasm;
 
-    char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
-    if (!content)
-        return nullptr;
-
-    auto report = new PluginReport();
-
-    report->plugin_name = "CFGTrace";
-    sprintf(content, "BRANCH");
-    report->content_before = content;
-    report->content_after = nullptr;
-
-    auto instr = instruction(MyDisasm->EIP,
-                             MyDisasm->CompleteInstr,
-                             (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
-                             custom_params->instrlen,
-                             custom_params->next_addr,
-                             custom_params->side_addr);
+    auto instr = assembly::instruction(MyDisasm->EIP,
+                                       MyDisasm->CompleteInstr,
+                                       (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
+                                       custom_params->instrlen,
+                                       custom_params->next_addr,
+                                       custom_params->side_addr);
     if (instr.is_call()) // skip calls
-        return report;
+        return create_plugin_report();
+    ;
 
     // TODO(hoenir): why the engine treats *leave* instruction as a branch
     // instruction? this does not make sense because leave instruction means:
     // move EBP ESP
     // pop EBP
     if (instr.is_leave()) // skip leave instructions
-        return report;
+        return create_plugin_report();
 
     try {
-        graph->append_branch_instruction(instr);
+        control_flow_graph->append_branch_instruction(instr);
     } catch (const std::exception &ex) {
         logger_error("%s", ex.what());
     }
 
-    return report;
-}
-
-PluginReport *DBTAfterExecute(void *params, PluginLayer **layers)
-{
-    (void)layers;
-    static int counter = 1000;
-    CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
-    compute_next_and_side_addr(custom_params);
-
-    char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
-    if (!content)
-        return 0;
-
-    auto report = new PluginReport();
-
-    report->plugin_name = "CFGTrace";
-    sprintf(content, "counter=%d", counter++);
-    report->content_before = nullptr;
-    report->content_after = content;
-
-    return report;
+    return create_plugin_report();
 }
 
 PluginReport *DBTFinish()
 {
     logger_info("[CFGTrace] Finish is called");
-    auto graphviz = graph->graphviz();
-    auto it = main_engine.cfg_iteration();
+    auto graphviz = control_flow_graph->graphviz();
+    auto it = _engine.cfg_iteration();
     logger_info("[CFGTrace] Finish is called for iteration %d", *it);
     auto out = std::fstream("partiaflowgraph.dot", std::fstream::out);
+
     try {
-        graph->generate(graphviz, &out, *it);
+        control_flow_graph->generate(graphviz, &out, *it);
     } catch (const std::exception &ex) {
         logger_error("%s", ex.what());
     }
-    // TODO(hoenir): do we still need volatile ?
-    auto mem = main_engine.cfg_serialize_memory_region();
-    volatile auto size = main_engine.cfg_size();
-    *size = graph->mem_size();
 
-    // TODO(hoenir): this should bail out or we should attempt to
-    // tell the engine we need more more memory.. for now we should
-    // squeeze the hole cfg in 2MB.
-    auto total_memory = main_engine.cfg_memory_region_size();
+    auto mem = _engine.cfg_serialize_memory_region();
+    auto size = _engine.cfg_size();
+    *size = control_flow_graph->mem_size();
+    auto total_memory = _engine.cfg_memory_region_size();
+
     if ((*size) > total_memory) {
         logger_error("memory is full, cannot write more");
         return nullptr;
     }
-    graph->load_to_memory(mem);
 
+    control_flow_graph->load_to_memory(mem);
     logger::unset_writer();
     return nullptr;
-}
-
-BOOL WINAPI DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved)
-{
-    (void)dll;
-    (void)reserved;
-
-    switch (reason) {
-    case DLL_PROCESS_ATTACH:
-        /**
-         * The DLL is being loaded into the virtual address space of
-         * the current process as a result of the process starting up or
-         * as a result of a call to LoadLibrary.DLLs can use this
-         * opportunity to initialize any instance data or to use the
-         * TlsAlloc function to allocate a thread local storage(TLS)
-         * index.The lpReserved parameter indicates whether the DLL is
-         * being loaded statically or dynamically.
-         */
-        if (!graph)
-            graph = new control_flow_graph();
-        break;
-
-    case DLL_THREAD_ATTACH:
-        /**
-         * The DLL is being unloaded from the virtual address space of
-         * the calling process because it was loaded unsuccessfully or
-         * the reference count has reached zero (the processes has either
-         * terminated or called FreeLibrary one time for each time it called LoadLibrary).
-         * The lpReserved parameter indicates whether the DLL is being
-         * unloaded as a result of a FreeLibrary call, a failure to load, or
-         * process termination The DLL can use this opportunity to call
-         * the TlsFree function to free any TLS indices allocated by using
-         * TlsAlloc and to free any thread local data Note that the thread
-         * that receives the DLL_PROCESS_DETACH notification is not necessarily
-         * the same thread that received the DLL_PROCESS_ATTACH
-         * notification.
-         */
-        break;
-    case DLL_THREAD_DETACH:
-        if (graph)
-            delete graph;
-        graph = nullptr;
-
-        break;
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-    return TRUE;
 }

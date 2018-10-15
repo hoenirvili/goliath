@@ -1,8 +1,12 @@
 #pragma once
 
 #include "cfgtrace/api/types.h"
+#include <cstddef>
 #include <string>
 
+namespace assembly
+{
+void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept;
 /**
  * instruction type holds all context of the next instruction
  */
@@ -53,3 +57,4 @@ public:
     size_t pointer_address() const noexcept;
     size_t mem_size() const noexcept;
 };
+}; // namespace assembly

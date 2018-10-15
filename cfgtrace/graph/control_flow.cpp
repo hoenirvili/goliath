@@ -1,13 +1,15 @@
-#include "cfgtrace/control_flow_graph.h"
+#include "cfgtrace/graph/control_flow.h"
+#include "cfgtrace/assembly/instruction.h"
 #include "cfgtrace/command/execute.h"
 #include "cfgtrace/engine/engine.h"
 #include "cfgtrace/error/error.h"
-#include "cfgtrace/instruction.h"
 #include "cfgtrace/random/random.h"
 #include <fstream>
 #include <stdexcept>
 #include <string>
 
+namespace graph
+{
 // digraph_prefix template
 constexpr const char *digraph_prefix = R"(
 digraph control_flow_graph {
@@ -21,7 +23,7 @@ digraph control_flow_graph {
 	]
 )";
 
-std::string control_flow_graph::graphviz()
+std::string control_flow::graphviz()
 {
     this->set_nodes_max_occurrences();
 
@@ -37,7 +39,7 @@ std::string control_flow_graph::graphviz()
     return digraph + "\n}";
 }
 
-void control_flow_graph::load_to_memory(std::byte *mem) const noexcept
+void control_flow::load_to_memory(std::byte *mem) const noexcept
 {
     memcpy(mem, &this->start_address_first_node, sizeof(this->start_address_first_node));
     mem += sizeof(this->start_address_first_node);
@@ -54,7 +56,7 @@ void control_flow_graph::load_to_memory(std::byte *mem) const noexcept
     }
 }
 
-void control_flow_graph::load_from_memory(const std::byte *mem) noexcept
+void control_flow::load_from_memory(const std::byte *mem) noexcept
 {
     memcpy(&this->start_address_first_node, mem, sizeof(this->start_address_first_node));
     mem += sizeof(start_address_first_node);
@@ -76,7 +78,7 @@ void control_flow_graph::load_from_memory(const std::byte *mem) noexcept
     }
 }
 
-void control_flow_graph::generate(const std::string content, std::ostream *out, int it) const
+void control_flow::generate(const std::string content, std::ostream *out, int it) const
 {
     (*out) << content << std::endl;
 
@@ -98,19 +100,19 @@ void control_flow_graph::generate(const std::string content, std::ostream *out, 
         throw ex(std::runtime_error, exception_message);
 }
 
-bool control_flow_graph::node_exists(size_t address) const noexcept
+bool control_flow::node_exists(size_t address) const noexcept
 {
     return (this->nodes.find(address) != this->nodes.end());
 }
 
-std::unique_ptr<Node> control_flow_graph::get_current_node(size_t start_address) noexcept
+std::unique_ptr<Node> control_flow::get_current_node(size_t start_address) noexcept
 {
     if (this->node_exists(start_address))
         return move(this->nodes[start_address]);
     return std::make_unique<Node>(start_address);
 }
 
-bool control_flow_graph::node_contains_address(size_t address) const noexcept
+bool control_flow::node_contains_address(size_t address) const noexcept
 {
     for (const auto &item : this->nodes)
         if (item.second->contains_address(address))
@@ -119,7 +121,7 @@ bool control_flow_graph::node_contains_address(size_t address) const noexcept
     return false;
 }
 
-size_t control_flow_graph::set_and_get_current_address(size_t eip) noexcept
+size_t control_flow::set_and_get_current_address(size_t eip) noexcept
 {
     if (this->current_node_start_addr == 0)
         this->current_node_start_addr = eip;
@@ -130,7 +132,7 @@ size_t control_flow_graph::set_and_get_current_address(size_t eip) noexcept
     return this->current_pointer;
 }
 
-void control_flow_graph::append_instruction(instruction instruction)
+void control_flow::append_instruction(assembly::instruction instruction)
 {
     if (!instruction.validate())
         throw ex(std::invalid_argument, "invalid instruction passed");
@@ -144,7 +146,7 @@ void control_flow_graph::append_instruction(instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow_graph::append_node_neighbors(const std::unique_ptr<Node> &node) noexcept
+void control_flow::append_node_neighbors(const std::unique_ptr<Node> &node) noexcept
 {
     size_t true_address = node->true_neighbour();
     size_t false_address = node->false_neighbour();
@@ -160,7 +162,7 @@ void control_flow_graph::append_node_neighbors(const std::unique_ptr<Node> &node
     }
 }
 
-void control_flow_graph::append_branch_instruction(instruction instruction)
+void control_flow::append_branch_instruction(assembly::instruction instruction)
 {
     if (!instruction.validate())
         throw ex(std::invalid_argument, "invalid instruction passed");
@@ -176,13 +178,13 @@ void control_flow_graph::append_branch_instruction(instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow_graph::unset_current_address(const std::unique_ptr<Node> &node) noexcept
+void control_flow::unset_current_address(const std::unique_ptr<Node> &node) noexcept
 {
     if (node->done())
         this->current_pointer = 0;
 }
 
-size_t control_flow_graph::mem_size() const noexcept
+size_t control_flow::mem_size() const noexcept
 {
     size_t size = sizeof(this->start_address_first_node);
     size += sizeof(size_t); // how many nodes we have
@@ -193,7 +195,7 @@ size_t control_flow_graph::mem_size() const noexcept
     return size;
 }
 
-void control_flow_graph::set_nodes_max_occurrences() noexcept
+void control_flow::set_nodes_max_occurrences() noexcept
 {
     unsigned int max = 0;
     for (const auto &item : this->nodes)
@@ -204,7 +206,9 @@ void control_flow_graph::set_nodes_max_occurrences() noexcept
         item.second->max_occurrences = max;
 }
 
-bool control_flow_graph::it_fits(const size_t size) const noexcept
+bool control_flow::it_fits(const size_t size) const noexcept
 {
     return (this->mem_size() <= size);
 }
+
+}; // namespace graph

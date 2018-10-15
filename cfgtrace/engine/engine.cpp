@@ -162,5 +162,4 @@ std::byte *engine::cfg_serialize_memory_region() const
     size_t size_offset = sizeof(*this->cfg_size());
     return &base[it_offset + size_offset];
 }
-
 }; // namespace engine

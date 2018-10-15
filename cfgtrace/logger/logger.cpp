@@ -40,6 +40,7 @@ void write(level l, const char *file, const int line, const char *function, cons
 void unset_writer() noexcept
 {
     delete w;
+    w = nullptr;
 }
 
 }; // namespace logger

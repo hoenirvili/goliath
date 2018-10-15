@@ -7,6 +7,12 @@ add_executable(cfgtracetest
 	fake_output_streamer.cpp
 	virtual_memory.cpp
 	virtual_memory.h
+	custom_params.cpp
+	custom_params.h
+	plugin_layer.h
+	plugin_layer.cpp
+	plugin_report.cpp
+	plugin_report.h
 )
 
 target_include_directories(cfgtracetest

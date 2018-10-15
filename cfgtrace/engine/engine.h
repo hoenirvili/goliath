@@ -25,7 +25,7 @@ public:
     static constexpr int SHARED_CFG = 0x40000;
     static constexpr int BUFFER_SIZE = 0x100000;
 
-    explicit engine(HANDLE file_mapping);
+    engine(HANDLE file_mapping);
     engine() = default;
     engine &operator=(engine &&other);
     ~engine();

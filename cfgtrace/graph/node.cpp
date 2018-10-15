@@ -1,7 +1,7 @@
-#include "cfgtrace/node.h"
+#include "cfgtrace/graph/node.h"
+#include "cfgtrace/assembly/instruction.h"
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/format/string.h"
-#include "cfgtrace/instruction.h"
 #include <string>
 
 void Node::mark_done() noexcept
@@ -24,7 +24,7 @@ size_t Node::false_neighbour() const noexcept
     return this->false_branch_address;
 }
 
-void Node::append_instruction(instruction instruction) noexcept
+void Node::append_instruction(assembly::instruction instruction) noexcept
 {
     size_t eip = instruction.pointer_address();
     // TODO(hoenir): always increment when first eip, ignore the rest
@@ -37,7 +37,7 @@ void Node::append_instruction(instruction instruction) noexcept
     this->block.push_back(instruction);
 }
 
-void Node::append_branch_instruction(instruction instruction) noexcept
+void Node::append_branch_instruction(assembly::instruction instruction) noexcept
 {
     this->append_instruction(instruction);
 
@@ -229,7 +229,7 @@ void Node::load_from_memory(const std::byte *mem) noexcept
     mem += sizeof(n);
 
     for (auto i = 0u; i < n; i++) {
-        auto instr = instruction();
+        auto instr = assembly::instruction();
         instr.load_from_memory(mem);
         mem += instr.mem_size();
         // push the newly completed instruction back

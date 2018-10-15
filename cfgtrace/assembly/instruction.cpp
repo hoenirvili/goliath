@@ -1,13 +1,30 @@
-#include "cfgtrace/instruction.h"
+#include "cfgtrace/assembly/instruction.h"
 #include "cfgtrace/api/types.h"
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/logger/logger.h"
 #include <stdexcept>
 #include <string>
 
-bool instruction::is_branch() const noexcept
+namespace assembly
 {
-    switch (this->branch_type) {
+static inline bool _direct_branch(BRANCH_TYPE type) noexcept
+{
+    return type == JmpType;
+}
+
+static inline bool _is_ret(BRANCH_TYPE type) noexcept
+{
+    return type == RetType;
+}
+
+static inline bool _is_call(BRANCH_TYPE type) noexcept
+{
+    return type == CallType;
+}
+
+static inline bool _is_branch(BRANCH_TYPE type) noexcept
+{
+    switch (type) {
     case JO:
     case JC:
     case JE:
@@ -34,6 +51,48 @@ bool instruction::is_branch() const noexcept
     }
 
     return false;
+}
+
+// TODO(hoenir): the engine should fix this
+static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
+{
+    BRANCH_TYPE type = (BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
+
+    if (_direct_branch(type))
+        return 0;
+    if (_is_ret(type))
+        return 0;
+
+    size_t eip = custom_params->MyDisasm->EIP;
+    size_t len = custom_params->instrlen;
+
+    size_t false_branch = eip + len;
+    if (_is_call(type)) {
+        if (custom_params->next_addr == custom_params->side_addr && custom_params->next_addr == false_branch)
+            return 0;
+
+        return false_branch;
+    }
+    if (!_is_call(type) && !_is_ret(type))
+        return custom_params->side_addr;
+
+    return false_branch;
+}
+
+static size_t compute_next_addr(CUSTOM_PARAMS *custom_params)
+{
+    return custom_params->next_addr;
+}
+
+void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept
+{
+    custom_params->next_addr = compute_next_addr(custom_params);
+    custom_params->side_addr = compute_side_addr(custom_params);
+}
+
+bool instruction::is_branch() const noexcept
+{
+    return _is_branch(this->branch_type);
 }
 
 bool instruction::is_leave() const noexcept
@@ -167,7 +226,7 @@ size_t instruction::false_branch_address() const noexcept
 
 bool instruction::is_call() const noexcept
 {
-    return (this->branch_type == CallType);
+    return _is_call(this->branch_type);
 }
 
 bool instruction::direct_branch() const noexcept
@@ -182,7 +241,7 @@ size_t instruction::pointer_address() const noexcept
 
 bool instruction::is_ret() const noexcept
 {
-    return (this->branch_type == RetType);
+    return _is_ret(this->branch_type);
 }
 
 bool instruction::validate() const noexcept
@@ -214,3 +273,5 @@ bool instruction::validate() const noexcept
 
     return true;
 }
+
+}; // namespace assembly

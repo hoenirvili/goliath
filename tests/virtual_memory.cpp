@@ -1,5 +1,6 @@
 #include "virtual_memory.h"
 #include "cfgtrace/engine/engine.h"
+#include <memory>
 #include <stdexcept>
 #include <windows.h>
 
@@ -28,8 +29,10 @@ virtual_memory::virtual_memory()
 
 virtual_memory::~virtual_memory()
 {
-    if (this->file_view)
+    if (this->file_view) {
         UnmapViewOfFile(this->file_view);
+        this->file_view = nullptr;
+    }
 
     CloseHandle(this->handler);
 }
@@ -44,10 +47,21 @@ void virtual_memory::enable_log_name()
     const char *file_log = "test_log_file.log";
     size_t file_log_size = strlen(file_log);
     memcpy(this->file_view, file_log, file_log_size);
-    /**
-     * we are done writing to that memory region
-     * make room for other processes to view in there
-     */
-    UnmapViewOfFile(this->file_view);
-    this->file_view = nullptr;
+}
+
+void virtual_memory::set_iteration_count(size_t n)
+{
+    void *start = &this->file_view[engine::engine::SHARED_CFG];
+    memcpy(start, &n, sizeof(n));
+};
+
+size_t virtual_memory::interation_count()
+{
+    void *start = &this->file_view[engine::engine::SHARED_CFG];
+    size_t space = sizeof(size_t);
+    if (!std::align(alignof(size_t), sizeof(size_t), start, space))
+        throw std::runtime_error("ptr is not aligned");
+
+    auto it = new (start) size_t;
+    return *it;
 }
