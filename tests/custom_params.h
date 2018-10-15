@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cfgtrace/api/types.h"
+#include <memory>
 
 const enum BRANCH_TYPE NO_BRANCH = static_cast<BRANCH_TYPE>(0);
 
@@ -20,3 +21,5 @@ public:
 private:
     CUSTOM_PARAMS *params = nullptr;
 };
+
+using custom_params_ptr = std::unique_ptr<custom_params>;
