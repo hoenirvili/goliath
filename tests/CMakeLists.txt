@@ -12,7 +12,8 @@ add_executable(cfgtracetest
 	plugin_layer.h
 	plugin_layer.cpp
 	plugin_report.cpp
-	plugin_report.h
+    plugin_report.h
+    logger_test.cpp
 )
 
 target_include_directories(cfgtracetest
