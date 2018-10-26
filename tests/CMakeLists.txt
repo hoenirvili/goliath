@@ -3,8 +3,6 @@ find_package(Catch2 REQUIRED)
 add_executable(cfgtracetest
 	main.cpp
 	cfgtrace_test.cpp
-	fake_output_streamer.h
-	fake_output_streamer.cpp
 	virtual_memory.cpp
 	virtual_memory.h
 	custom_params.cpp
@@ -14,6 +12,7 @@ add_executable(cfgtracetest
 	plugin_report.cpp
     plugin_report.h
     logger_test.cpp
+    catch_extra_matchers.h
 )
 
 target_include_directories(cfgtracetest

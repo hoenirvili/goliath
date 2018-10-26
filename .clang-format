@@ -1,28 +1,18 @@
----
+﻿---
+BasedOnStyle: LLVM
 AccessModifierOffset: '-4'
-AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: 'false'
-AlignConsecutiveDeclarations: 'false'
 AlignEscapedNewlinesLeft: 'true'
-AlignOperands: 'false'
 AlignTrailingComments: 'true'
 AllowAllParametersOfDeclarationOnNextLine: 'false'
-BasedOnStyle: LLVM
 AllowShortBlocksOnASingleLine: 'false'
-AllowShortCaseLabelsOnASingleLine: 'false'
-AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: 'false'
 AllowShortLoopsOnASingleLine: 'false'
-AlwaysBreakAfterDefinitionReturnType: None
-AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: 'false'
 AlwaysBreakTemplateDeclarations: 'true'
-BinPackArguments: 'false'
 BinPackParameters: 'false'
-BreakBeforeBinaryOperators: None
 BreakBeforeBraces: Linux
 BreakBeforeTernaryOperators: 'false'
-BreakStringLiterals: 'true'
 ColumnLimit: '120'
 ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
 ContinuationIndentWidth: '2'
@@ -37,9 +27,6 @@ MaxEmptyLinesToKeep: '1'
 NamespaceIndentation: None
 PenaltyReturnTypeOnItsOwnLine: '1'
 PointerAlignment: Right
-ReflowComments: 'true'
-SortIncludes: 'true'
-SpaceAfterCStyleCast: 'false'
 SpaceBeforeAssignmentOperators: 'true'
 SpaceBeforeParens: ControlStatements
 SpaceInEmptyParentheses: 'false'
@@ -48,7 +35,6 @@ SpacesInAngles: 'false'
 SpacesInCStyleCastParentheses: 'false'
 SpacesInContainerLiterals: 'true'
 SpacesInParentheses: 'false'
-SpacesInSquareBrackets: 'false'
 Standard: Cpp11
 TabWidth: '4'
 
