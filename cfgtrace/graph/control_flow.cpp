@@ -211,4 +211,43 @@ bool control_flow::it_fits(const size_t size) const noexcept
     return (this->mem_size() <= size);
 }
 
+static control_flow *g;
+
+static creator fn;
+
+static control_flow *control_flow_creator()
+{
+    return new control_flow();
+}
+
+bool is_initialised() noexcept
+{
+    return (g);
+}
+
+control_flow *instance() noexcept
+{
+    if (g)
+        return g;
+
+    if (!fn)
+        fn = control_flow_creator;
+
+    return fn();
+}
+
+void clean() noexcept
+{
+    if (!g)
+        return;
+
+    delete g;
+    g = nullptr;
+}
+
+void custom_creation(creator create) noexcept
+{
+    fn = create;
+}
+
 }; // namespace graph

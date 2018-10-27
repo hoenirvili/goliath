@@ -47,4 +47,8 @@ public:
     std::byte *cfg_serialize_memory_region() const;
 }; // class engine
 
+bool is_initialised();
+
+engine *instance();
+
 }; // namespace engine

@@ -1,20 +1,21 @@
 #pragma once
 
-#include "cfgtrace/error/error.h"
-
+#include <functional>
 #include <ostream>
 
 namespace logger
 {
 enum class level : uint8_t { error, warning, info };
 
-bool is_writer_set() noexcept;
-
-void set_writer(std::ostream *w);
-
 void write(level l, const char *file, const int line, const char *function, const char *format, ...) noexcept;
 
-void unset_writer() noexcept;
+bool initialise(const char *name);
+
+void clean() noexcept;
+
+using creator = std::function<std::ostream *(const char *name)>;
+
+void custom_creation(creator create) noexcept;
 
 }; // namespace logger
 

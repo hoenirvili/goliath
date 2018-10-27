@@ -162,4 +162,24 @@ std::byte *engine::cfg_serialize_memory_region() const
     size_t size_offset = sizeof(*this->cfg_size());
     return &base[it_offset + size_offset];
 }
+
+static engine *e;
+
+bool is_initialised()
+{
+    return (e);
+}
+
+engine *instance()
+{
+    if (!e) {
+        HANDLE file_mapping = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
+        if (!file_mapping)
+            return nullptr;
+        return new engine(file_mapping);
+    }
+
+    return e;
+}
+
 }; // namespace engine

@@ -5,11 +5,17 @@
 
 class fake_output_streamer
 {
-private:
-    std::stringbuf buffer;
-
 public:
+    const char *name() const noexcept;
     fake_output_streamer() = default;
     ~fake_output_streamer() = default;
-    std::ostream *writer() noexcept;
+    std::ostream *writer(const char *name);
+    void fake_output_streamer::contains(const char *str);
+
+private:
+    std::stringbuf buffer;
+    std::ostream *os = nullptr;
+
+    const char *_name = nullptr;
+    void init_only_once() noexcept;
 };

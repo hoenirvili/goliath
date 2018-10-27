@@ -2,6 +2,7 @@
 
 #include "cfgtrace/assembly/instruction.h"
 #include "cfgtrace/graph/node.h"
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -39,4 +40,12 @@ public:
     void append_instruction(assembly::instruction instruction);
     void append_branch_instruction(assembly::instruction instruction);
 };
+
+using creator = std::function<control_flow *()>;
+
+bool is_initialised() noexcept;
+control_flow *instance() noexcept;
+void clean() noexcept;
+void custom_creation(creator create) noexcept;
+
 }; // namespace graph

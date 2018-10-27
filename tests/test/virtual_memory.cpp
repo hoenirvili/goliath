@@ -37,6 +37,11 @@ virtual_memory::~virtual_memory()
     CloseHandle(this->handler);
 }
 
+const char *virtual_memory::logger_name() const noexcept
+{
+    return this->file_log_name;
+}
+
 void virtual_memory::enable_log_name()
 {
     if (!this->file_view)
@@ -44,9 +49,8 @@ void virtual_memory::enable_log_name()
     /**
      * write the first bytes the test log file name
      */
-    const char *file_log = "test_log_file.log";
-    size_t file_log_size = strlen(file_log);
-    memcpy(this->file_view, file_log, file_log_size);
+    size_t file_log_size = strlen(this->file_log_name);
+    memcpy(this->file_view, this->file_log_name, file_log_size);
 }
 
 void virtual_memory::set_iteration_count(size_t n)
@@ -55,7 +59,7 @@ void virtual_memory::set_iteration_count(size_t n)
     memcpy(start, &n, sizeof(n));
 };
 
-size_t virtual_memory::interation_count()
+size_t virtual_memory::iteration_count()
 {
     void *start = &this->file_view[engine::engine::SHARED_CFG];
     size_t space = sizeof(size_t);

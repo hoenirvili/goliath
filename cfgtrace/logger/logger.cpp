@@ -1,29 +1,30 @@
 #include "cfgtrace/logger/logger.h"
 #include <cstdarg>
+#include <fstream>
+#include <functional>
 #include <map>
 #include <ostream>
-#include <stdexcept>
 #include <string>
 
 namespace logger
 {
-static std::ostream *w;
+static creator fn;
 
-bool is_writer_set() noexcept
+static std::ostream *file_creator(const char *name)
 {
-    return (w);
+    std::ostream *file;
+    if (file = new std::fstream(name, std::ios::app); (!*(file))) {
+        delete file;
+        file = nullptr;
+    }
+
+    return file;
 }
 
-void set_writer(std::ostream *writer)
-{
-    w = writer;
-}
+static std::ostream *out;
 
 void write(level l, const char *file, const int line, const char *function, const char *format, ...) noexcept
 {
-    if (!w)
-        return;
-
     const std::map<level, std::string> table = {
       {level::error, "ERROR"}, {level::warning, "WARNING"}, {level::info, "INFO"}};
     auto _prefix = "|" + table.at(l) + "|";
@@ -42,13 +43,34 @@ void write(level l, const char *file, const int line, const char *function, cons
     vsnprintf(message, len, format, list);
     va_end(list);
 
-    (*w) << file << ":" << line << ":" << function << " " << _prefix << " " << message << std::endl;
+    (*out) << file << ":" << line << ":" << function << " " << _prefix << " " << message << '\n';
 }
 
-void unset_writer() noexcept
+void custom_creation(creator create) noexcept
 {
-    delete w;
-    w = nullptr;
+    fn = create;
+}
+
+bool initialise(const char *name)
+{
+    if (out)
+        return true;
+
+    if (!fn)
+        fn = file_creator;
+
+    if (out = fn(name); !out)
+        return false;
+
+    return true;
+}
+
+void clean() noexcept
+{
+    if (out) {
+        delete out;
+        out = nullptr;
+    }
 }
 
 }; // namespace logger

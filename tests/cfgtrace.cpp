@@ -1,44 +1,106 @@
-#include "cfgtrace.h"
-#include "cfgtrace/api/types.h"
-#include "cfgtrace/logger/logger.h"
-#include "test/catch_extra_matchers.h"
-#include "test/custom_params.h"
 #include "test/fake_output_streamer.h"
-#include "test/plugin_layer.h"
-#include "test/plugin_report.h"
 #include "test/virtual_memory.h"
 #include <catch2/catch.hpp>
-#include <memory>
-#include <ostream>
-#include <vector>
-#include <windows.h>
+#include <cfgtrace.h>
+#include <cfgtrace/graph/control_flow.h>
+#include <cfgtrace/logger/logger.h>
 
 using Catch::Matchers::Contains;
+using Catch::Matchers::Equals;
 
 TEST_CASE("The plugin is assumed to be run in layer 2", "[GetLayer]")
 {
-    size_t layer = GetLayer();
+    auto layer = GetLayer();
     REQUIRE(layer == PLUGIN_LAYER);
 }
 
-TEST_CASE("When the internal virtual memory is not initialised", "[DBTInit]")
+TEST_CASE("When the holestate is not initialised", "[DBTInit]")
 {
     BOOL state = DBTInit();
-    REQUIRE(state == FALSE);
+    REQUIRE_FALSE(state);
 }
 
-TEST_CASE("When the internal virtual memory is initialised", "[DBTInit]")
+TEST_CASE("When the virtual memory is initialised", "[DBTInit]")
 {
-    virtual_memory vm = virtual_memory();
-
-    SECTION("file_mapping is now constructed but log name is not available")
-    {
-        BOOL state = DBTInit();
-        REQUIRE(state == FALSE);
-        auto it = vm.interation_count();
-        REQUIRE(it == 0);
-    }
+    auto vm = virtual_memory();
+    BOOL state = DBTInit();
+    REQUIRE_FALSE(state);
 }
+
+TEST_CASE("When the internal state is initiliased", "[DBTInit]")
+{
+    auto vm = virtual_memory();        // setup the shared virtual memory
+    vm.enable_log_name();              // write the logger name at the start of the block
+    auto fos = fake_output_streamer(); // create a new logger mock
+    auto fp = std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1);
+    logger::custom_creation(fp); // bind the fake logger
+
+    BOOL state = DBTInit();
+    REQUIRE(state == TRUE);
+
+    // check if the logger's name is initliased correctly
+    std::string name = fos.name();
+    auto logger_name = vm.logger_name();
+    REQUIRE(name == logger_name);
+
+    // check the iteration count of the algorithm
+    auto it = vm.iteration_count();
+    REQUIRE(it == 1);
+
+    // check the logger messages
+    fos.contains("[CFGTrace] DBTInit engine and logger state are initiliased");
+    fos.contains("[CFGTrace] Init is called for iteration 1");
+
+    // clean the graph and logger state
+    logger::clean();
+    graph::clean();
+}
+
+TEST_CASE("When the graph initialisation fails", "[DBTInit]")
+{
+    // setup all the mocks
+    auto vm = virtual_memory();
+    vm.enable_log_name();
+    auto fos = fake_output_streamer();
+    auto fp = std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1);
+    logger::custom_creation(fp);
+    // make the graph to fails
+    auto fail = []() -> graph::control_flow * { return nullptr; };
+    graph::custom_creation(fail);
+
+    BOOL state = DBTInit();
+    REQUIRE(state == FALSE);
+
+    // check the logger name is initliased correctly
+    std::string name = fos.name();
+    auto logger_name = vm.logger_name();
+    REQUIRE(name == logger_name);
+
+    // check the iteration count
+    // TODO(hoenir): why this is 1? why it's not 0?
+    auto it = vm.iteration_count();
+    REQUIRE(it == 0);
+
+    // clean the graph and logger
+    logger::clean();
+}
+
+// TEST_CASE("Initilise only the logger", "[DBTInit]")
+// {
+// }
+
+// TEST_CASE("When the internal virtual memory is initialised", "[DBTInit]")
+// {
+//     virtual_memory vm = virtual_memory();
+
+//     SECTION("file_mapping is now constructed but log name is not available")
+//     {
+//         BOOL state = DBTInit();
+//         REQUIRE(state == FALSE);
+//         auto it = vm.interation_count();
+//         REQUIRE(it == 0);
+//     }
+// }
 
 // TEST_CASE("When the internal virtual memory log is initialised", "[DBTInit]")
 // {
