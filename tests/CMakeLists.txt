@@ -1,29 +1,24 @@
 enable_testing()
+
 find_package(Catch2 REQUIRED)
+
 add_executable(cfgtracetest
 	main.cpp
-	cfgtrace_test.cpp
-	virtual_memory.cpp
-	virtual_memory.h
-	custom_params.cpp
-	custom_params.h
-	plugin_layer.h
-	plugin_layer.cpp
-	plugin_report.cpp
-    plugin_report.h
-    logger_test.cpp
-    catch_extra_matchers.h
+	cfgtrace.cpp
+    logger.cpp
 )
+add_subdirectory(test)
 
 target_include_directories(cfgtracetest
 	PRIVATE ${CFGTRACE_ROOT_DIRECTORY})
 
 target_link_libraries(cfgtracetest
 	PRIVATE cfgtrace
-	PRIVATE Catch2::Catch2
+    PRIVATE Catch2::Catch2
 )
 
 get_target_property(OUTPUT cfgtrace RUNTIME_OUTPUT_DIRECTORY)
+
 set_target_properties(cfgtracetest
 	PROPERTIES
 		COMPILE_FEATURES cxx_std_17

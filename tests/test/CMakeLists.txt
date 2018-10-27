@@ -1,21 +1,14 @@
-add_library(cfgtrace)
-
-target_include_directories(cfgtrace
-	PUBLIC ${CFGTRACE_ROOT_DIRECTORY}/tests/test/include)
-
-set_target_properties(cfgtrace
-		OUTPUT_NAME "cfgtracetestutil"
-		ARCHIVE_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
-		LIBRARY_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
-		RUNTIME_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
-		PDB_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
-		COMPILE_FEATURES cxx_std_17
-		COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS;$<$<BOOL:${BUILD_TESTS}>:${TEST_EXPORT}>"
-)
-
-add_library(cfgtracetestutil ALIAS cfgtracetestutil)
-
-target_link_libraries(cfgtracetest
-	PRIVATE cfgtrace
-	PRIVATE Catch2::Catch2
+target_sources(cfgtracetest
+    PRIVATE
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/catch_extra_matchers.h
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/custom_params.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/custom_params.h
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_output_streamer.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_output_streamer.h
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_layer.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_layer.h
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_report.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_report.h
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/virtual_memory.cpp
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/virtual_memory.h
 )

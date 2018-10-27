@@ -1,17 +1,17 @@
-#include "catch_extra_matchers.h"
 #include "cfgtrace.h"
 #include "cfgtrace/api/types.h"
 #include "cfgtrace/logger/logger.h"
-#include "custom_params.h"
-#include "fake_output_streamer.h"
-#include "plugin_layer.h"
-#include "plugin_report.h"
-#include "virtual_memory.h"
-#include "windows.h"
+#include "test/catch_extra_matchers.h"
+#include "test/custom_params.h"
+#include "test/fake_output_streamer.h"
+#include "test/plugin_layer.h"
+#include "test/plugin_report.h"
+#include "test/virtual_memory.h"
 #include <catch2/catch.hpp>
 #include <memory>
 #include <ostream>
 #include <vector>
+#include <windows.h>
 
 using Catch::Matchers::Contains;
 

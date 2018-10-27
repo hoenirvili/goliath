@@ -1,5 +1,5 @@
 #include "cfgtrace/logger/logger.h"
-#include "fake_output_streamer.h"
+#include "test/fake_output_streamer.h"
 #include <catch2/catch.hpp>
 #include <map>
 #include <memory>
