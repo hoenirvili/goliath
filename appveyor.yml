@@ -39,7 +39,8 @@ install:
   - choco install codecov
   # install coverage tool
   - choco install OpenCppCoverage
-
+  # refresh shell
+  - refreshenv
 
 build:
   parallel: true
