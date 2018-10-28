@@ -13,6 +13,10 @@ configuration:
 
 platform: x86
 
+environment:
+  CODECOV_REPO_TOKEN:
+    secure: aieBsQl5F8rZCpKNDWahIuvVUN3dncJSxng3paclXwzVo07T8Ewusjk+d5ba4zsf
+
 install:
   # All external dependencies are installed in C:\projects\deps
   - mkdir C:\projects\deps
@@ -31,6 +35,11 @@ install:
   - cmake --build build/ --target install
   # Install ctest
   - ctest --version
+  # code coverage upload tool
+  - choco install codecov
+  # install coverage tool
+  - choco install OpenCppCoverage
+
 
 build:
   parallel: true
@@ -50,3 +59,8 @@ test_script:
   - ninja -v -C build -j2 cfgtracetest
   - cd build/tests
   - ctest -VV -j2 -C Debug
+
+after_test:
+  - cd C:\projects\cfgtrace
+  - OpenCppCoverage.exe --sources cfgtrace --export_type cobertura -- .\bin\cfgtracetest.exe
+  - codecov -f "cfgtracetestCoverage.xml" -t %CODECOV_REPO_TOKEN%

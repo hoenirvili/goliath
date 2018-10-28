@@ -69,8 +69,6 @@ PluginReport *DBTFinish()
     return nullptr;
 }
 
-// static std::unique_ptr<graph::control_flow> control_flow_graph;
-
 // static PluginReport *create_plugin_report()
 // {
 //     char *content = (char *)VirtualAlloc(0, 0x4000, MEM_COMMIT, PAGE_READWRITE);
@@ -82,49 +80,6 @@ PluginReport *DBTFinish()
 //     report->content_before = content;
 //     report->content_after = nullptr;
 //     return report;
-// }
-
-// static engine::engine _engine;
-
-// BOOL DBTInit()
-// {
-//     HANDLE file_mapping = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
-//     if (!file_mapping)
-//         return FALSE;
-
-//     try {
-//         _engine = engine::engine(file_mapping);
-//     } catch (...) {
-//         return FALSE;
-//     }
-
-//     if (!logger::is_writer_set()) {
-//         const char *lname = _engine.log_name();
-//         if (!lname)
-//             return FALSE;
-
-//         std::fstream *file = new std::fstream(lname, std::ios_base::app);
-//         if (!(*file)) {
-//             delete file;
-//             return FALSE;
-//         }
-
-//         logger::set_writer(file);
-//     }
-
-//     if (!control_flow_graph)
-//         control_flow_graph = std::make_unique<graph::control_flow>();
-
-//     logger_info("[CFGTrace] Init is called");
-//     size_t *it = _engine.cfg_iteration();
-//     if (*it) {
-//         auto mem = _engine.cfg_serialize_memory_region();
-//         control_flow_graph->load_from_memory(mem);
-//     }
-//     (*it)++;
-//     logger_info("[CFGTrace] Init is called for iteration %d", *it);
-
-//     return TRUE;
 // }
 
 // PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
