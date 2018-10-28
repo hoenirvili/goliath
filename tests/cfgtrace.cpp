@@ -1,12 +1,12 @@
+#include "test/fake_graph.h"
 #include "test/fake_output_streamer.h"
 #include "test/virtual_memory.h"
 #include <catch2/catch.hpp>
 #include <cfgtrace.h>
-#include <cfgtrace/graph/control_flow.h>
+#include <cfgtrace/engine/engine.h>
+#include <cfgtrace/graph/graph.h>
 #include <cfgtrace/logger/logger.h>
-
-using Catch::Matchers::Contains;
-using Catch::Matchers::Equals;
+#include <typeinfo>
 
 TEST_CASE("The plugin is assumed to be run in layer 2", "[GetLayer]")
 {
@@ -14,76 +14,185 @@ TEST_CASE("The plugin is assumed to be run in layer 2", "[GetLayer]")
     REQUIRE(layer == PLUGIN_LAYER);
 }
 
-TEST_CASE("When the holestate is not initialised", "[DBTInit]")
+TEST_CASE("Test different states of initialisation", "[DBTInit]")
 {
-    BOOL state = DBTInit();
-    REQUIRE_FALSE(state);
+    SECTION("When the virtual memory is not initiliased")
+    {
+        BOOL state = DBTInit();
+        REQUIRE_FALSE(state);
+    }
+
+    SECTION("When the virtual memory is set but the engine fails to initialise")
+    {
+        auto vm = virtual_memory();
+        engine::custom_creation([](HANDLE file_mapping) -> engine::engine * {
+            REQUIRE(file_mapping != nullptr);
+            return nullptr;
+        });
+        BOOL state = DBTInit();
+        REQUIRE_FALSE(state);
+
+        engine::custom_creation(nullptr);
+    }
+
+    SECTION("When the engine is set but the logger fails to initialise")
+    {
+        auto vm = virtual_memory();
+        vm.enable_log_name();
+        std::string logger_name;
+        auto fail = [&logger_name](const char *name) -> std::ostream * {
+            REQUIRE(name != nullptr);
+            logger_name = name;
+            return nullptr;
+        };
+        logger::custom_creation(fail);
+
+        BOOL state = DBTInit();
+        REQUIRE_FALSE(state);
+        REQUIRE(logger_name == vm.logger_name());
+        engine::clean();
+        logger::custom_creation(nullptr);
+    }
+
+    SECTION("When the engine, logger is set but the control flow graph fails to initialise")
+    {
+        auto vm = virtual_memory();
+        vm.enable_log_name();
+        auto fos = fake_output_streamer();
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
+        graph::custom_creation([]() -> graph::graph * { return nullptr; });
+
+        BOOL state = DBTInit();
+        REQUIRE_FALSE(state);
+
+        std::string got = fos.name();
+        auto expected = vm.logger_name();
+        REQUIRE(got == expected);
+
+        fos.contains("[CFGTrace] DBTInit engine and logger state are initiliased");
+
+        engine::clean();
+        logger::clean();
+        logger::custom_creation(nullptr);
+        graph::custom_creation(nullptr);
+    }
+
+    SECTION("When the engine, logger and control flow graph is initialised")
+    {
+        auto vm = virtual_memory();
+        vm.enable_log_name();
+        auto fos = fake_output_streamer();
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
+
+        BOOL state = DBTInit();
+        REQUIRE(state == TRUE);
+
+        fos.contains("[CFGTrace] DBTInit engine and logger state are initiliased");
+        fos.contains("[CFGTrace] Init is called for iteration 1");
+
+        auto it = vm.iteration_count();
+        REQUIRE(it == 1);
+
+        engine::clean();
+        logger::clean();
+        graph::clean();
+        logger::custom_creation(nullptr);
+    }
+
+    SECTION("When the state is initialised and the logger is at iteration > 0")
+    {
+        auto vm = virtual_memory();
+        vm.enable_log_name();
+        auto fos = fake_output_streamer();
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            fk->_read = [](const std::byte *from) { REQUIRE(from != nullptr); };
+            return fk;
+        });
+
+        // set iteration to be > 0
+        vm.set_iteration_count(1);
+
+        BOOL state = DBTInit();
+        REQUIRE(state == TRUE);
+
+        fos.contains("[CFGTrace] DBTInit engine and logger state are initiliased");
+        fos.contains("[CFGTrace] Init is called for iteration 2");
+
+        auto it = vm.iteration_count();
+        REQUIRE(it == 2);
+
+        // check instance graph
+        auto g = graph::instance();
+        auto is_fake_graph = dynamic_cast<fake_graph *>(g);
+        REQUIRE(is_fake_graph != nullptr);
+
+        engine::clean();
+        logger::clean();
+        graph::clean();
+        logger::custom_creation(nullptr);
+        graph::custom_creation(nullptr);
+    }
 }
 
-TEST_CASE("When the virtual memory is initialised", "[DBTInit]")
-{
-    auto vm = virtual_memory();
-    BOOL state = DBTInit();
-    REQUIRE_FALSE(state);
-}
+// TEST_CASE("When the internal state is initiliased", "[DBTInit]")
+// {
+//     auto vm = virtual_memory();        // setup the shared virtual memory
+//     vm.enable_log_name();              // write the logger name at the start of the block
+//     auto fos = fake_output_streamer(); // create a new logger mock
+//     auto fp = std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1);
+//     logger::custom_creation(fp); // bind the fake logger
 
-TEST_CASE("When the internal state is initiliased", "[DBTInit]")
-{
-    auto vm = virtual_memory();        // setup the shared virtual memory
-    vm.enable_log_name();              // write the logger name at the start of the block
-    auto fos = fake_output_streamer(); // create a new logger mock
-    auto fp = std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1);
-    logger::custom_creation(fp); // bind the fake logger
+//     BOOL state = DBTInit();
+//     REQUIRE(state == TRUE);
 
-    BOOL state = DBTInit();
-    REQUIRE(state == TRUE);
+//     // check if the logger's name is initliased correctly
+//     std::string name = fos.name();
+//     auto logger_name = vm.logger_name();
+//     REQUIRE(name == logger_name);
 
-    // check if the logger's name is initliased correctly
-    std::string name = fos.name();
-    auto logger_name = vm.logger_name();
-    REQUIRE(name == logger_name);
+//     // check the iteration count of the algorithm
+//     auto it = vm.iteration_count();
+//     REQUIRE(it == 1);
 
-    // check the iteration count of the algorithm
-    auto it = vm.iteration_count();
-    REQUIRE(it == 1);
+//     // check the logger messages
+//     fos.contains("[CFGTrace] DBTInit engine and logger state are initiliased");
+//     fos.contains("[CFGTrace] Init is called for iteration 1");
 
-    // check the logger messages
-    fos.contains("[CFGTrace] DBTInit engine and logger state are initiliased");
-    fos.contains("[CFGTrace] Init is called for iteration 1");
+//     // clean the graph and logger state
+//     logger::clean();
+//     graph::clean();
+// }
 
-    // clean the graph and logger state
-    logger::clean();
-    graph::clean();
-}
+// TEST_CASE("When the graph initialisation fails", "[DBTInit]")
+// {
+//     // setup all the mocks
+//     auto vm = virtual_memory();
+//     vm.enable_log_name();
+//     auto fos = fake_output_streamer();
+//     auto fp = std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1);
+//     logger::custom_creation(fp);
+//     // make the graph to fails
+//     auto fail = []() -> graph::control_flow * { return nullptr; };
+//     graph::custom_creation(fail);
 
-TEST_CASE("When the graph initialisation fails", "[DBTInit]")
-{
-    // setup all the mocks
-    auto vm = virtual_memory();
-    vm.enable_log_name();
-    auto fos = fake_output_streamer();
-    auto fp = std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1);
-    logger::custom_creation(fp);
-    // make the graph to fails
-    auto fail = []() -> graph::control_flow * { return nullptr; };
-    graph::custom_creation(fail);
+//     BOOL state = DBTInit();
+//     REQUIRE(state == FALSE);
 
-    BOOL state = DBTInit();
-    REQUIRE(state == FALSE);
+//     // check the logger name is initliased correctly
+//     std::string name = fos.name();
+//     auto logger_name = vm.logger_name();
+//     REQUIRE(name == logger_name);
 
-    // check the logger name is initliased correctly
-    std::string name = fos.name();
-    auto logger_name = vm.logger_name();
-    REQUIRE(name == logger_name);
+//     // check the iteration count
+//     // TODO(hoenir): why this is 1? why it's not 0?
+//     auto it = vm.iteration_count();
+//     REQUIRE(it == 0);
 
-    // check the iteration count
-    // TODO(hoenir): why this is 1? why it's not 0?
-    auto it = vm.iteration_count();
-    REQUIRE(it == 0);
-
-    // clean the graph and logger
-    logger::clean();
-}
+//     // clean the graph and logger
+//     logger::clean();
+// }
 
 // TEST_CASE("Initilise only the logger", "[DBTInit]")
 // {

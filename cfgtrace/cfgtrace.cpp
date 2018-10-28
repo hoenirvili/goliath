@@ -3,6 +3,7 @@
 #include "cfgtrace/engine/engine.h"
 #include "cfgtrace/graph/control_flow.h"
 #include "cfgtrace/logger/logger.h"
+#include "cfgtrace/memory/loader.h"
 
 /**
  * GetLayer returns the layer number that the plugin
@@ -35,7 +36,7 @@ BOOL DBTInit()
         return FALSE;
 
     logger_info("[CFGTrace] DBTInit engine and logger state are initiliased");
-    graph::control_flow *g;
+    graph::graph *g;
     if (!graph::is_initialised()) {
         if (g = graph::instance(); !g)
             return FALSE;
@@ -44,7 +45,7 @@ BOOL DBTInit()
     auto it = e->cfg_iteration();
     if (*it) {
         auto smr = e->cfg_serialize_memory_region();
-        g->load_from_memory(smr);
+        memory::loader(g, smr);
     }
 
     (*it)++;
@@ -134,7 +135,8 @@ PluginReport *DBTFinish()
 //     DISASM *MyDisasm = custom_params->MyDisasm;
 
 //     auto instr =
-//       assembly::instruction(MyDisasm->EIP, MyDisasm->CompleteInstr, (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
+//       assembly::instruction(MyDisasm->EIP, MyDisasm->CompleteInstr,
+//       (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
 //                             custom_params->instrlen, custom_params->next_addr, custom_params->side_addr);
 //     auto plugin = _engine.plugin_interface("APIReporter", 1, layers);
 //     if (plugin) {
@@ -170,7 +172,8 @@ PluginReport *DBTFinish()
 //     DISASM *MyDisasm = custom_params->MyDisasm;
 
 //     auto instr =
-//       assembly::instruction(MyDisasm->EIP, MyDisasm->CompleteInstr, (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
+//       assembly::instruction(MyDisasm->EIP, MyDisasm->CompleteInstr,
+//       (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
 //                             custom_params->instrlen, custom_params->next_addr, custom_params->side_addr);
 //     if (instr.is_call()) // skip calls
 //         return create_plugin_report();

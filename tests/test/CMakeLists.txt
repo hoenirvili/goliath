@@ -11,4 +11,7 @@ target_sources(cfgtracetest
         ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_report.h
         ${CFGTRACE_ROOT_DIRECTORY}/tests/test/virtual_memory.cpp
         ${CFGTRACE_ROOT_DIRECTORY}/tests/test/virtual_memory.h
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_graph.h
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_graph.cpp
+
 )

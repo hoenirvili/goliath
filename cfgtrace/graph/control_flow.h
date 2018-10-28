@@ -1,19 +1,68 @@
 #pragma once
 
 #include "cfgtrace/assembly/instruction.h"
+#include "cfgtrace/graph/graph.h"
 #include "cfgtrace/graph/node.h"
-#include <functional>
+
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace graph
 {
-class control_flow
+/**
+ * control_flow graph is a type of graph that
+ * holds instruction and can represent the flow of an execution
+ */
+class control_flow : public graph
 {
-private:
+public:
     using node_ptr = std::unique_ptr<Node>;
+    /**
+     * start_address_first_node is the start address of the first
+     * instruction that has been added into our control flow graph
+     */
+    size_t start_address_first_node = 0;
 
+    /**
+     * nodes a map of start node addresses and pointers to nodes
+     * in each and every node we can hold multiple instruction based on the context
+     * we are in
+     */
+    std::map<size_t, node_ptr> nodes;
+
+    /**
+     *  read from a block of memory that we assume holds information from
+     *  a control flow graph and try to initialise internal fields.
+     */
+    void read(const std::byte *from) noexcept override;
+
+    /**
+     *  write the current state of the control flow graph in memory pointed by to
+     *  we assume that to is bigger enough to hold all the internal information
+     */
+    void write(std::byte *to) const noexcept override;
+
+    /**
+     *  append adds an assembly instruction in the control flow graph
+     */
+    void append(assembly::instruction instruction) override;
+
+    // TODO(hoenir): make an interface that can generate multiple formats
+    void generate(std::string_view content, std::ostream *out, int it) const;
+    std::string graphviz();
+
+    // TODO(hoenir): I think this information should be private, the caller does not care
+    // about this kind of things
+    size_t mem_size() const noexcept;
+    bool node_exists(size_t start) const noexcept;
+
+    control_flow() = default;
+    ~control_flow() = default;
+
+private:
     size_t current_node_start_addr = 0x0;
     size_t current_pointer = 0x0;
 
@@ -24,28 +73,8 @@ private:
     bool it_fits(const size_t size) const noexcept;
     size_t set_and_get_current_address(size_t eip) noexcept;
     node_ptr get_current_node(size_t start_address) noexcept;
-
-public:
-    size_t start_address_first_node = 0;
-    std::map<size_t, node_ptr> nodes;
-
-    control_flow() = default;
-    ~control_flow() = default;
-    void generate(std::string content, std::ostream *out, int it) const;
-    std::string graphviz();
-    void load_to_memory(std::byte *mem) const noexcept;
-    void load_from_memory(const std::byte *mem) noexcept;
-    size_t mem_size() const noexcept;
-    bool node_exists(size_t start) const noexcept;
     void append_instruction(assembly::instruction instruction);
     void append_branch_instruction(assembly::instruction instruction);
 };
-
-using creator = std::function<control_flow *()>;
-
-bool is_initialised() noexcept;
-control_flow *instance() noexcept;
-void clean() noexcept;
-void custom_creation(creator create) noexcept;
 
 }; // namespace graph

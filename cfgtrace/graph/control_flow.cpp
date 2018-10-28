@@ -4,9 +4,11 @@
 #include "cfgtrace/engine/engine.h"
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/random/random.h"
+
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace graph
 {
@@ -39,7 +41,7 @@ std::string control_flow::graphviz()
     return digraph + "\n}";
 }
 
-void control_flow::load_to_memory(std::byte *mem) const noexcept
+void control_flow::write(std::byte *mem) const noexcept
 {
     memcpy(mem, &this->start_address_first_node, sizeof(this->start_address_first_node));
     mem += sizeof(this->start_address_first_node);
@@ -56,7 +58,7 @@ void control_flow::load_to_memory(std::byte *mem) const noexcept
     }
 }
 
-void control_flow::load_from_memory(const std::byte *mem) noexcept
+void control_flow::read(const std::byte *mem) noexcept
 {
     memcpy(&this->start_address_first_node, mem, sizeof(this->start_address_first_node));
     mem += sizeof(start_address_first_node);
@@ -78,7 +80,7 @@ void control_flow::load_from_memory(const std::byte *mem) noexcept
     }
 }
 
-void control_flow::generate(const std::string content, std::ostream *out, int it) const
+void control_flow::generate(std::string_view content, std::ostream *out, int it) const
 {
     (*out) << content << std::endl;
 
@@ -162,6 +164,17 @@ void control_flow::append_node_neighbors(const std::unique_ptr<Node> &node) noex
     }
 }
 
+void control_flow::append(assembly::instruction instruction)
+{
+    switch (instruction.is_branch()) {
+    case true:
+        this->append_branch_instruction(instruction);
+        break;
+    case false:
+        this->append_instruction(instruction);
+    }
+}
+
 void control_flow::append_branch_instruction(assembly::instruction instruction)
 {
     if (!instruction.validate())
@@ -209,45 +222,6 @@ void control_flow::set_nodes_max_occurrences() noexcept
 bool control_flow::it_fits(const size_t size) const noexcept
 {
     return (this->mem_size() <= size);
-}
-
-static control_flow *g;
-
-static creator fn;
-
-static control_flow *control_flow_creator()
-{
-    return new control_flow();
-}
-
-bool is_initialised() noexcept
-{
-    return (g);
-}
-
-control_flow *instance() noexcept
-{
-    if (g)
-        return g;
-
-    if (!fn)
-        fn = control_flow_creator;
-
-    return fn();
-}
-
-void clean() noexcept
-{
-    if (!g)
-        return;
-
-    delete g;
-    g = nullptr;
-}
-
-void custom_creation(creator create) noexcept
-{
-    fn = create;
 }
 
 }; // namespace graph

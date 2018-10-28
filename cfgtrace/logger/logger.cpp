@@ -67,10 +67,11 @@ bool initialise(const char *name)
 
 void clean() noexcept
 {
-    if (out) {
-        delete out;
-        out = nullptr;
-    }
+    if (!out)
+        return;
+
+    delete out;
+    out = nullptr;
 }
 
 }; // namespace logger

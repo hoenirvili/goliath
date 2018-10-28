@@ -165,7 +165,19 @@ std::byte *engine::cfg_serialize_memory_region() const
 
 static engine *e;
 
-bool is_initialised()
+static creator fn;
+
+static engine *default_creator(HANDLE file_mapping)
+{
+    return new engine(file_mapping);
+}
+
+void custom_creation(creator create)
+{
+    fn = create;
+}
+
+bool is_initialised() noexcept
 {
     return (e);
 }
@@ -176,10 +188,23 @@ engine *instance()
         HANDLE file_mapping = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, memsharedname);
         if (!file_mapping)
             return nullptr;
-        return new engine(file_mapping);
+
+        if (!fn)
+            fn = default_creator;
+
+        return fn(file_mapping);
     }
 
     return e;
+}
+
+void clean() noexcept
+{
+    if (!e)
+        return;
+
+    delete e;
+    e = nullptr;
 }
 
 }; // namespace engine

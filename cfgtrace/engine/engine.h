@@ -2,6 +2,7 @@
 
 #include "cfgtrace/api/types.h"
 #include <cstddef>
+#include <functional>
 #include <windows.h>
 
 namespace engine
@@ -47,8 +48,14 @@ public:
     std::byte *cfg_serialize_memory_region() const;
 }; // class engine
 
-bool is_initialised();
+bool is_initialised() noexcept;
 
 engine *instance();
+
+void clean() noexcept;
+
+using creator = std::function<engine *(HANDLE file_mapping)>;
+
+void custom_creation(creator create);
 
 }; // namespace engine
