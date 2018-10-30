@@ -100,7 +100,7 @@ BOOL DBTInit()
  */
 PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
 {
-    // we know ahead that this will be a CUSTOM_PARAMS*
+    // we know ahead that this is a CUSTOM_PARAMS*
     CUSTOM_PARAMS *cp = static_cast<CUSTOM_PARAMS *>(params);
     assembly::patch_next_and_side_addr(cp); // patch the next and side
 
@@ -140,113 +140,83 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
     return new_plugin_report();
 }
 
+/**
+ * DBTBranching recives a CUSTOM_PARAMS* and an array of
+ * link lists that holds all the information from all the other layers
+ * Every plugin has the capability to put itself on any layer that he wants
+ * using the GetLayer api function.
+ * All the assembly information, context execution of the instruction are
+ * gathered by the engine in this place. Based on this information we should try
+ * and create a representation. DBTBranching will be called when ever the
+ * engine has encountered a new assembly branch instruction.
+ *
+ * After figuring out the instruction context and adding internally into our
+ * graph the assembly instruction we always return a new ptr to a newly
+ * allocated PluginReport* The engine will take care of freeing the memory. In
+ * case of an error we should return nullptr and log the error out.
+ *
+ * Notice: On some wierd states the engine finds some instruction and it can't
+ * quite figure out what is the next instruction. It set's the internal
+ * side_addr and next_addr badly we will use a hack that's found in the package
+ * assembly in order to fix this issue.
+ * DBTBranching treat's the LEAVE instruction as branching instruction so we
+ * should delegate the responsabilities to DBTBeforeExecute.
+ *
+ */
 PluginReport *DBTBranching(void *params, PluginLayer **layers)
 {
-    return nullptr;
+    // we know ahead that this is a CUSTOM_PARAMS*
+    CUSTOM_PARAMS *cp = static_cast<CUSTOM_PARAMS *>(params);
+    assembly::patch_next_and_side_addr(cp); // path the next and side
+
+    DISASM *d = cp->MyDisasm;
+
+    auto instruction = assembly::instruction(
+      d->EIP, d->CompleteInstr, (BRANCH_TYPE)(d->Instruction.BranchType),
+      cp->instrlen, cp->next_addr, cp->side_addr);
+
+    /**
+     *  Ff this is a call instruction skip it
+     *  let the DBTBeforeExecute treat this case
+     */
+    if (instruction.is_call())
+        return new_plugin_report();
+    /**
+     *  This unexpected behaviour is a bug so in order
+     *  to repair this we skip this instruction and let
+     *  the expected DBTBeforeExecute methood treat it
+     *  as a simple instruction
+     */
+    if (instruction.is_leave())
+        return new_plugin_report();
+
+    auto graph = graph::instance();
+    try {
+        graph->append(instruction);
+    } catch (const std::exception &ex) {
+        logger_error("cannot append branch instruction", ex.what());
+        return nullptr;
+    }
+
+    return new_plugin_report();
 }
 
+/**
+ * DBTFinish the finish functions that's called when the engine terminates
+ * an analysing run. The engine will call multiple times the pair DBTInit and
+ * DBTFinish when he is run with the -concolic flag. The concolic flags start
+ * the multi-run analysing process that the engine will do to the binary. In
+ * this case, the binary is runned multiple times in order to find all the
+ * branch and execution paths. Using this technique we can generate in a DEBUG
+ * mode fashion a picture of the internal graph.
+ */
 PluginReport *DBTFinish()
 {
-    return nullptr;
+    logger_info("[CFGTrace] Finish is called");
+
+    graph::clean();
+    logger::clean();
+    engine::clean();
+
+    return new_plugin_report();
 }
-
-// PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
-// {
-//     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
-//     assembly::compute_next_and_side_addr(custom_params);
-
-//     DISASM *MyDisasm = custom_params->MyDisasm;
-
-//     auto instr =
-//       assembly::instruction(MyDisasm->EIP, MyDisasm->CompleteInstr,
-//       (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
-//                             custom_params->instrlen,
-//                             custom_params->next_addr,
-//                             custom_params->side_addr);
-//     auto plugin = _engine.plugin_interface("APIReporter", 1, layers);
-//     if (plugin) {
-//         instr.api_reporter = (char *)plugin->data->content_before;
-//         instr.branch_type = (BRANCH_TYPE)0; // make this a simple instruction
-//     }
-
-//     if (instr.is_branch()) {
-//         if (instr.is_call()) {
-//             try {
-//                 control_flow_graph->append_branch_instruction(instr);
-//             } catch (const std::exception &ex) {
-//                 logger_error("%s", ex.what());
-//             }
-//         }
-//         return create_plugin_report();
-//     }
-
-//     try {
-//         control_flow_graph->append_instruction(instr);
-//     } catch (const std::exception &ex) {
-//         logger_error("%s", ex.what());
-//     }
-
-//     return create_plugin_report();
-// }
-
-// PluginReport *DBTBranching(void *params, PluginLayer **layers)
-// {
-//     (void)layers;
-//     CUSTOM_PARAMS *custom_params = (CUSTOM_PARAMS *)params;
-//     assembly::compute_next_and_side_addr(custom_params);
-//     DISASM *MyDisasm = custom_params->MyDisasm;
-
-//     auto instr =
-//       assembly::instruction(MyDisasm->EIP, MyDisasm->CompleteInstr,
-//       (BRANCH_TYPE)MyDisasm->Instruction.BranchType,
-//                             custom_params->instrlen,
-//                             custom_params->next_addr,
-//                             custom_params->side_addr);
-//     if (instr.is_call()) // skip calls
-//         return create_plugin_report();
-//     ;
-
-//     // TODO(hoenir): why the engine treats *leave* instruction as a branch
-//     // instruction? this does not make sense because leave instruction means:
-//     // move EBP ESP
-//     // pop EBP
-//     if (instr.is_leave()) // skip leave instructions
-//         return create_plugin_report();
-
-//     try {
-//         control_flow_graph->append_branch_instruction(instr);
-//     } catch (const std::exception &ex) {
-//         logger_error("%s", ex.what());
-//     }
-
-//     return create_plugin_report();
-// }
-
-// PluginReport *DBTFinish()
-// {
-//     logger_info("[CFGTrace] Finish is called");
-//     auto graphviz = control_flow_graph->graphviz();
-//     auto it = _engine.cfg_iteration();
-//     logger_info("[CFGTrace] Finish is called for iteration %d", *it);
-//     auto out = std::fstream("partiaflowgraph.dot", std::fstream::out);
-
-//     try {
-//         control_flow_graph->generate(graphviz, &out, *it);
-//     } catch (const std::exception &ex) {
-//         logger_error("%s", ex.what());
-//     }
-
-//     auto mem = _engine.cfg_serialize_memory_region();
-//     auto size = _engine.cfg_size();
-//     *size = control_flow_graph->mem_size();
-//     auto total_memory = _engine.cfg_memory_region_size();
-
-//     if ((*size) > total_memory) {
-//         logger_error("memory is full, cannot write more");
-//         return nullptr;
-//     }
-
-//     control_flow_graph->load_to_memory(mem);
-//     logger::unset_writer();
-//     return nullptr;
-// }

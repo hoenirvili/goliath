@@ -156,9 +156,9 @@ TEST_CASE("Test different states of initialisation", "[DBTInit]")
 #define REQUIRE_INSTRUCTION(i, data, true, false, branch) \
     do {                                                  \
         REQUIRE(i.str() == data);                         \
-        REQUIRE(i.branch_type == branch);                 \
         REQUIRE(i.true_branch_address() == true);         \
         REQUIRE(i.false_branch_address() == false);       \
+        REQUIRE(i.branch_type == branch);                 \
     } while (0)
 
 #define REQUIRE_REPORT(pr, name)       \
@@ -170,37 +170,105 @@ TEST_CASE("Test different states of initialisation", "[DBTInit]")
 
 TEST_CASE("Test adding instructions before the engine ", "[DBTBeforeExecute]")
 {
-    // manual set the state
     auto vm = virtual_memory();
     vm.enable_log_name();
-    auto fos = fake_output_streamer();
-    logger::custom_creation(
-      std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
-    auto state = logger::initialise("random_logger");
-    REQUIRE(state == true);
-    graph::custom_creation([]() -> graph::graph * {
-        auto fk = new fake_graph();
-        // test if the instruction has been passed correctly
-        fk->_append = [](assembly::instruction i) {
-            REQUIRE_INSTRUCTION(i, "MOV EAX, EBX", 0XFFAA, 0, 0);
-        };
 
-        return fk;
-    });
+    SECTION("Run the DBTBeforeExecute with with a simple instruction")
+    {
+        auto fos = fake_output_streamer();
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
+                                          std::placeholders::_1));
+        auto state = logger::initialise("random_logger");
+        REQUIRE(state == true);
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            // test if the instruction has been passed correctly
+            fk->_append = [](assembly::instruction i) {
+                REQUIRE_INSTRUCTION(i, "MOV EAX, EBX", 0XFFAA, 0, 0);
+            };
 
-    auto params = std::make_unique<custom_params>(0x55232288, "MOV EAX, EBX",
-                                                  NO_BRANCH, 4, 0XFFAA, 0);
-    auto layers = std::make_unique<plugin_layer>(
-      layer_informations{{1, "PluginOne"}, {2, "PluginTwo"}});
+            return fk;
+        });
+        auto params = std::make_unique<custom_params>(
+          0x55232288, "MOV EAX, EBX", NO_BRANCH, 4, 0XFFAA, 0);
+        auto layers = std::make_unique<plugin_layer>(
+          layer_informations{{1, "PluginOne"}, {2, "PluginTwo"}});
 
-    auto report = DBTBeforeExecute(params->get(), layers->get());
-    REQUIRE(report != nullptr);
+        auto report = DBTBeforeExecute(params->get(), layers->get());
+        REQUIRE(report != nullptr);
+
+        FREE_REPORT(report);
+        graph::clean();
+        logger::clean();
+        logger::custom_creation(nullptr);
+        graph::custom_creation(nullptr);
+    }
+
+    SECTION("Run the DBTBeforeExecute with fail graph append")
+    {
+        auto fos = fake_output_streamer();
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
+                                          std::placeholders::_1));
+        auto state = logger::initialise("random_logger");
+        REQUIRE(state == true);
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            // test if the instruction has been passed correctly
+            fk->_append = [](assembly::instruction i) {
+                throw std::exception("here be dragons");
+            };
+
+            return fk;
+        });
+        auto params = std::make_unique<custom_params>(
+          0x55232288, "MOV EAX, EBX", NO_BRANCH, 4, 0XFFAA, 0);
+        auto layers = std::make_unique<plugin_layer>(
+          layer_informations{{1, "PluginOne"}, {2, "PluginTwo"}});
+
+        auto report = DBTBeforeExecute(params->get(), layers->get());
+        REQUIRE(report == nullptr);
+
+        // check if the returned exception is logged
+        fos.contains("here be dragons");
+
+        graph::clean();
+        logger::clean();
+        logger::custom_creation(nullptr);
+        graph::custom_creation(nullptr);
+    }
+
+    SECTION("Run the DBTBeforeExecute with branch instruction")
+    {
+        auto fos = fake_output_streamer();
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
+                                          std::placeholders::_1));
+        auto state = logger::initialise("random_logger");
+        REQUIRE(state == true);
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            // test if the instruction has been passed correctly
+            fk->_append = [](assembly::instruction i) {
+                REQUIRE_INSTRUCTION(i, "CALL 0x5521323", 0x5521323,
+                                    0x55232288 + 4, CallType);
+            };
+            return fk;
+        });
+
+        auto params = std::make_unique<custom_params>(
+          0x55232288, "CALL 0x5521323", CallType, 4, 0x5521323, 0x55232288 + 4);
+        auto layers = std::make_unique<plugin_layer>(
+          layer_informations{{1, "PluginOne"}, {2, "PluginTwo"}});
+
+        auto report = DBTBeforeExecute(params->get(), layers->get());
+        REQUIRE(report != nullptr);
+
+        FREE_REPORT(report);
+        graph::clean();
+        logger::clean();
+        logger::custom_creation(nullptr);
+        graph::custom_creation(nullptr);
+    }
 
     // teardown the state
-    FREE_REPORT(report);
     engine::clean();
-    logger::clean();
-    graph::clean();
-    logger::custom_creation(nullptr);
-    graph::custom_creation(nullptr);
 }
