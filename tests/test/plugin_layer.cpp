@@ -1,38 +1,56 @@
 #include "plugin_layer.h"
 #include "cfgtrace/api/types.h"
+#include <algorithm>
 
-plugin_layer::plugin_layer(size_t layer, const char *plugin_name)
+static size_t max_layer(const layer_informations &infos)
 {
-    this->layer = layer;
-    this->p = new PluginLayer *[this->layer + 1];
-    // create every layer from the base addr
-    // to p[this->layer];
-    for (size_t i = 0; i <= this->layer; i++) {
-        p[i] = new PluginLayer();
-        p[i]->data = nullptr;
-        p[i]->nextnode = nullptr;
-    }
+    auto max_element = std::max_element(
+      infos.begin(), infos.end(),
+      [](const layer_information &a, const layer_information &b) {
+          return (a.first < b.first);
+      });
+    return max_element->first;
+}
 
-    if (plugin_name) {
-        p[this->layer]->data = new PluginReport();
-        p[this->layer]->data->plugin_name = plugin_name;
+plugin_layer::plugin_layer(const layer_informations &&infos)
+{
+    // find how many layers we need to create
+    this->n = max_layer(infos);
+
+    // create an array of n + 1 layers
+    // because the highest layer will be at
+    // this->p[this->n]
+    this->p = new PluginLayer *[n + 1];
+
+    // create a new node in the linked list for
+    // every layer
+    for (size_t i = 0; i < n + 1; i++)
+        p[i] = new PluginLayer{0};
+
+    for (const auto &info : infos) {
+        // touch only the layers that we need to fill
+        p[info.first]->data = new PluginReport();
+        p[info.first]->data->plugin_name = info.second;
     }
 }
 
 plugin_layer::~plugin_layer()
 {
-    if (!this->p)
+    if (!this->n || !this->p)
         return;
 
-    for (size_t i = 0; i <= this->layer; i++) {
-        if (p[i] != nullptr)
+    for (size_t i = 0; i < n; i++) {
+        if (!p[i]->data) // not all layers are filled
             continue;
-
-        if (p[i]->data)
-            delete p[i]->data;
-        delete p[i];
+        delete p[i]->data;
     }
+
+    for (size_t i = 0; i < n; i++)
+        delete p[i];
+
     delete[] p;
+    this->p = nullptr;
+    this->n = 0;
 }
 
 PluginLayer **plugin_layer::get() const noexcept

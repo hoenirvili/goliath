@@ -6,7 +6,8 @@
 
 namespace assembly
 {
-void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept;
+void patch_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept;
+
 /**
  * instruction type holds all context of the next instruction
  */

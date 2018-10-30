@@ -5,6 +5,7 @@ static void _plugin_report_deleter(PluginReport *report)
 {
     if (!report)
         return;
+    puts("Hey I'm tring to be nice");
 
     if (report->content_after)
         VirtualFree(report->content_after, 0, MEM_RELEASE);

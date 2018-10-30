@@ -84,7 +84,7 @@ static size_t compute_next_addr(CUSTOM_PARAMS *custom_params)
     return custom_params->next_addr;
 }
 
-void compute_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept
+void patch_next_and_side_addr(CUSTOM_PARAMS *custom_params) noexcept
 {
     custom_params->next_addr = compute_next_addr(custom_params);
     custom_params->side_addr = compute_side_addr(custom_params);
