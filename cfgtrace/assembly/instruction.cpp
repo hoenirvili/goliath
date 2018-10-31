@@ -2,6 +2,7 @@
 #include "cfgtrace/api/types.h"
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/logger/logger.h"
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 
@@ -56,7 +57,8 @@ static inline bool _is_branch(BRANCH_TYPE type) noexcept
 // TODO(hoenir): the engine should fix this
 static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
 {
-    BRANCH_TYPE type = (BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
+    BRANCH_TYPE type =
+      (BRANCH_TYPE)custom_params->MyDisasm->Instruction.BranchType;
 
     if (_direct_branch(type))
         return 0;
@@ -68,7 +70,8 @@ static size_t compute_side_addr(CUSTOM_PARAMS *custom_params)
 
     size_t false_branch = eip + len;
     if (_is_call(type)) {
-        if (custom_params->next_addr == custom_params->side_addr && custom_params->next_addr == false_branch)
+        if (custom_params->next_addr == custom_params->side_addr &&
+            custom_params->next_addr == false_branch)
             return 0;
 
         return false_branch;
@@ -97,7 +100,9 @@ bool instruction::is_branch() const noexcept
 
 bool instruction::is_leave() const noexcept
 {
-    return this->content == "leave ";
+    auto data = this->content; // make a copy
+    std::transform(data.begin(), data.end(), data.begin(), tolower);
+    return data.find("leave") != std::string::npos;
 }
 
 size_t instruction::mem_size() const noexcept
@@ -162,7 +167,8 @@ void instruction::load_from_memory(const std::byte *mem) noexcept
         mem += sizeof(this->guard_value);
 
     memcpy(&this->branch_type, mem, sizeof(this->branch_type));
-    mem += sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
+    mem +=
+      sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
 }
 
 void instruction::load_to_memory(std::byte *mem) const noexcept
@@ -181,7 +187,8 @@ void instruction::load_to_memory(std::byte *mem) const noexcept
 
     // content if any
     if (!this->content.empty()) {
-        const size_t cmem_size = this->content.size() + 1; // add also the \0 in mem
+        const size_t cmem_size =
+          this->content.size() + 1; // add also the \0 in mem
         memcpy(mem, this->content.c_str(), cmem_size);
         mem += cmem_size;
     } else {
@@ -191,7 +198,8 @@ void instruction::load_to_memory(std::byte *mem) const noexcept
 
     // api_reporter if any
     if (!this->api_reporter.empty()) {
-        const size_t rep_size = this->api_reporter.size() + 1; // add also the \0 in mem
+        const size_t rep_size =
+          this->api_reporter.size() + 1; // add also the \0 in mem
         memcpy(mem, this->api_reporter.c_str(), rep_size);
         mem += rep_size;
     } else {
@@ -200,7 +208,8 @@ void instruction::load_to_memory(std::byte *mem) const noexcept
     }
 
     memcpy(mem, &this->branch_type, sizeof(this->branch_type));
-    mem += sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
+    mem +=
+      sizeof(this->branch_type); // TODO(hoenir): I think this should be removed
 }
 
 std::string instruction::str() const noexcept

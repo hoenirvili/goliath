@@ -194,7 +194,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
     try {
         graph->append(instruction);
     } catch (const std::exception &ex) {
-        logger_error("cannot append branch instruction", ex.what());
+        logger_error("cannot append branch instruction %s", ex.what());
         return nullptr;
     }
 
@@ -203,17 +203,17 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
 
 /**
  * DBTFinish the finish functions that's called when the engine terminates
- * an analysing run. The engine will call multiple times the pair DBTInit and
- * DBTFinish when the engine executable is run with the -concolic flag. The
- * concolic flag start's the multi-run analysing process to the binary. In this
- * case, the binary is runned multiple times in order to find all the branch and
- * execution paths. Using this technique we can generate in a DEBUG mode fashion
- * a picture of the internal graph.
- * It is important that in this method we should take care of cleaning and
- * freeing all the state that DBTInit had previously initiliased.
- * There are some things we need to do before the plugin exists it's context.
- * The DBTFinish method we should call the loading serialization memory to write
- * into our shared virtual space that the engine provided us.
+ * an analysing run. The engine will call the pair DBTInit and DBTFinish
+ * multiple times, when the engine is run with the -concolic flag. The concolic
+ * flag start's the multi-run analysing process of the binary. In this
+ * case, the binary is runned multiple times in order to find all the branches
+ * and execution paths. Using this technique we can generate in a DEBUG mode
+ * fashion a picture of the internal graph. It is important that in this method
+ * we should take care of cleaning and freeing all the state that DBTInit had
+ * previously initiliased. There are some things we need to do before the plugin
+ * exists it's context. The DBTFinish should call the loading
+ * memory serialization in order to write the graph into the shared memory
+ * space.
  */
 PluginReport *DBTFinish()
 {
