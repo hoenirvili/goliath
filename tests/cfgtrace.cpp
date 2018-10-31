@@ -153,17 +153,12 @@ TEST_CASE("Test different states of initialisation", "[DBTInit]")
     }
 }
 
-#define REQUIRE_INSTRUCTION(i, data, true, false, branch) \
-    do {                                                  \
-        REQUIRE(i.str() == data);                         \
-        REQUIRE(i.true_branch_address() == true);         \
-        REQUIRE(i.false_branch_address() == false);       \
-        REQUIRE(i.branch_type == branch);                 \
-    } while (0)
-
-#define REQUIRE_REPORT(pr, name)       \
-    do {                               \
-        REQUIRE(pr.name, Equals(name)) \
+#define REQUIRE_INSTRUCTION(i, instr_and_or_api_reporter, true, false, branch) \
+    do {                                                                       \
+        REQUIRE(i.str() == instr_and_or_api_reporter);                         \
+        REQUIRE(i.true_branch_address() == true);                              \
+        REQUIRE(i.false_branch_address() == false);                            \
+        REQUIRE(i.branch_type == branch);                                      \
     } while (0)
 
 #define FREE_REPORT(report) auto __rep = plugin_report_ptr(report)
@@ -173,7 +168,7 @@ TEST_CASE("Test adding instructions before the engine ", "[DBTBeforeExecute]")
     auto vm = virtual_memory();
     vm.enable_log_name();
 
-    SECTION("Run the DBTBeforeExecute with with a simple instruction")
+    SECTION("Call with a simple instruction")
     {
         auto fos = fake_output_streamer();
         logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
@@ -192,7 +187,8 @@ TEST_CASE("Test adding instructions before the engine ", "[DBTBeforeExecute]")
         auto params = std::make_unique<custom_params>(
           0x55232288, "MOV EAX, EBX", NO_BRANCH, 4, 0XFFAA, 0);
         auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne"}, {2, "PluginTwo"}});
+          layer_informations{{1, "PluginOne", nullptr, nullptr},
+                             {2, "PluginTwo", nullptr, nullptr}});
 
         auto report = DBTBeforeExecute(params->get(), layers->get());
         REQUIRE(report != nullptr);
@@ -204,7 +200,7 @@ TEST_CASE("Test adding instructions before the engine ", "[DBTBeforeExecute]")
         graph::custom_creation(nullptr);
     }
 
-    SECTION("Run the DBTBeforeExecute with fail graph append")
+    SECTION("Call with fail graph append")
     {
         auto fos = fake_output_streamer();
         logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
@@ -223,7 +219,8 @@ TEST_CASE("Test adding instructions before the engine ", "[DBTBeforeExecute]")
         auto params = std::make_unique<custom_params>(
           0x55232288, "MOV EAX, EBX", NO_BRANCH, 4, 0XFFAA, 0);
         auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne"}, {2, "PluginTwo"}});
+          layer_informations{{1, "PluginOne", nullptr, nullptr},
+                             {2, "PluginTwo", nullptr, nullptr}});
 
         auto report = DBTBeforeExecute(params->get(), layers->get());
         REQUIRE(report == nullptr);
@@ -237,7 +234,7 @@ TEST_CASE("Test adding instructions before the engine ", "[DBTBeforeExecute]")
         graph::custom_creation(nullptr);
     }
 
-    SECTION("Run the DBTBeforeExecute with branch instruction")
+    SECTION("Call with branch instruction")
     {
         auto fos = fake_output_streamer();
         logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
@@ -257,7 +254,42 @@ TEST_CASE("Test adding instructions before the engine ", "[DBTBeforeExecute]")
         auto params = std::make_unique<custom_params>(
           0x55232288, "CALL 0x5521323", CallType, 4, 0x5521323, 0x55232288 + 4);
         auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne"}, {2, "PluginTwo"}});
+          layer_informations{{1, "PluginOne", nullptr, nullptr},
+                             {2, "PluginTwo", nullptr, nullptr}});
+
+        auto report = DBTBeforeExecute(params->get(), layers->get());
+        REQUIRE(report != nullptr);
+
+        FREE_REPORT(report);
+        graph::clean();
+        logger::clean();
+        logger::custom_creation(nullptr);
+        graph::custom_creation(nullptr);
+    }
+
+    SECTION("Call with APIReporter layer present")
+    {
+        auto fos = fake_output_streamer();
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
+                                          std::placeholders::_1));
+        auto state = logger::initialise("random_logger");
+        REQUIRE(state == true);
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            // test if the instruction has been passed correctly
+            fk->_append = [](assembly::instruction i) {
+                REQUIRE_INSTRUCTION(i, "CALL 0x5521323 External windows api", 0,
+                                    0x55232288 + 4, 0);
+                REQUIRE(i.api_reporter == "External windows api");
+            };
+            return fk;
+        });
+
+        auto params = std::make_unique<custom_params>(
+          0x55232288, "CALL 0x5521323", CallType, 4, 0x5521323, 0x55232288 + 4);
+        auto layers = std::make_unique<plugin_layer>(layer_informations{
+          {2, "PluginTwo", nullptr, nullptr},
+          {1, "APIReporter", nullptr, "External windows api"}});
 
         auto report = DBTBeforeExecute(params->get(), layers->get());
         REQUIRE(report != nullptr);

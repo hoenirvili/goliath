@@ -28,7 +28,8 @@ custom_params::custom_params(const custom_params &cp)
     auto start = cp.params->MyDisasm->CompleteInstr;
     auto end = start + sizeof(start);
     std::copy(start, end, this->params->MyDisasm->CompleteInstr);
-    this->params->MyDisasm->Instruction.BranchType = cp.params->MyDisasm->Instruction.BranchType;
+    this->params->MyDisasm->Instruction.BranchType =
+      cp.params->MyDisasm->Instruction.BranchType;
     this->params->instrlen = cp.params->instrlen;
     this->params->next_addr = cp.params->next_addr;
     this->params->side_addr = cp.params->side_addr;

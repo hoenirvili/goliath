@@ -204,15 +204,21 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
 /**
  * DBTFinish the finish functions that's called when the engine terminates
  * an analysing run. The engine will call multiple times the pair DBTInit and
- * DBTFinish when he is run with the -concolic flag. The concolic flags start
- * the multi-run analysing process that the engine will do to the binary. In
- * this case, the binary is runned multiple times in order to find all the
- * branch and execution paths. Using this technique we can generate in a DEBUG
- * mode fashion a picture of the internal graph.
+ * DBTFinish when the engine executable is run with the -concolic flag. The
+ * concolic flag start's the multi-run analysing process to the binary. In this
+ * case, the binary is runned multiple times in order to find all the branch and
+ * execution paths. Using this technique we can generate in a DEBUG mode fashion
+ * a picture of the internal graph.
+ * It is important that in this method we should take care of cleaning and
+ * freeing all the state that DBTInit had previously initiliased.
+ * There are some things we need to do before the plugin exists it's context.
+ * The DBTFinish method we should call the loading serialization memory to write
+ * into our shared virtual space that the engine provided us.
  */
 PluginReport *DBTFinish()
 {
     logger_info("[CFGTrace] Finish is called");
+    // TODO(hoenir): Finish the implementation
 
     graph::clean();
     logger::clean();
