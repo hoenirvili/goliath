@@ -444,3 +444,29 @@ TEST_CASE("Test adding instruction in branching", "[DBTBranching]")
     // teardown the state
     engine::clean();
 }
+
+TEST_CASE("Test cleaning state", "[DBTFinish]")
+{
+    // setup all the state
+    auto vm = virtual_memory();
+    vm.enable_log_name();
+    auto fos = fake_output_streamer();
+    logger::custom_creation(
+      std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
+    graph::custom_creation([]() -> graph::graph * {
+        auto fk = new fake_graph();
+        fk->_read = [](const std::byte *from) { REQUIRE(from != nullptr); };
+        return fk;
+    });
+    auto state = logger::initialise("test_log_finish");
+    REQUIRE(state == true);
+
+    auto report = DBTFinish();
+    REQUIRE(report != nullptr);
+    FREE_REPORT(report);
+
+    fos.contains("[CFGTrace] Finish is called");
+
+    logger::custom_creation(nullptr);
+    graph::custom_creation(nullptr);
+}
