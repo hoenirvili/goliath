@@ -1,5 +1,7 @@
 #include "plugin_layer.h"
-#include "cfgtrace/api/types.h"
+
+#include <cfgtrace/api/types.h>
+
 #include <algorithm>
 #include <tuple>
 #include <vector>

@@ -1,6 +1,7 @@
 #include "cfgtrace/graph/control_flow.h"
 #include "cfgtrace/assembly/instruction.h"
 #include "cfgtrace/command/execute.h"
+#include "cfgtrace/definition/generate.h"
 #include "cfgtrace/engine/engine.h"
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/random/random.h"
@@ -12,8 +13,10 @@
 
 namespace graph
 {
-// digraph_prefix template
-constexpr const char *digraph_prefix = R"(
+std::string control_flow::graphviz()
+{
+    // digraph_prefix template
+    constexpr const char *digraph_prefix = R"(
 digraph control_flow_graph {
 	node [
 		shape = box
@@ -24,9 +27,6 @@ digraph control_flow_graph {
 		arrowtail = normal
 	]
 )";
-
-std::string control_flow::graphviz()
-{
     this->set_nodes_max_occurrences();
 
     std::string definitions = "";
@@ -41,9 +41,34 @@ std::string control_flow::graphviz()
     return digraph + "\n}";
 }
 
+void control_flow::set_nodes_max_occurrences() noexcept
+{
+    unsigned int max = 0;
+    for (const auto &item : this->nodes)
+        if (item.second->occurrences > max)
+            max = item.second->occurrences;
+
+    for (auto &item : this->nodes)
+        item.second->max_occurrences = max;
+}
+
+std::string control_flow::generate(definition::FORMAT format) const
+{
+    switch (format) {
+    case definition::FORMAT::GRAPHVIZ:
+        return "";
+    case definition::FORMAT::GDL:
+        throw std::invalid_argument("This is not implemented yet");
+    }
+
+    throw std::invalid_argument(
+      "cannot generate definitions, unknow format specified");
+}
+
 void control_flow::write(std::byte *mem) const noexcept
 {
-    memcpy(mem, &this->start_address_first_node, sizeof(this->start_address_first_node));
+    memcpy(mem, &this->start_address_first_node,
+           sizeof(this->start_address_first_node));
     mem += sizeof(this->start_address_first_node);
 
     const size_t n = this->nodes.size();
@@ -60,7 +85,8 @@ void control_flow::write(std::byte *mem) const noexcept
 
 void control_flow::read(const std::byte *mem) noexcept
 {
-    memcpy(&this->start_address_first_node, mem, sizeof(this->start_address_first_node));
+    memcpy(&this->start_address_first_node, mem,
+           sizeof(this->start_address_first_node));
     mem += sizeof(start_address_first_node);
 
     size_t n = 0;
@@ -80,7 +106,9 @@ void control_flow::read(const std::byte *mem) noexcept
     }
 }
 
-void control_flow::generate(std::string_view content, std::ostream *out, int it) const
+void control_flow::exec_based_on_template(std::string_view content,
+                                          std::ostream *out,
+                                          int it) const
 {
     (*out) << content << std::endl;
 
@@ -107,7 +135,8 @@ bool control_flow::node_exists(size_t address) const noexcept
     return (this->nodes.find(address) != this->nodes.end());
 }
 
-std::unique_ptr<Node> control_flow::get_current_node(size_t start_address) noexcept
+std::unique_ptr<Node>
+control_flow::get_current_node(size_t start_address) noexcept
 {
     if (this->node_exists(start_address))
         return move(this->nodes[start_address]);
@@ -140,15 +169,18 @@ void control_flow::append_instruction(assembly::instruction instruction)
         throw ex(std::invalid_argument, "invalid instruction passed");
 
     if (instruction.is_branch())
-        throw ex(std::invalid_argument, "cannot append instruction that is branch");
+        throw ex(std::invalid_argument,
+                 "cannot append instruction that is branch");
 
-    size_t current = this->set_and_get_current_address(instruction.pointer_address());
+    size_t current =
+      this->set_and_get_current_address(instruction.pointer_address());
     auto node = this->get_current_node(current);
     node->append_instruction(instruction);
     this->nodes[current] = move(node);
 }
 
-void control_flow::append_node_neighbors(const std::unique_ptr<Node> &node) noexcept
+void control_flow::append_node_neighbors(
+  const std::unique_ptr<Node> &node) noexcept
 {
     size_t true_address = node->true_neighbour();
     size_t false_address = node->false_neighbour();
@@ -183,7 +215,8 @@ void control_flow::append_branch_instruction(assembly::instruction instruction)
     if (!instruction.is_branch())
         throw ex(std::invalid_argument, "cannot append non branch instruction");
 
-    size_t current = this->set_and_get_current_address(instruction.pointer_address());
+    size_t current =
+      this->set_and_get_current_address(instruction.pointer_address());
     auto node = this->get_current_node(current);
     node->append_branch_instruction(instruction);
     this->append_node_neighbors(node);
@@ -191,7 +224,8 @@ void control_flow::append_branch_instruction(assembly::instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow::unset_current_address(const std::unique_ptr<Node> &node) noexcept
+void control_flow::unset_current_address(
+  const std::unique_ptr<Node> &node) noexcept
 {
     if (node->done())
         this->current_pointer = 0;
@@ -206,17 +240,6 @@ size_t control_flow::mem_size() const noexcept
         size += item.second->mem_size();
     }
     return size;
-}
-
-void control_flow::set_nodes_max_occurrences() noexcept
-{
-    unsigned int max = 0;
-    for (const auto &item : this->nodes)
-        if (item.second->occurrences > max)
-            max = item.second->occurrences;
-
-    for (auto &item : this->nodes)
-        item.second->max_occurrences = max;
 }
 
 bool control_flow::it_fits(const size_t size) const noexcept

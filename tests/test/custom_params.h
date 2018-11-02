@@ -1,6 +1,7 @@
 #pragma once
 
-#include "cfgtrace/api/types.h"
+#include <cfgtrace/api/types.h>
+
 #include <memory>
 
 const enum BRANCH_TYPE NO_BRANCH = static_cast<BRANCH_TYPE>(0);

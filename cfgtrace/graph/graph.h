@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cfgtrace/assembly/instruction.h"
+#include "cfgtrace/definition/generate.h"
 #include "cfgtrace/memory/loader.h"
 #include "cfgtrace/memory/unloader.h"
 
@@ -13,7 +14,9 @@ namespace graph
  *  can read and write to a location of memory
  *  and can append multiple instruction
  */
-struct graph : public virtual memory::reader, public virtual memory::writer {
+struct graph : public virtual memory::reader,
+               public virtual memory::writer,
+               public virtual definition::generator {
     virtual ~graph() = default;
     /**
      *  append adds an assembly instruction into the graph representation

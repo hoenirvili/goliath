@@ -1,5 +1,7 @@
 #pragma once
+
 #include <cfgtrace/api/types.h>
+
 #include <memory>
 
 struct _plugin_report_functor {

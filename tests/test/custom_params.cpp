@@ -1,5 +1,7 @@
 #include "custom_params.h"
-#include "cfgtrace/api/types.h"
+
+#include <cfgtrace/api/types.h>
+
 #include <algorithm>
 
 custom_params::custom_params(size_t EIP,

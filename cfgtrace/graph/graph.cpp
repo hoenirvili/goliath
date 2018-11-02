@@ -37,7 +37,11 @@ graph *instance() noexcept
     if (!fn)
         fn = graph_creator;
 
-    return fn();
+    if (!g)
+        g = fn();
+
+    return g;
+
 }
 
 void clean() noexcept

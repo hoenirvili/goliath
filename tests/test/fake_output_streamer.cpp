@@ -1,5 +1,7 @@
 #include "fake_output_streamer.h"
+
 #include <catch2/catch.hpp>
+
 #include <ostream>
 
 using Catch::Matchers::Contains;

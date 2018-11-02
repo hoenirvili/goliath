@@ -28,10 +28,10 @@ public:
 
     /**
      * nodes a map of start node addresses and pointers to nodes
-     * in each and every node we can hold multiple instruction based on the context
-     * we are in
+     * in each and every node we can hold multiple instruction based on the
+     * context we are in
      */
-    std::map<size_t, node_ptr> nodes;
+    mutable std::map<size_t, node_ptr> nodes;
 
     /**
      *  read from a block of memory that we assume holds information from
@@ -40,8 +40,9 @@ public:
     void read(const std::byte *from) noexcept override;
 
     /**
-     *  write the current state of the control flow graph in memory pointed by to
-     *  we assume that to is bigger enough to hold all the internal information
+     *  write the current state of the control flow graph in memory pointed by
+     * to we assume that to is bigger enough to hold all the internal
+     * information
      */
     void write(std::byte *to) const noexcept override;
 
@@ -50,14 +51,13 @@ public:
      */
     void append(assembly::instruction instruction) override;
 
-    // TODO(hoenir): make an interface that can generate multiple formats
-    void generate(std::string_view content, std::ostream *out, int it) const;
-    std::string graphviz();
-
-    // TODO(hoenir): I think this information should be private, the caller does not care
-    // about this kind of things
-    size_t mem_size() const noexcept;
-    bool node_exists(size_t start) const noexcept;
+    /**
+     * generate generates out of the control flow graph an textual
+     * representation that a third program can compile and run
+     * to turn it into a png, jpeg or a viewable format by the user
+     * TODO(hoenir): MAKE THIS GENERATION SUPPORT GDL
+     */
+    std::string generate(definition::FORMAT format) const;
 
     control_flow() = default;
     ~control_flow() = default;
@@ -66,6 +66,13 @@ private:
     size_t current_node_start_addr = 0x0;
     size_t current_pointer = 0x0;
 
+    size_t mem_size() const noexcept;
+    bool node_exists(size_t start) const noexcept;
+    // TODO(hoenir): make an interface that can generate multiple formats
+    void exec_based_on_template(std::string_view content,
+                                std::ostream *out,
+                                int it) const;
+    std::string graphviz();
     bool node_contains_address(size_t address) const noexcept;
     void set_nodes_max_occurrences() noexcept;
     void unset_current_address(const node_ptr &node) noexcept;

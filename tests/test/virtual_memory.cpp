@@ -1,5 +1,7 @@
 #include "virtual_memory.h"
-#include "cfgtrace/engine/engine.h"
+
+#include <cfgtrace/engine/engine.h>
+
 #include <memory>
 #include <stdexcept>
 #include <windows.h>

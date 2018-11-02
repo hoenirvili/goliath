@@ -1,6 +1,7 @@
 #pragma once
 
-#include "cfgtrace/api/types.h"
+#include <cfgtrace/api/types.h>
+
 #include <tuple>
 #include <vector>
 

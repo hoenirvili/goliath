@@ -1,6 +1,7 @@
 #pragma once
 
-#include "cfgtrace/engine/engine.h"
+#include <cfgtrace/engine/engine.h>
+
 #include <windows.h>
 
 class virtual_memory

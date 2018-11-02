@@ -210,7 +210,7 @@ engine *instance()
         if (!fn)
             fn = default_creator;
 
-        return fn(file_mapping);
+        e = fn(file_mapping);
     }
 
     return e;

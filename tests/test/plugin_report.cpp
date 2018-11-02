@@ -1,5 +1,6 @@
 #include "plugin_report.h"
-#include "cfgtrace/api/types.h"
+
+#include <cfgtrace/api/types.h>
 
 static void _plugin_report_deleter(PluginReport *report)
 {

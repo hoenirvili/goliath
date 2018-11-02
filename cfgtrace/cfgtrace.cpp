@@ -1,10 +1,13 @@
 #include "cfgtrace.h"
 #include "cfgtrace/api/types.h"
 #include "cfgtrace/assembly/instruction.h"
+#include "cfgtrace/definition/generate.h"
 #include "cfgtrace/engine/engine.h"
 #include "cfgtrace/graph/control_flow.h"
 #include "cfgtrace/logger/logger.h"
 #include "cfgtrace/memory/loader.h"
+
+#include <string>
 #include <stdexcept>
 
 /**
@@ -201,6 +204,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
     return new_plugin_report();
 }
 
+#define GENERATION_FORMAT definition::FORMAT::GRAPHVIZ
 /**
  * DBTFinish the finish functions that's called when the engine terminates
  * an analysing run. The engine will call the pair DBTInit and DBTFinish
@@ -218,8 +222,20 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
 PluginReport *DBTFinish()
 {
     logger_info("[CFGTrace] Finish is called");
-    // TODO(hoenir): Finish the implementation
+    auto graph = graph::instance();
+    std::string definitions = "";
+    try {
+        definitions = definition::generate(graph, GENERATION_FORMAT);
+    } catch(const std::exception &ex) {
+        logger_info("cannot generate definitions, %s", ex.what());
+        goto _exit;
+    }
 
+    auto engine = engine::instance();
+    auto to = engine->cfg_memory_region();
+    memory::unloader(graph, to);
+
+_exit:
     graph::clean();
     logger::clean();
     engine::clean();

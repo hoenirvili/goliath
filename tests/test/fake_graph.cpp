@@ -1,6 +1,10 @@
 #include "fake_graph.h"
-#include "cfgtrace/assembly/instruction.h"
-#include "cfgtrace/graph/graph.h"
+
+#include <cfgtrace/assembly/instruction.h>
+#include <cfgtrace/graph/graph.h>
+#include <cfgtrace/definition/generate.h>
+
+#include <string>
 #include <cstddef>
 
 void fake_graph::append(assembly::instruction instruction)
@@ -24,3 +28,12 @@ void fake_graph::write(std::byte *to) const noexcept
         return;
     this->_write(to);
 }
+
+  std::string fake_graph::generate(definition::FORMAT format) const
+  {
+        if (!this->_generate)
+            return "";
+
+        return this->_generate(format);
+
+  }

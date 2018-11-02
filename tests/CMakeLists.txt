@@ -5,7 +5,6 @@ find_package(Catch2 REQUIRED)
 add_executable(cfgtracetest
 	main.cpp
 	cfgtrace.cpp
-    logger.cpp
 )
 add_subdirectory(test)
 
