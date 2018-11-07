@@ -241,7 +241,7 @@ PluginReport *DBTFinish()
     auto to = engine->cfg_serialize_memory_region();
     memory::unloader(graph, to);
 
-#ifdef NDEBUG
+#ifndef NDEBUG
     try {
         if (definitions)
             definitions->execute();

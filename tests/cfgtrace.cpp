@@ -499,6 +499,7 @@ TEST_CASE("Test all states", "[DBTFinish]")
         REQUIRE(report == nullptr);
     }
 
+#ifndef NDEBUG
     SECTION("Test standard cleanup when the execution returns an exception")
     {
         graph::custom_creation([]() -> graph::graph * {
@@ -517,6 +518,7 @@ TEST_CASE("Test all states", "[DBTFinish]")
         auto report = DBTFinish();
         REQUIRE(report == nullptr);
     }
+#endif
 
     logger::custom_creation(nullptr);
     graph::custom_creation(nullptr);

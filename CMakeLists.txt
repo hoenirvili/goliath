@@ -48,6 +48,8 @@ endif()
 message(STATUS "Root directory: ${CFGTRACE_ROOT_DIRECTORY}")
 message(STATUS "Build test: ${BUILD_TESTS}")
 message(STATUS "Build demo: ${BUILD_DEMO}")
+message(STATUS "Build type:  ${CMAKE_BUILD_TYPE}")
+
 
 add_library(cfgtrace cfgtrace/cfgtrace.cpp include/cfgtrace.h)
 target_include_directories(cfgtrace
