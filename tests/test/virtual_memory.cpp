@@ -2,6 +2,7 @@
 
 #include <cfgtrace/engine/engine.h>
 
+#include <catch2/catch.hpp>
 #include <memory>
 #include <stdexcept>
 #include <windows.h>
@@ -29,14 +30,22 @@ virtual_memory::virtual_memory()
     this->file_view = static_cast<unsigned char *>(view);
 }
 
+#include <cstdio>
+
 virtual_memory::~virtual_memory()
 {
+    BOOL state = 0;
+
+    memset(this->file_view, 0, this->size);
     if (this->file_view) {
-        UnmapViewOfFile(this->file_view);
+        state = UnmapViewOfFile(this->file_view);
+        REQUIRE(state != 0);
+
         this->file_view = nullptr;
     }
 
-    CloseHandle(this->handler);
+    state = CloseHandle(this->handler);
+    REQUIRE(state != 0);
 }
 
 const char *virtual_memory::logger_name() const noexcept

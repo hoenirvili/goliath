@@ -27,14 +27,6 @@ engine::engine(HANDLE file_mapping)
           "cannot open a view into the address space of a calling process");
 }
 
-// TODO(hoenir): Do we still need this?
-engine &engine::operator=(engine &&other)
-{
-    this->memory = other.memory;
-    other.memory = nullptr;
-    return *this;
-}
-
 engine::~engine()
 {
     if (this->memory)

@@ -1,10 +1,9 @@
 #include "cfgtrace/graph/control_flow.h"
 #include "cfgtrace/assembly/instruction.h"
-#include "cfgtrace/command/execute.h"
+#include "cfgtrace/command/graphviz.h"
 #include "cfgtrace/definition/generate.h"
 #include "cfgtrace/engine/engine.h"
 #include "cfgtrace/error/error.h"
-#include "cfgtrace/random/random.h"
 
 #include <fstream>
 #include <stdexcept>
@@ -15,6 +14,8 @@ namespace graph
 {
 std::string control_flow::graphviz()
 {
+    this->set_nodes_max_occurrences();
+
     // digraph_prefix template
     constexpr const char *digraph_prefix = R"(
 digraph control_flow_graph {
@@ -27,7 +28,6 @@ digraph control_flow_graph {
 		arrowtail = normal
 	]
 )";
-    this->set_nodes_max_occurrences();
 
     std::string definitions = "";
     for (const auto &item : this->nodes)
@@ -52,11 +52,15 @@ void control_flow::set_nodes_max_occurrences() noexcept
         item.second->max_occurrences = max;
 }
 
-std::string control_flow::generate(definition::FORMAT format) const
+definition::definition *control_flow::generate(definition::FORMAT format)
 {
+    auto engine = engine::instance();
+
     switch (format) {
     case definition::FORMAT::GRAPHVIZ:
-        return "";
+        return new command::graphviz(this->graphviz(),
+                                     *engine->cfg_iteration());
+
     case definition::FORMAT::GDL:
         throw std::invalid_argument("This is not implemented yet");
     }
@@ -105,37 +109,12 @@ void control_flow::read(const std::byte *mem) noexcept
         this->nodes[key] = std::move(node);
     }
 }
-
-void control_flow::exec_based_on_template(std::string_view content,
-                                          std::ostream *out,
-                                          int it) const
-{
-    (*out) << content << std::endl;
-
-    auto name = std::to_string(it) + "_" + random::string();
-
-    const std::string cmd = "dot -Tpng partiaflowgraph.dot -o" + name + ".png";
-    std::string process_stderr, process_exit;
-
-    command::execute(cmd, &process_stderr, &process_exit);
-
-    std::string exception_message = "";
-    if (!process_stderr.empty())
-        exception_message += process_exit;
-
-    if (!process_exit.empty())
-        exception_message += " " + process_exit;
-
-    if (!exception_message.empty())
-        throw ex(std::runtime_error, exception_message);
-}
-
 bool control_flow::node_exists(size_t address) const noexcept
 {
     return (this->nodes.find(address) != this->nodes.end());
 }
 
-std::unique_ptr<Node>
+control_flow::node_ptr
 control_flow::get_current_node(size_t start_address) noexcept
 {
     if (this->node_exists(start_address))
@@ -179,8 +158,7 @@ void control_flow::append_instruction(assembly::instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow::append_node_neighbors(
-  const std::unique_ptr<Node> &node) noexcept
+void control_flow::append_node_neighbors(const node_ptr &node) noexcept
 {
     size_t true_address = node->true_neighbour();
     size_t false_address = node->false_neighbour();
@@ -224,8 +202,7 @@ void control_flow::append_branch_instruction(assembly::instruction instruction)
     this->nodes[current] = move(node);
 }
 
-void control_flow::unset_current_address(
-  const std::unique_ptr<Node> &node) noexcept
+void control_flow::unset_current_address(const node_ptr &node) noexcept
 {
     if (node->done())
         this->current_pointer = 0;

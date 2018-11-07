@@ -62,3 +62,4 @@ build/
 LastCoverageResults.log
 cfgtracetestCoverage.xml
 test_log_file.log
+misc/

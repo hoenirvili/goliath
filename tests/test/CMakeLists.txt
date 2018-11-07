@@ -13,5 +13,6 @@ target_sources(cfgtracetest
         ${CFGTRACE_ROOT_DIRECTORY}/tests/test/virtual_memory.h
         ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_graph.h
         ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_graph.cpp
-
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_definition.h
+        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_definition.cpp
 )

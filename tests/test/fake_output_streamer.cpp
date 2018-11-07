@@ -13,6 +13,11 @@ std::ostream *fake_output_streamer::writer(const char *name)
     return this->os;
 }
 
+fake_output_streamer::~fake_output_streamer()
+{
+    this->os = nullptr;
+}
+
 void fake_output_streamer::init_only_once() noexcept
 {
     if (this->os)

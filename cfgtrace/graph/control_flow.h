@@ -57,7 +57,7 @@ public:
      * to turn it into a png, jpeg or a viewable format by the user
      * TODO(hoenir): MAKE THIS GENERATION SUPPORT GDL
      */
-    std::string generate(definition::FORMAT format) const;
+    definition::definition *generate(definition::FORMAT format);
 
     control_flow() = default;
     ~control_flow() = default;
@@ -68,10 +68,7 @@ private:
 
     size_t mem_size() const noexcept;
     bool node_exists(size_t start) const noexcept;
-    // TODO(hoenir): make an interface that can generate multiple formats
-    void exec_based_on_template(std::string_view content,
-                                std::ostream *out,
-                                int it) const;
+
     std::string graphviz();
     bool node_contains_address(size_t address) const noexcept;
     void set_nodes_max_occurrences() noexcept;

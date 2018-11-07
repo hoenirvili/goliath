@@ -4,15 +4,20 @@
 
 namespace definition
 {
-
 enum class FORMAT : uint8_t { GRAPHVIZ, GDL };
+
+struct definition {
+    virtual ~definition() = default;
+
+    virtual void execute() const = 0;
+};
 
 struct generator {
     virtual ~generator() = default;
 
-    virtual std::string generate(FORMAT format) const = 0;
+    virtual definition *generate(FORMAT format) = 0;
 };
 
-std::string generate(generator *g, FORMAT format);
+definition *generate(generator *g, FORMAT format);
 
 }; // namespace definition

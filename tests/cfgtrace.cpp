@@ -4,6 +4,7 @@
 #include "test/plugin_layer.h"
 #include "test/plugin_report.h"
 #include "test/virtual_memory.h"
+#include "test/fake_definition.h"
 
 #include <cfgtrace.h>
 #include <cfgtrace/assembly/instruction.h>
@@ -100,7 +101,7 @@ TEST_CASE("Test different states of initialisation", "[DBTInit]")
 
         fos.contains(
           "[CFGTrace] DBTInit engine and logger state are initiliased");
-        fos.contains("[CFGTrace] Init is called for iteration 1");
+        fos.contains("[CFGTrace] Init is called for iteration [1]");
 
         auto it = vm.iteration_count();
         REQUIRE(it == 1);
@@ -133,7 +134,7 @@ TEST_CASE("Test different states of initialisation", "[DBTInit]")
 
         fos.contains(
           "[CFGTrace] DBTInit engine and logger state are initiliased");
-        fos.contains("[CFGTrace] Init is called for iteration 2");
+        fos.contains("[CFGTrace] Init is called for iteration [2]");
 
         auto it = vm.iteration_count();
         REQUIRE(it == 2);
@@ -445,27 +446,77 @@ TEST_CASE("Test adding instruction in branching", "[DBTBranching]")
     engine::clean();
 }
 
-TEST_CASE("Test cleaning state", "[DBTFinish]")
+TEST_CASE("Test all states", "[DBTFinish]")
 {
     // setup all the state
     auto vm = virtual_memory();
     vm.enable_log_name();
     auto fos = fake_output_streamer();
     logger::custom_creation(
-      std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
-    graph::custom_creation([]() -> graph::graph * {
-        auto fk = new fake_graph();
-        fk->_read = [](const std::byte *from) { REQUIRE(from != nullptr); };
-        return fk;
-    });
+    std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
     auto state = logger::initialise("test_log_finish");
     REQUIRE(state == true);
 
-    auto report = DBTFinish();
-    REQUIRE(report != nullptr);
-    FREE_REPORT(report);
+    SECTION("Test standard cleanup when definitions are not null")
+    {
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            fk->_write = [](std::byte *from) { REQUIRE(from != nullptr); };
+            fk->_generate = [](definition::FORMAT format) {return  new fake_definition();};
+            return fk;
+        });
 
-    fos.contains("[CFGTrace] Finish is called");
+        auto report = DBTFinish();
+        REQUIRE(report != nullptr);
+        FREE_REPORT(report);
+    }
+
+    SECTION("Test standard cleanup when definitions are null")
+    {
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            fk->_write = [](std::byte *from) { REQUIRE(from != nullptr); };
+            return fk;
+        });
+
+        auto report = DBTFinish();
+        REQUIRE(report != nullptr);
+        FREE_REPORT(report);
+    }
+
+    SECTION("Test standard cleanup when definitions returns an exception")
+    {
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            fk->_write = [](std::byte *from) { REQUIRE(from != nullptr); };
+            fk->_generate = [](definition::FORMAT format) {
+                throw std::logic_error("logic error"); return nullptr;
+            };
+            return fk;
+        });
+
+        auto report = DBTFinish();
+        REQUIRE(report == nullptr);
+    }
+
+    SECTION("Test standard cleanup when the execution returns an exception")
+    {
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            fk->_write = [](std::byte *from) { REQUIRE(from != nullptr); };
+            fk->_generate = [](definition::FORMAT format) {
+                auto def = new fake_definition();
+                def->_execute = []() {
+                    throw std::logic_error("logic error");
+                };
+                return def;
+            };
+            return fk;
+        });
+
+        auto report = DBTFinish();
+        REQUIRE(report == nullptr);
+    }
 
     logger::custom_creation(nullptr);
     graph::custom_creation(nullptr);

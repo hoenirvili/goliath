@@ -14,6 +14,7 @@ public:
     const char *logger_name() const noexcept;
     virtual_memory();
     ~virtual_memory();
+
     const size_t size = engine::engine::BUFFER_SIZE;
     void enable_log_name();
     size_t iteration_count();

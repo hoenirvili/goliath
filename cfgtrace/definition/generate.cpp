@@ -2,8 +2,9 @@
 
 namespace definition
 {
-std::string generate(generator *g, FORMAT format)
+definition *generate(generator *g, FORMAT format)
 {
     return g->generate(format);
 }
+
 }; // namespace definition

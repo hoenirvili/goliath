@@ -7,8 +7,8 @@
 #include "cfgtrace/logger/logger.h"
 #include "cfgtrace/memory/loader.h"
 
-#include <string>
 #include <stdexcept>
+#include <string>
 
 /**
  *  new_plugin_report it will create a new PluginReport and
@@ -72,7 +72,7 @@ BOOL DBTInit()
     }
 
     (*it)++;
-    logger_info("[CFGTrace] Init is called for iteration %d", *it);
+    logger_info("[CFGTrace] Init is called for iteration [%d]", *it);
 
     return TRUE;
 }
@@ -130,6 +130,9 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
         // instruction
         instruction.branch_type = static_cast<BRANCH_TYPE>(0);
     }
+
+    if (instruction.is_branch() && !instruction.is_call())
+        return new_plugin_report();
 
     auto graph = graph::instance();
 
@@ -204,7 +207,6 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
     return new_plugin_report();
 }
 
-#define GENERATION_FORMAT definition::FORMAT::GRAPHVIZ
 /**
  * DBTFinish the finish functions that's called when the engine terminates
  * an analysing run. The engine will call the pair DBTInit and DBTFinish
@@ -221,24 +223,43 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
  */
 PluginReport *DBTFinish()
 {
-    logger_info("[CFGTrace] Finish is called");
+    auto engine = engine::instance();
+    auto it = engine->cfg_iteration();
+    logger_info("[CFGTrace] Finish is called at iteration [%d]", *it);
+
+    definition::definition *definitions = nullptr;
+    PluginReport *report = nullptr;
     auto graph = graph::instance();
-    std::string definitions = "";
+
     try {
         definitions = definition::generate(graph, GENERATION_FORMAT);
-    } catch(const std::exception &ex) {
-        logger_info("cannot generate definitions, %s", ex.what());
-        goto _exit;
+    } catch (const std::exception &ex) {
+        logger_error("cannot generate definitions, %s", ex.what());
+        goto _clean;
     }
 
-    auto engine = engine::instance();
-    auto to = engine->cfg_memory_region();
+    auto to = engine->cfg_serialize_memory_region();
     memory::unloader(graph, to);
 
-_exit:
+#ifdef NDEBUG
+    try {
+        if (definitions)
+            definitions->execute();
+    } catch (const std::exception &ex) {
+        logger_error("cannot execute definitions, %s", ex.what());
+        goto _clean;
+    }
+#endif
+
+    report = new_plugin_report();
+
+_clean:
+    if (definitions)
+        delete definitions;
+
     graph::clean();
     logger::clean();
     engine::clean();
 
-    return new_plugin_report();
+    return report;
 }

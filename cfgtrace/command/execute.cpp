@@ -2,12 +2,17 @@
 #include "cfgtrace/error/error.h"
 #include "cfgtrace/error/win32.h"
 #include "cfgtrace/format/win32.h"
+#include "cfgtrace/definition/generate.h"
+#include "cfgtrace/random/random.h"
+
 #include <string>
 #include <string_view>
 #include <windows.h>
+#include <ostream>
 
 namespace command
 {
+
 void execute(std::string_view command, std::string *process_stderr, std::string *process_exit)
 {
     SECURITY_ATTRIBUTES sa = {

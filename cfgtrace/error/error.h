@@ -2,4 +2,4 @@
 
 #include "cfgtrace/format/string.h"
 
-#define ex(T, str) (T)(format::string("%s:%d : %s", str))
+#define ex(T, str) (T)(format::string("%s", str))

@@ -29,10 +29,10 @@ void fake_graph::write(std::byte *to) const noexcept
     this->_write(to);
 }
 
-  std::string fake_graph::generate(definition::FORMAT format) const
+  definition::definition* fake_graph::generate(definition::FORMAT format)
   {
         if (!this->_generate)
-            return "";
+            return nullptr;
 
         return this->_generate(format);
 

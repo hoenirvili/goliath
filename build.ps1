@@ -19,10 +19,10 @@ Invoke-CmdScript "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\
 #$process = Start-Process cmake -ArgumentList "-DBUILD_TESTS=ON -DBUILD_DEMO=ON -DBUILD_SHARED_LIBS=ON -G Ninja -Bbuild/ -H." -NoNewWindow -PassThru
 
 # BUILD AS STATIC LIBRARY (this is only for testing) in ninja format
-$process = Start-Process cmake -ArgumentList "-DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DBUILD_DEMO=ON -DBUILD_SHARED_LIBS=OFF -G Ninja -Bbuild/ -H." -NoNewWindow -PassThru
+$process = Start-Process cmake -ArgumentList "-DBUILD_DEMO=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H." -NoNewWindow -PassThru
 
 # BUILD AS A SHARED LIBRARY for visual studio
-#$process = Start-Process cmake -ArgumentList "-DBUILD_TESTS=ON -DBUILD_DEMO=ON -DBUILD_SHARED_LIBS=OFF -G `"Visual Studio 15 2017`" -Bbuild/ -H." -NoNewWindow -PassThru
+#$process = Start-Process cmake -ArgumentList "-DBUILD_TESTS=ON -DBUILD_DEMO=ON -DBUILD_SHARED_LIBS=ON -G `"Visual Studio 15 2017`" -Bbuild/ -H." -NoNewWindow -PassThru
 
 $process.WaitForExit()
 ninja -v -C build -j2 cfgtrace
