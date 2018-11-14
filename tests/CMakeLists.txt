@@ -5,6 +5,9 @@ find_package(Catch2 REQUIRED)
 add_executable(cfgtracetest
 	main.cpp
 	cfgtrace.cpp
+    run.cpp
+    machinery.cpp
+    machinery.h
 )
 add_subdirectory(test)
 

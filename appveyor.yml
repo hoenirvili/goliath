@@ -51,7 +51,7 @@ before_build:
   - cd C:\projects\cfgtrace
 
 build_script:
-  - cmake -DBUILD_DEMO=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H.
+  - cmake -DBUILD_DEMO=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Debug -G Ninja -Bbuild/ -H.
   - ninja -v -C build -j2 cfgtrace
   - ninja -v -C build -j2 first_demo
   - ninja -v -C build -j2 second_demo

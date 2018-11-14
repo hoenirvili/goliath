@@ -19,6 +19,8 @@ public:
     custom_params(const custom_params &cp);
     ~custom_params();
 
+    bool branch() const;
+
 private:
     CUSTOM_PARAMS *params = nullptr;
 };

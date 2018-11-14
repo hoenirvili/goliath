@@ -1,10 +1,10 @@
 #include "test/custom_params.h"
+#include "test/fake_definition.h"
 #include "test/fake_graph.h"
 #include "test/fake_output_streamer.h"
 #include "test/plugin_layer.h"
 #include "test/plugin_report.h"
 #include "test/virtual_memory.h"
-#include "test/fake_definition.h"
 
 #include <cfgtrace.h>
 #include <cfgtrace/assembly/instruction.h>
@@ -152,16 +152,6 @@ TEST_CASE("Test different states of initialisation", "[DBTInit]")
     }
 }
 
-#define REQUIRE_INSTRUCTION(i, instr_and_or_api_reporter, true, false, branch) \
-    do {                                                                       \
-        REQUIRE(i.str() == instr_and_or_api_reporter);                         \
-        REQUIRE(i.true_branch_address() == true);                              \
-        REQUIRE(i.false_branch_address() == false);                            \
-        REQUIRE(i.branch_type == branch);                                      \
-    } while (0)
-
-#define FREE_REPORT(report) auto __rep = plugin_report_ptr(report)
-
 TEST_CASE("Test adding instruction in before ", "[DBTBeforeExecute]")
 {
     auto vm = virtual_memory();
@@ -185,11 +175,10 @@ TEST_CASE("Test adding instruction in before ", "[DBTBeforeExecute]")
         });
         auto params = std::make_unique<custom_params>(
           0x55232288, "MOV EAX, EBX", NO_BRANCH, 4, 0XFFAA, 0);
-        auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne", nullptr, nullptr},
-                             {2, "PluginTwo", nullptr, nullptr}});
+        auto layers = plugin_layer({{1, "PluginOne", nullptr, nullptr},
+                                    {2, "PluginTwo", nullptr, nullptr}});
 
-        auto report = DBTBeforeExecute(params->get(), layers->get());
+        auto report = DBTBeforeExecute(params->get(), layers.get());
         REQUIRE(report != nullptr);
 
         FREE_REPORT(report);
@@ -217,11 +206,10 @@ TEST_CASE("Test adding instruction in before ", "[DBTBeforeExecute]")
         });
         auto params = std::make_unique<custom_params>(
           0x55232288, "MOV EAX, EBX", NO_BRANCH, 4, 0XFFAA, 0);
-        auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne", nullptr, nullptr},
-                             {2, "PluginTwo", nullptr, nullptr}});
+        auto layers = plugin_layer({{1, "PluginOne", nullptr, nullptr},
+                                    {2, "PluginTwo", nullptr, nullptr}});
 
-        auto report = DBTBeforeExecute(params->get(), layers->get());
+        auto report = DBTBeforeExecute(params->get(), layers.get());
         REQUIRE(report == nullptr);
 
         // check if the returned exception is logged
@@ -252,11 +240,42 @@ TEST_CASE("Test adding instruction in before ", "[DBTBeforeExecute]")
 
         auto params = std::make_unique<custom_params>(
           0x55232288, "CALL 0x5521323", CallType, 4, 0x5521323, 0x55232288 + 4);
-        auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne", nullptr, nullptr},
-                             {2, "PluginTwo", nullptr, nullptr}});
+        auto layers = plugin_layer({{1, "PluginOne", nullptr, nullptr},
+                                    {2, "PluginTwo", nullptr, nullptr}});
 
-        auto report = DBTBeforeExecute(params->get(), layers->get());
+        auto report = DBTBeforeExecute(params->get(), layers.get());
+        REQUIRE(report != nullptr);
+
+        FREE_REPORT(report);
+        graph::clean();
+        logger::clean();
+        logger::custom_creation(nullptr);
+        graph::custom_creation(nullptr);
+    }
+
+    SECTION("Call with branch instruction that is not call")
+    {
+        auto fos = fake_output_streamer();
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
+                                          std::placeholders::_1));
+        auto state = logger::initialise("random_logger");
+        REQUIRE(state == true);
+        graph::custom_creation([]() -> graph::graph * {
+            auto fk = new fake_graph();
+            // test if the instruction has been passed correctly
+            fk->_append = [](assembly::instruction i) {
+                REQUIRE_INSTRUCTION(i, "JB 0x5521323", 0x5521323,
+                                    0x55232288 + 4, JB);
+            };
+            return fk;
+        });
+
+        auto params = std::make_unique<custom_params>(
+          0x55232288, "JB 0x5521323", JB, 4, 0x5521323, 0x55232288 + 4);
+        auto layers = plugin_layer({{1, "PluginOne", nullptr, nullptr},
+                                    {2, "PluginTwo", nullptr, nullptr}});
+
+        auto report = DBTBeforeExecute(params->get(), layers.get());
         REQUIRE(report != nullptr);
 
         FREE_REPORT(report);
@@ -286,11 +305,11 @@ TEST_CASE("Test adding instruction in before ", "[DBTBeforeExecute]")
 
         auto params = std::make_unique<custom_params>(
           0x55232288, "CALL 0x5521323", CallType, 4, 0x5521323, 0x55232288 + 4);
-        auto layers = std::make_unique<plugin_layer>(layer_informations{
-          {2, "PluginTwo", nullptr, nullptr},
-          {1, "APIReporter", nullptr, "External windows api"}});
+        auto layers =
+          plugin_layer({{2, "PluginTwo", nullptr, nullptr},
+                        {1, "APIReporter", nullptr, "External windows api"}});
 
-        auto report = DBTBeforeExecute(params->get(), layers->get());
+        auto report = DBTBeforeExecute(params->get(), layers.get());
         REQUIRE(report != nullptr);
 
         FREE_REPORT(report);
@@ -328,11 +347,10 @@ TEST_CASE("Test adding instruction in branching", "[DBTBranching]")
 
         auto params = std::make_unique<custom_params>(
           0x55232288, "CALL 0x5521323", CallType, 4, 0x5521323, 0x55232288 + 4);
-        auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne", nullptr, nullptr},
-                             {2, "PluginTwo", nullptr, nullptr}});
+        auto layers = plugin_layer({{1, "PluginOne", nullptr, nullptr},
+                                    {2, "PluginTwo", nullptr, nullptr}});
 
-        auto report = DBTBranching(params->get(), layers->get());
+        auto report = DBTBranching(params->get(), layers.get());
         REQUIRE(report != nullptr);
 
         FREE_REPORT(report);
@@ -361,11 +379,10 @@ TEST_CASE("Test adding instruction in branching", "[DBTBranching]")
 
         auto params = std::make_unique<custom_params>(
           0x55232288, "LEAVE 0x5521323", NO_BRANCH, 2, 0x5521323, 0);
-        auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne", nullptr, nullptr},
-                             {2, "PluginTwo", nullptr, nullptr}});
+        auto layers = plugin_layer({{1, "PluginOne", nullptr, nullptr},
+                                    {2, "PluginTwo", nullptr, nullptr}});
 
-        auto report = DBTBranching(params->get(), layers->get());
+        auto report = DBTBranching(params->get(), layers.get());
         REQUIRE(report != nullptr);
 
         FREE_REPORT(report);
@@ -394,11 +411,10 @@ TEST_CASE("Test adding instruction in branching", "[DBTBranching]")
 
         auto params = std::make_unique<custom_params>(
           0x55232288, "je 0x5521323", JE, 4, 0x5521323, 0x55232288 + 4);
-        auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne", nullptr, nullptr},
-                             {2, "PluginTwo", nullptr, nullptr}});
+        auto layers = plugin_layer({{1, "PluginOne", nullptr, nullptr},
+                                    {2, "PluginTwo", nullptr, nullptr}});
 
-        auto report = DBTBranching(params->get(), layers->get());
+        auto report = DBTBranching(params->get(), layers.get());
         REQUIRE(report != nullptr);
 
         FREE_REPORT(report);
@@ -426,11 +442,10 @@ TEST_CASE("Test adding instruction in branching", "[DBTBranching]")
         });
         auto params = std::make_unique<custom_params>(
           0x55232288, "MOV EAX, EBX", NO_BRANCH, 4, 0XFFAA, 0);
-        auto layers = std::make_unique<plugin_layer>(
-          layer_informations{{1, "PluginOne", nullptr, nullptr},
-                             {2, "PluginTwo", nullptr, nullptr}});
+        auto layers = plugin_layer({{1, "PluginOne", nullptr, nullptr},
+                                    {2, "PluginTwo", nullptr, nullptr}});
 
-        auto report = DBTBranching(params->get(), layers->get());
+        auto report = DBTBranching(params->get(), layers.get());
         REQUIRE(report == nullptr);
 
         // check if the returned exception is logged
@@ -453,7 +468,7 @@ TEST_CASE("Test all states", "[DBTFinish]")
     vm.enable_log_name();
     auto fos = fake_output_streamer();
     logger::custom_creation(
-    std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
+      std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
     auto state = logger::initialise("test_log_finish");
     REQUIRE(state == true);
 
@@ -462,13 +477,17 @@ TEST_CASE("Test all states", "[DBTFinish]")
         graph::custom_creation([]() -> graph::graph * {
             auto fk = new fake_graph();
             fk->_write = [](std::byte *from) { REQUIRE(from != nullptr); };
-            fk->_generate = [](definition::FORMAT format) {return  new fake_definition();};
+            fk->_generate = [](definition::FORMAT format) {
+                return new fake_definition();
+            };
             return fk;
         });
 
         auto report = DBTFinish();
         REQUIRE(report != nullptr);
         FREE_REPORT(report);
+
+        fos.contains("[CFGTrace] Finish is called at iteration [0]");
     }
 
     SECTION("Test standard cleanup when definitions are null")
@@ -482,6 +501,8 @@ TEST_CASE("Test all states", "[DBTFinish]")
         auto report = DBTFinish();
         REQUIRE(report != nullptr);
         FREE_REPORT(report);
+
+        fos.contains("[CFGTrace] Finish is called at iteration [0]");
     }
 
     SECTION("Test standard cleanup when definitions returns an exception")
@@ -490,13 +511,16 @@ TEST_CASE("Test all states", "[DBTFinish]")
             auto fk = new fake_graph();
             fk->_write = [](std::byte *from) { REQUIRE(from != nullptr); };
             fk->_generate = [](definition::FORMAT format) {
-                throw std::logic_error("logic error"); return nullptr;
+                throw std::logic_error("logic error");
+                return nullptr;
             };
             return fk;
         });
 
         auto report = DBTFinish();
         REQUIRE(report == nullptr);
+        fos.contains("[CFGTrace] Finish is called at iteration [0]");
+        fos.contains("logic error");
     }
 
 #ifndef NDEBUG
@@ -507,9 +531,7 @@ TEST_CASE("Test all states", "[DBTFinish]")
             fk->_write = [](std::byte *from) { REQUIRE(from != nullptr); };
             fk->_generate = [](definition::FORMAT format) {
                 auto def = new fake_definition();
-                def->_execute = []() {
-                    throw std::logic_error("logic error");
-                };
+                def->_execute = []() { throw std::logic_error("logic error"); };
                 return def;
             };
             return fk;
@@ -517,6 +539,8 @@ TEST_CASE("Test all states", "[DBTFinish]")
 
         auto report = DBTFinish();
         REQUIRE(report == nullptr);
+        fos.contains("[CFGTrace] Finish is called at iteration [0]");
+        fos.contains("logic error");
     }
 #endif
 

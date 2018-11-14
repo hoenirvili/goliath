@@ -176,6 +176,9 @@ void control_flow::append_node_neighbors(const node_ptr &node) noexcept
 
 void control_flow::append(assembly::instruction instruction)
 {
+    if (this->start_address_first_node == 0)
+        this->start_address_first_node = instruction.pointer_address();
+
     switch (instruction.is_branch()) {
     case true:
         this->append_branch_instruction(instruction);

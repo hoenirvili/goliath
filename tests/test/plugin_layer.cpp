@@ -1,8 +1,9 @@
 #include "plugin_layer.h"
 
-#include <cfgtrace/api/types.h>
-
 #include <algorithm>
+#include <cassert>
+#include <cfgtrace/api/types.h>
+#include <stdexcept>
 #include <tuple>
 #include <vector>
 
@@ -15,7 +16,7 @@
 /**
  *  greatest_layer returns the plugin that has the greatest layer number
  */
-static size_t greatest_layer(const layer_informations &infos)
+size_t greatest_layer(const layer_informations &infos)
 {
     auto max_element = std::max_element(
       infos.begin(), infos.end(),
@@ -24,6 +25,17 @@ static size_t greatest_layer(const layer_informations &infos)
       });
     return TUPLE_ITEM_LAYER(*max_element);
 }
+
+// plugin_layer &plugin_layer::operator=(plugin_layer &&plugin_layer)
+// {
+//     this->n = plugin_layer.n;
+//     this->p = plugin_layer.p;
+
+//     plugin_layer.n = 0;
+//     plugin_layer.p = nullptr;
+
+//     return *this;
+// }
 
 /**
  *  layer_informations {
@@ -68,25 +80,38 @@ plugin_layer::plugin_layer(const layer_informations &&infos)
         auto content_after = TUPLE_ITEM_CONTENT_AFTER(infos[i]);
 
         // if not, create a new entry into our array
-        this->p[idx] = new PluginLayer{0};
-        this->p[idx]->data = new PluginReport{0};
+        this->p[idx] = new PluginLayer;
+        this->p[idx]->data = new PluginReport;
         this->p[idx]->data->plugin_name = plugin_name;
         this->p[idx]->data->content_after = content_after;
         this->p[idx]->data->content_before = content_before;
+        this->p[idx]->nextnode = nullptr;
 
         // append the rest of the plugin into our linked list
         this->append_into_linked_list(p[idx], idx, infos, idx);
         already_done.push_back(idx); // mark idx as done;
     }
+
+    assert(this->p != nullptr);
+    assert(this->p[n] != nullptr);
+    assert(this->p[n]->data != nullptr);
+    assert(this->p[n]->nextnode == nullptr);
 }
+
 plugin_layer::~plugin_layer()
 {
-    for (size_t i = 0; i <= this->n; i++) {
-        if (!this->p[i])
+    if ((!this->n) || (!this->p))
+        return;
+
+    for (size_t i = 0; i < this->n + 1; i++) {
+        if (this->p[i] == nullptr)
             continue;
 
         do {
+            assert(p[i]->data != nullptr);
             delete this->p[i]->data;
+            this->p[i]->data = nullptr;
+
             auto next = this->p[i]->nextnode;
             delete this->p[i];
             this->p[i] = next;
@@ -94,6 +119,9 @@ plugin_layer::~plugin_layer()
     }
 
     delete[] this->p;
+
+    this->p = nullptr;
+    this->n = 0;
 }
 
 bool plugin_layer::find_in(std::vector<size_t> arr, size_t item) const noexcept
@@ -129,4 +157,75 @@ void plugin_layer::append_into_linked_list(PluginLayer *layer,
 PluginLayer **plugin_layer::get() const noexcept
 {
     return this->p;
+}
+
+plugin_layer &plugin_layer::operator=(const plugin_layer &plugin_layer)
+{
+    if ((!plugin_layer.n) || (!plugin_layer.p))
+        throw std::logic_error("invalid obj to copy ctor");
+
+    // destroy what we have first if we have smth;
+    if ((this->n) && (this->p))
+        this->~plugin_layer();
+
+    // alloc and copy the entire thing;
+    // we don't need to call plugin_layer.dctor
+    // because it's called automatically
+
+    this->n = plugin_layer.n;
+
+    this->p = new PluginLayer *[n + 1]();
+
+    // iterate all the array of layers
+    for (auto i = 0u; i < this->n + 1; i++) {
+        // if we are at an empty layer, skip it
+        if (plugin_layer.p[i] == nullptr)
+            continue;
+
+        // aloc a new layer;
+        this->p[i] = new PluginLayer{0};
+
+        auto to = this->p[i];
+        auto from = plugin_layer.p[i];
+        // alloc and copy the entire linked list;
+        // element by element
+        do {
+            to->data = new PluginReport{0};
+            // TODO(hoenir): should we alloc and copy them also?
+            to->data->content_after = from->data->content_after;
+            to->data->content_before = from->data->content_before;
+            to->data->plugin_name = from->data->plugin_name;
+
+            if (from->nextnode) {
+                this->p[i]->nextnode = new PluginLayer{0};
+                memcpy(to->nextnode, from->nextnode, sizeof(to->nextnode));
+            }
+
+            to = this->p[i]->nextnode;
+            from = from->nextnode;
+        } while (from != nullptr);
+    }
+
+    return *this;
+}
+
+plugin_layer &plugin_layer::operator=(plugin_layer &&plugin_layer)
+{
+    this->n = plugin_layer.n;
+    this->p = plugin_layer.p;
+
+    plugin_layer.n = 0;
+    plugin_layer.p = nullptr;
+
+    return *this;
+}
+
+plugin_layer::plugin_layer(const plugin_layer &plugin_layer)
+{
+    *this = plugin_layer;
+}
+
+plugin_layer::plugin_layer(plugin_layer &&plugin_layer)
+{
+    *this = std::move(plugin_layer);
 }

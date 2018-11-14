@@ -9,6 +9,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <windows.h>
 
 /**
  *  new_plugin_report it will create a new PluginReport and
