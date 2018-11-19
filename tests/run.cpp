@@ -185,9 +185,6 @@ TEST_CASE("Test engine multiple runs adding multiple instructions")
     vm.enable_log_name();
     auto fos = fake_output_streamer();
 
-    graph::custom_creation(
-      []() -> graph::graph * { return new fake_control_flow(); });
-
     auto m = machinery();
     m.add_single_layer(
       {{1, "PluginOne", nullptr, nullptr}, {2, "PluginTwo", nullptr, nullptr}});
@@ -207,6 +204,8 @@ TEST_CASE("Test engine multiple runs adding multiple instructions")
       });
 
     m.run_before_dbtinit = [&fos]() {
+        graph::custom_creation(
+          []() -> graph::graph * { return new fake_control_flow(); });
         logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
                                           std::placeholders::_1));
     };
