@@ -12,6 +12,8 @@ public:
 
     fake_output_streamer() = default;
     ~fake_output_streamer();
+    void reset() noexcept;
+
 private:
     std::stringbuf buffer;
     std::ostream *os = nullptr;

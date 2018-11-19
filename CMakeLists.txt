@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project (CFGTrace
-	VERSION 0.1
+    VERSION 0.2
 	DESCRIPTION "Control flow graph generator plugin"
 	LANGUAGES CXX
 	HOMEPAGE_URL "https://github.com/hoenirvili/cfgtrace"
@@ -64,7 +64,8 @@ set_target_properties(cfgtrace
 		RUNTIME_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
 		PDB_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
 		COMPILE_FEATURES cxx_std_17
-		COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS;$<$<BOOL:${BUILD_TESTS}>:${TEST_EXPORT}>"
+        COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS;$<$<BOOL:${BUILD_TESTS}>:${TEST_EXPORT}>"
+        LINK_OPTIONS "/MANIFEST:NO"
 )
 
 add_subdirectory(cfgtrace)

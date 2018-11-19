@@ -19,6 +19,14 @@ struct machinery {
     // params list of parameters
     using params = std::vector<pairs>;
 
+    using list_params_run = std::vector<custom_params>;
+
+    using params_run = std::vector<list_params_run>;
+
+    using batch_runs = std::vector<params>;
+
+    using list_params = std::vector<custom_params>;
+
     // set a single layer for all the parameters
     plugin_layer single_layer;
 
@@ -29,21 +37,27 @@ struct machinery {
     // params a list of pair of parameters
     params list_of_params;
 
+    batch_runs list_of_runs;
+
+    void add_custom_params(const params_run &&runs);
+
     // add_single_layer add a single layer to the list of parameter pairs
     void add_single_layer(const layer_informations &&infos);
-    void add_custom_params(const std::vector<custom_params> &&params);
     // void add_custom_params(const params &&params);
 
+    // before set of function;
+    std::function<void()> run_before_dbtinit = nullptr;
+
     // after set of functions
-    std::function<void(void)> run_after_dbtinit = nullptr;
-    std::function<void(void)> run_after_dbtbefore = nullptr;
-    std::function<void(void)> run_after_dbtbranch = nullptr;
-    std::function<void(void)> run_after_dbtfinish = nullptr;
+    std::function<void(size_t)> run_after_dbtinit = nullptr;
+    std::function<void(size_t)> run_after_dbtbefore = nullptr;
+    std::function<void(size_t)> run_after_dbtbranch = nullptr;
+    std::function<void(size_t)> run_after_dbtfinish = nullptr;
 
     // inspect
-    std::function<void(BOOL)> inspect_init_state = nullptr;
-    std::function<void(PluginReport *)> inspect_plugin_report = nullptr;
-    std::function<void(PluginReport *)> inspect_finish_report = nullptr;
+    std::function<void(BOOL, size_t)> inspect_init_state = nullptr;
+    std::function<void(PluginReport *, size_t)> inspect_plugin_report = nullptr;
+    std::function<void(PluginReport *, size_t)> inspect_finish_report = nullptr;
 
     void start();
 

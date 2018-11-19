@@ -184,8 +184,6 @@ TEST_CASE("Test engine multiple runs adding multiple instructions")
     auto vm = virtual_memory();
     vm.enable_log_name();
     auto fos = fake_output_streamer();
-    logger::custom_creation(
-      std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
 
     graph::custom_creation(
       []() -> graph::graph * { return new fake_control_flow(); });
@@ -194,38 +192,57 @@ TEST_CASE("Test engine multiple runs adding multiple instructions")
     m.add_single_layer(
       {{1, "PluginOne", nullptr, nullptr}, {2, "PluginTwo", nullptr, nullptr}});
 
-    // first run
     m.add_custom_params(
-      {{0x00776611, "call 0x00776614", CallType, 1, 0x00776614, 0x00776613},
-       {0x00776614, "xor eax, eax", NO_BRANCH, 2, 0x00776616, 0},
-       {0x00776616, "ret", RetType, 1, 0x00776613, 0}});
+      // start
+      {
+        // first run
+        {{0x00776611, "call 0x00776614", CallType, 1, 0x00776614, 0x00776613},
+         {0x00776614, "xor eax, eax", NO_BRANCH, 2, 0x00776616, 0},
+         {0x00776616, "ret", RetType, 1, 0x00776613, 0}},
 
-    // second run
-    // TODO(hoenir): Implement this;
-    m.add_custom_params({
-      {0x00776611, "call 0x00776614", CallType, 1, 0x00776613, 0x00776614},
-      {0x00776613, "push ebp", NO_BRANCH, 1, 0x00776614, 0},
-    });
+        // second run
+        {{0x00776611, "call 0x00776614", CallType, 1, 0x00776613, 0x00776614},
+         {0x00776613, "push ebp", NO_BRANCH, 1, 0x00776614, 0}}
+        // end
+      });
 
-    m.run_after_dbtinit = [&fos, &vm]() {
+    m.run_before_dbtinit = [&fos]() {
+        logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
+                                          std::placeholders::_1));
+    };
+
+    m.run_after_dbtinit = [&fos, &vm](size_t it) {
         fos.contains(
           "[CFGTrace] DBTInit engine and logger state are initiliased");
-        fos.contains("[CFGTrace] Init is called for iteration [1]");
-
-        auto it = vm.iteration_count();
-        REQUIRE(it == 1);
+        switch (it) {
+        case 1:
+            fos.contains("[CFGTrace] Init is called for iteration [1]");
+            break;
+        case 2:
+            fos.contains("[CFGTrace] Init is called for iteration [2]");
+            break;
+        }
     };
 
-    m.inspect_plugin_report = [](PluginReport *report) {
+    m.inspect_plugin_report = [](PluginReport *report, size_t it) {
         REQUIRE(report != nullptr);
     };
 
-    m.inspect_finish_report = [](PluginReport *report) {
+    m.inspect_finish_report = [](PluginReport *report, size_t it) {
         REQUIRE(report != nullptr);
     };
 
-    m.run_after_dbtfinish = [&fos]() {
-        fos.contains("[CFGTrace] Finish is called at iteration [1]");
+    m.run_after_dbtfinish = [&fos](size_t it) {
+        switch (it) {
+        case 1:
+            fos.contains("[CFGTrace] Finish is called at iteration [1]");
+            break;
+        case 2:
+            fos.contains("[CFGTrace] Finish is called at iteration [2]");
+            break;
+        }
+
+        fos.reset(); // make the logger create a new writer
         logger::custom_creation(nullptr);
         graph::custom_creation(nullptr);
     };

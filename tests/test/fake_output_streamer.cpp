@@ -31,6 +31,11 @@ const char *fake_output_streamer::name() const noexcept
     return this->_name;
 }
 
+void fake_output_streamer::reset() noexcept
+{
+    this->os = nullptr;
+}
+
 void fake_output_streamer::contains(const char *str)
 {
     auto data = buffer.str();
