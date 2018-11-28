@@ -115,11 +115,11 @@ bool control_flow::node_exists(size_t address) const noexcept
 }
 
 control_flow::node_ptr
-control_flow::get_current_node(size_t start_address) noexcept
+control_flow::get_current_node(size_t start_address, size_t iteration) noexcept
 {
     if (this->node_exists(start_address))
         return move(this->nodes[start_address]);
-    return std::make_unique<Node>(start_address);
+    return std::make_unique<Node>(start_address, iteration);
 }
 
 bool control_flow::node_contains_address(size_t address) const noexcept
@@ -142,7 +142,8 @@ size_t control_flow::set_and_get_current_address(size_t eip) noexcept
     return this->current_pointer;
 }
 
-void control_flow::append_instruction(assembly::instruction instruction)
+void control_flow::append_instruction(assembly::instruction instruction,
+                                      size_t current_iteration)
 {
     if (!instruction.validate())
         throw ex(std::invalid_argument, "invalid instruction passed");
@@ -153,42 +154,44 @@ void control_flow::append_instruction(assembly::instruction instruction)
 
     size_t current =
       this->set_and_get_current_address(instruction.pointer_address());
-    auto node = this->get_current_node(current);
-    node->append_instruction(instruction);
+    auto node = this->get_current_node(current, current_iteration);
+    node->append_instruction(instruction, current_iteration);
     this->nodes[current] = move(node);
 }
 
-void control_flow::append_node_neighbors(const node_ptr &node) noexcept
+void control_flow::append_node_neighbors(const node_ptr &node,
+                                         size_t iteration) noexcept
 {
     size_t true_address = node->true_neighbour();
     size_t false_address = node->false_neighbour();
 
     if (true_address != 0) {
-        auto true_node = get_current_node(true_address);
+        auto true_node = get_current_node(true_address, iteration);
         this->nodes[true_address] = move(true_node);
     }
 
     if (false_address != 0) {
-        auto false_node = get_current_node(false_address);
+        auto false_node = get_current_node(false_address, iteration);
         this->nodes[false_address] = move(false_node);
     }
 }
 
-void control_flow::append(assembly::instruction instruction)
+void control_flow::append(assembly::instruction instruction, size_t iteration)
 {
     if (this->start_address_first_node == 0)
         this->start_address_first_node = instruction.pointer_address();
 
     switch (instruction.is_branch()) {
     case true:
-        this->append_branch_instruction(instruction);
+        this->append_branch_instruction(instruction, iteration);
         break;
     case false:
-        this->append_instruction(instruction);
+        this->append_instruction(instruction, iteration);
     }
 }
 
-void control_flow::append_branch_instruction(assembly::instruction instruction)
+void control_flow::append_branch_instruction(assembly::instruction instruction,
+                                             size_t iteration)
 {
     if (!instruction.validate())
         throw ex(std::invalid_argument, "invalid instruction passed");
@@ -198,9 +201,9 @@ void control_flow::append_branch_instruction(assembly::instruction instruction)
 
     size_t current =
       this->set_and_get_current_address(instruction.pointer_address());
-    auto node = this->get_current_node(current);
-    node->append_branch_instruction(instruction);
-    this->append_node_neighbors(node);
+    auto node = this->get_current_node(current, iteration);
+    node->append_branch_instruction(instruction, iteration);
+    this->append_node_neighbors(node, iteration);
     this->unset_current_address(node);
     this->nodes[current] = move(node);
 }

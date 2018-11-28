@@ -31,154 +31,178 @@ definition::definition *fake_control_flow::generate(definition::FORMAT format)
     return new fake_definition(); // this is no-op
 }
 
-TEST_CASE("Test engine single run without adding any single branch")
-{
-    // initialise the state
-    auto vm = virtual_memory();
-    vm.enable_log_name();
-    auto fos = fake_output_streamer();
-    logger::custom_creation(
-      std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
-    graph::custom_creation(
-      []() -> graph::graph * { return new fake_control_flow(); });
+// TEST_CASE("Test engine single run without adding any single branch")
+// {
+//     // initialise the state
+//     auto vm = virtual_memory();
+//     vm.enable_log_name();
+//     auto fos = fake_output_streamer();
+//     logger::custom_creation(
+//       std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
+//     graph::custom_creation(
+//       []() -> graph::graph * { return new fake_control_flow(); });
 
-    // call the starting function
-    BOOL state = DBTInit();
-    REQUIRE(state == TRUE);
+//     // call the starting function
+//     BOOL state = DBTInit();
+//     REQUIRE(state == TRUE);
 
-    fos.contains("[CFGTrace] DBTInit engine and logger state are initiliased");
-    fos.contains("[CFGTrace] Init is called for iteration [1]");
+//     fos.contains("[CFGTrace] DBTInit engine and logger state are
+//     initiliased"); fos.contains("[CFGTrace] Init is called for iteration
+//     [1]");
 
-    auto it = vm.iteration_count();
-    REQUIRE(it == 1);
+//     auto it = vm.iteration_count();
+//     REQUIRE(it == 1);
 
-    // call the ending function
-    auto report = DBTFinish();
-    REQUIRE(report != nullptr);
-    FREE_REPORT(report);
+//     // call the ending function
+//     auto report = DBTFinish();
+//     REQUIRE(report != nullptr);
+//     FREE_REPORT(report);
 
-    fos.contains("[CFGTrace] Finish is called at iteration [1]");
-    logger::custom_creation(nullptr);
-    graph::custom_creation(nullptr);
-}
+//     fos.contains("[CFGTrace] Finish is called at iteration [1]");
+//     logger::custom_creation(nullptr);
+//     graph::custom_creation(nullptr);
+// }
 
-TEST_CASE("Test engine single run adding multiple instructions")
-{
-    auto vm = virtual_memory();
-    vm.enable_log_name();
-    auto fos = fake_output_streamer();
-    logger::custom_creation(
-      std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
+// TEST_CASE("Test engine single run adding multiple instructions")
+// {
+//     auto vm = virtual_memory();
+//     vm.enable_log_name();
+//     auto fos = fake_output_streamer();
+//     logger::custom_creation(
+//       std::bind(&fake_output_streamer::writer, &fos, std::placeholders::_1));
 
-    // first run
-    graph::custom_creation(
-      []() -> graph::graph * { return new fake_control_flow(); });
+//     // first run
+//     graph::custom_creation(
+//       []() -> graph::graph * { return new fake_control_flow(); });
 
-    // call the starting function
-    BOOL state = DBTInit();
-    REQUIRE(state == TRUE);
+//     // call the starting function
+//     BOOL state = DBTInit();
+//     REQUIRE(state == TRUE);
 
-    fos.contains("[CFGTrace] DBTInit engine and logger state are initiliased");
-    fos.contains("[CFGTrace] Init is called for iteration [1]");
+//     fos.contains("[CFGTrace] DBTInit engine and logger state are
+//     initiliased"); fos.contains("[CFGTrace] Init is called for iteration
+//     [1]");
 
-    auto it = vm.iteration_count();
-    REQUIRE(it == 1);
+//     auto it = vm.iteration_count();
+//     REQUIRE(it == 1);
 
-    // use the same layer on all calls
-    auto layers = plugin_layer(
-      {{1, "PluginOne", nullptr, nullptr}, {2, "PluginTwo", nullptr, nullptr}});
+//     // use the same layer on all calls
+//     auto layers = plugin_layer(
+//       {{1, "PluginOne", nullptr, nullptr}, {2, "PluginTwo", nullptr,
+//       nullptr}});
 
-    /*
+//     /*
 
-    first run
-    +-------------------+
-    |  0x00776611       |
-    |                   +-----------+
-    |  call 0x00776614  |           |
-    +--------+----------+           |
-             |                      |
-             |               +------v--------+
-     +-------v--------+      |  0x00776613   |
-     | 0x00776614     |      |               |
-     | xor eax, eax   |      +---------------+
-     | ret            |
-     |                |
-     +----------------+
+//     first run
+//     +-------------------+
+//     |  0x00776611       |
+//     |                   +-----------+
+//     |  call 0x00776614  |           |
+//     +--------+----------+           |
+//              |                      |
+//              |               +------v--------+
+//      +-------v--------+      |  0x00776613   |
+//      | 0x00776614     |      |               |
+//      | xor eax, eax   |      +---------------+
+//      | ret            |
+//      |                |
+//      +----------------+
 
-    */
+//     */
 
-    auto params = std::make_unique<custom_params>(
-      0x00776611, "call 0x00776614", CallType, 1, 0x00776614, 0x00776613);
+//     auto params = std::make_unique<custom_params>(
+//       0x00776611, "call 0x00776614", CallType, 1, 0x00776614, 0x00776613);
 
-    auto report = DBTBranching(params->get(), layers.get());
-    REQUIRE(report != nullptr);
-    delete report;
+//     auto report = DBTBranching(params->get(), layers.get());
+//     REQUIRE(report != nullptr);
+//     delete report;
 
-    report = DBTBeforeExecute(params->get(), layers.get());
-    REQUIRE(report != nullptr);
-    delete report;
+//     report = DBTBeforeExecute(params->get(), layers.get());
+//     REQUIRE(report != nullptr);
+//     delete report;
 
-    params = std::make_unique<custom_params>(0x00776614, "xor eax, eax",
-                                             NO_BRANCH, 2, 0x00776616, 0);
+//     params = std::make_unique<custom_params>(0x00776614, "xor eax, eax",
+//                                              NO_BRANCH, 2, 0x00776616, 0);
 
-    report = DBTBeforeExecute(params->get(), layers.get());
-    REQUIRE(report != nullptr);
-    delete report;
+//     report = DBTBeforeExecute(params->get(), layers.get());
+//     REQUIRE(report != nullptr);
+//     delete report;
 
-    params = std::make_unique<custom_params>(0x00776616, "ret", RetType, 1,
-                                             0x00776613, 0);
+//     params = std::make_unique<custom_params>(0x00776616, "ret", RetType, 1,
+//                                              0x00776613, 0);
 
-    report = DBTBranching(params->get(), layers.get());
-    REQUIRE(report != nullptr);
-    delete report;
+//     report = DBTBranching(params->get(), layers.get());
+//     REQUIRE(report != nullptr);
+//     delete report;
 
-    report = DBTBeforeExecute(params->get(), layers.get());
-    REQUIRE(report != nullptr);
-    delete report;
+//     report = DBTBeforeExecute(params->get(), layers.get());
+//     REQUIRE(report != nullptr);
+//     delete report;
 
-    // call the ending function
-    report = DBTFinish();
-    REQUIRE(report != nullptr);
-    delete report;
+//     // call the ending function
+//     report = DBTFinish();
+//     REQUIRE(report != nullptr);
+//     delete report;
 
-    fos.contains("[CFGTrace] Finish is called at iteration [1]");
-    logger::custom_creation(nullptr);
-    graph::custom_creation(nullptr);
-}
+//     fos.contains("[CFGTrace] Finish is called at iteration [1]");
+//     logger::custom_creation(nullptr);
+//     graph::custom_creation(nullptr);
+// }
 
 TEST_CASE("Test engine multiple runs adding multiple instructions")
 {
     /*
 
         first run
+        // it = 1
         +-------------------+
-        |  0x00776611       |
+        |  0x00776200       |
         |                   +-----------+
-        |  call 0x00776614  |           |
+        |  call 0x00776500  |           |
         +--------+----------+           |
                  |                      |
                  |               +------v--------+
-         +-------v--------+      |  0x00776613   |
-         | 0x00776614     |      |               |
+         +-------v--------+      |  0x00776202   |
+         | 0x00776500     |      |               |
          | xor eax, eax   |      +---------------+
          | ret            |
          |                |
          +----------------+
 
           second run
+          // it = 2
+          // nodes have it 1
           +-----------------+
-          |  0x00776611     |
+          |  0x00776200     |
           |                 +-----------------+
-          |  call 0x00776614|                 |
+          |  call 0x00776500|                 |
           +--------+--------+                 |
                    |                          |
           +--------v--------+          +------v-------+
-          | 0x00776614      |          | 0x00776613   |
+          | 0x00776500      |          | 0x00776202   |
           |                 |          |              |
           |                 |          | push ebp     |
           +-----------------+          | sub esp, 0x4 |
                                        | ret          |
                                        +--------------+
+
+
+        final result
+
+        +-------------------+
+        |  0x00776200       |
+        |                   +-----------+
+        |  call 0x00776500  |           |
+        +--------+----------+           |
+                 |                      |
+                 |               +------v--------+
+         +-------v--------+      |  0x00776202   |
+         | 0x00776500     |      | push ebp      |
+         |                |      | sub esp, 0x4  |
+         | xor eax, eax   |      | ret           |
+         | ret			  |	     +---------------+
+         |                |
+         +----------------+
     */
 
     auto vm = virtual_memory();
@@ -193,19 +217,20 @@ TEST_CASE("Test engine multiple runs adding multiple instructions")
       // start
       {
         // first run
-        {{0x00776611, "call 0x00776614", CallType, 1, 0x00776614, 0x00776613},
-         {0x00776614, "xor eax, eax", NO_BRANCH, 2, 0x00776616, 0},
-         {0x00776616, "ret", RetType, 1, 0x00776613, 0}},
-
+        {{0x00776200, "call 0x00776500", CallType, 2, 0x00776500, 0x00776500},
+         {0x00776500, "xor eax, ebx", NO_BRANCH, 2, 0x00776500, 0x00776202},
+         {0x00776502, "ret", RetType, 1, 0x00776202, 0x00776202}},
         // second run
-        {{0x00776611, "call 0x00776614", CallType, 1, 0x00776613, 0x00776614},
-         {0x00776613, "push ebp", NO_BRANCH, 1, 0x00776614, 0}}
+        {{0x00776200, "call 0x00776500", CallType, 2, 0x00776500, 0x00776500},
+         {0x00776202, "push ebp", NO_BRANCH, 1, 0x00776202, 0x00776500},
+         {0x00776203, "sub esp, 0x4", NO_BRANCH, 1, 0x00776202, 0x00776500},
+         {0x00776204, "ret", RetType, 1, 0x00776200, 0}}
         // end
       });
 
     m.run_before_dbtinit = [&fos]() {
-        graph::custom_creation(
-          []() -> graph::graph * { return new fake_control_flow(); });
+        // graph::custom_creation(
+        //[]() -> graph::graph * { return new fake_control_flow(); });
         logger::custom_creation(std::bind(&fake_output_streamer::writer, &fos,
                                           std::placeholders::_1));
     };
@@ -243,7 +268,7 @@ TEST_CASE("Test engine multiple runs adding multiple instructions")
 
         fos.reset(); // make the logger create a new writer
         logger::custom_creation(nullptr);
-        graph::custom_creation(nullptr);
+        // graph::custom_creation(nullptr);
     };
 
     m.start();

@@ -24,22 +24,30 @@ size_t Node::false_neighbour() const noexcept
     return this->false_branch_address;
 }
 
-void Node::append_instruction(assembly::instruction instruction) noexcept
+void Node::append_instruction(assembly::instruction instruction,
+                              size_t iteration) noexcept
 {
     size_t eip = instruction.pointer_address();
-    // TODO(hoenir): always increment when first eip, ignore the rest
-    // TODO(hoenir): what if the jump is in the middle of the block?
     if (this->done() && this->contains_address(eip)) {
-        this->already_visited(eip);
+        // if we are at the same node creation iteration count
+        // that means we have a loop
+        if (this->_iteration == iteration) {
+            this->already_visited(eip);
+            return;
+        }
         return;
     }
 
     this->block.push_back(instruction);
 }
 
-void Node::append_branch_instruction(assembly::instruction instruction) noexcept
+void Node::append_branch_instruction(assembly::instruction instruction,
+                                     size_t iteration) noexcept
 {
-    this->append_instruction(instruction);
+    if (this->done())
+        return;
+
+    this->append_instruction(instruction, iteration);
 
     if (!instruction.is_ret()) {
         this->true_branch_address = instruction.true_branch_address();
@@ -68,7 +76,8 @@ bool Node::contains_address(size_t eip) const noexcept
 bool Node::no_branching() const noexcept
 {
     // TODO(): Modify this. terminal_node
-    return (!this->true_branch_address && !this->false_branch_address && this->block.size());
+    return (!this->true_branch_address && !this->false_branch_address &&
+            this->block.size());
 }
 
 /**
@@ -223,6 +232,9 @@ void Node::load_from_memory(const std::byte *mem) noexcept
     memcpy(&this->_start_address, mem, sizeof(this->_start_address));
     mem += sizeof(this->_start_address);
 
+    memcpy(&this->_iteration, mem, sizeof(this->_iteration));
+    mem += sizeof(this->_iteration);
+
     // how many instruction we have?
     size_t n = 0;
     memcpy(&n, mem, sizeof(n));
@@ -245,7 +257,8 @@ void Node::load_from_memory(const std::byte *mem) noexcept
     memcpy(&this->true_branch_address, mem, sizeof(this->true_branch_address));
     mem += sizeof(this->true_branch_address);
 
-    memcpy(&this->false_branch_address, mem, sizeof(this->false_branch_address));
+    memcpy(&this->false_branch_address, mem,
+           sizeof(this->false_branch_address));
     mem += sizeof(this->false_branch_address);
 
     memcpy(&this->occurrences, mem, sizeof(this->occurrences));
@@ -256,6 +269,9 @@ void Node::load_to_memory(std::byte *mem) const noexcept
 {
     memcpy(mem, &this->_start_address, sizeof(this->_start_address));
     mem += sizeof(this->_start_address);
+
+    memcpy(mem, &this->_iteration, sizeof(this->_iteration));
+    mem += sizeof(this->_iteration);
 
     const size_t n = this->block.size();
     memcpy(mem, &n, sizeof(n));
@@ -275,7 +291,8 @@ void Node::load_to_memory(std::byte *mem) const noexcept
     memcpy(mem, &this->true_branch_address, sizeof(this->true_branch_address));
     mem += sizeof(this->true_branch_address);
 
-    memcpy(mem, &this->false_branch_address, sizeof(this->false_branch_address));
+    memcpy(mem, &this->false_branch_address,
+           sizeof(this->false_branch_address));
     mem += sizeof(this->false_branch_address);
 
     memcpy(mem, &this->occurrences, sizeof(this->occurrences));
@@ -285,6 +302,7 @@ void Node::load_to_memory(std::byte *mem) const noexcept
 size_t Node::mem_size() const noexcept
 {
     size_t size = sizeof(this->_start_address);
+    size += sizeof(this->_iteration);
     size += sizeof(this->block.size());
     for (const auto &item : this->block) {
         auto item_size = item.mem_size();

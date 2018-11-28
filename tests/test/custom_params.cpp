@@ -14,10 +14,12 @@ custom_params::custom_params(size_t EIP,
     this->params = new CUSTOM_PARAMS();
     this->params->MyDisasm = new DISASM();
     this->params->MyDisasm->EIP = EIP;
+
     auto begin = CompleteInstr;
-    auto end = CompleteInstr + strlen(CompleteInstr) + 1;
+    auto end = CompleteInstr + strlen(CompleteInstr);
     auto to = this->params->MyDisasm->CompleteInstr;
-    std::copy(begin, end, this->params->MyDisasm->CompleteInstr);
+    std::copy(begin, end, to);
+
     this->params->MyDisasm->Instruction.BranchType = BranchType;
     this->params->instrlen = instrlen;
     this->params->next_addr = next_addr;
@@ -30,7 +32,7 @@ custom_params::custom_params(const custom_params &cp)
     this->params->MyDisasm = new DISASM();
     this->params->MyDisasm->EIP = cp.params->MyDisasm->EIP;
     auto start = cp.params->MyDisasm->CompleteInstr;
-    auto end = start + sizeof(start);
+    auto end = start + sizeof(cp.params->MyDisasm->CompleteInstr);
     std::copy(start, end, this->params->MyDisasm->CompleteInstr);
     this->params->MyDisasm->Instruction.BranchType =
       cp.params->MyDisasm->Instruction.BranchType;

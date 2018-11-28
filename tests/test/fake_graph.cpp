@@ -1,18 +1,18 @@
 #include "fake_graph.h"
 
 #include <cfgtrace/assembly/instruction.h>
-#include <cfgtrace/graph/graph.h>
 #include <cfgtrace/definition/generate.h>
+#include <cfgtrace/graph/graph.h>
 
-#include <string>
 #include <cstddef>
+#include <string>
 
-void fake_graph::append(assembly::instruction instruction)
+void fake_graph::append(assembly::instruction instruction, size_t iteration)
 {
     if (!this->_append)
         return;
 
-    this->_append(instruction);
+    this->_append(instruction, iteration);
 }
 
 void fake_graph::read(const std::byte *from) noexcept
@@ -29,11 +29,10 @@ void fake_graph::write(std::byte *to) const noexcept
     this->_write(to);
 }
 
-  definition::definition* fake_graph::generate(definition::FORMAT format)
-  {
-        if (!this->_generate)
-            return nullptr;
+definition::definition *fake_graph::generate(definition::FORMAT format)
+{
+    if (!this->_generate)
+        return nullptr;
 
-        return this->_generate(format);
-
-  }
+    return this->_generate(format);
+}

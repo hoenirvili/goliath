@@ -21,7 +21,8 @@ struct graph : public virtual memory::reader,
     /**
      *  append adds an assembly instruction into the graph representation
      */
-    virtual void append(assembly::instruction instruction) = 0;
+    virtual void
+    append(assembly::instruction instruction, size_t iteration) = 0;
 };
 
 /**

@@ -38,6 +38,8 @@ size_t GetLayer()
     return PLUGIN_LAYER;
 }
 
+static size_t current_iteration = 0;
+
 /**
  * DBTInit initialises the internal state and memory of the plugin
  * this will manage the initialisation of the internal implementation
@@ -72,9 +74,13 @@ BOOL DBTInit()
         memory::loader(g, smr);
     }
 
+    // it will be 1 if we are at the start of the process
+    // every node graph that encounters a loop should always check
+    // if the node when is created equals to the current iteration count
     (*it)++;
     logger_info("[CFGTrace] Init is called for iteration [%d]", *it);
 
+    current_iteration = *it;
     return TRUE;
 }
 
@@ -138,7 +144,7 @@ PluginReport *DBTBeforeExecute(void *params, PluginLayer **layers)
     auto graph = graph::instance();
 
     try {
-        graph->append(instruction);
+        graph->append(instruction, current_iteration);
     } catch (const std::exception &ex) {
         logger_error("cannot append instruction, %s", ex.what());
         return nullptr;
@@ -199,7 +205,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
 
     auto graph = graph::instance();
     try {
-        graph->append(instruction);
+        graph->append(instruction, current_iteration);
     } catch (const std::exception &ex) {
         logger_error("cannot append branch instruction %s", ex.what());
         return nullptr;

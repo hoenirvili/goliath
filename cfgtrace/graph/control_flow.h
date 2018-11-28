@@ -49,7 +49,7 @@ public:
     /**
      *  append adds an assembly instruction in the control flow graph
      */
-    void append(assembly::instruction instruction) override;
+    void append(assembly::instruction instruction, size_t iteration) override;
 
     /**
      * generate generates out of the control flow graph an textual
@@ -73,12 +73,14 @@ private:
     bool node_contains_address(size_t address) const noexcept;
     void set_nodes_max_occurrences() noexcept;
     void unset_current_address(const node_ptr &node) noexcept;
-    void append_node_neighbors(const node_ptr &node) noexcept;
+    void append_node_neighbors(const node_ptr &node, size_t iteration) noexcept;
     bool it_fits(const size_t size) const noexcept;
     size_t set_and_get_current_address(size_t eip) noexcept;
-    node_ptr get_current_node(size_t start_address) noexcept;
-    void append_instruction(assembly::instruction instruction);
-    void append_branch_instruction(assembly::instruction instruction);
+    node_ptr get_current_node(size_t start_address, size_t iteration) noexcept;
+    void append_instruction(assembly::instruction instruction,
+                            size_t current_iteration);
+    void append_branch_instruction(assembly::instruction instruction,
+                                   size_t iteration);
 };
 
 }; // namespace graph

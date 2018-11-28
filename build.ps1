@@ -19,13 +19,14 @@ Invoke-CmdScript "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\
 # $process = Start-Process cmake -ArgumentList "-DBUILD_DEMO=ON -DBUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -G Ninja -Bbuild/ -H." -NoNewWindow -PassThru
 
 # Debug mode for testing
-$process = Start-Process cmake -ArgumentList "-DBUILD_DEMO=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Debug -G Ninja -Bbuild/ -H." -NoNewWindow -PassThru
+#$process = Start-Process cmake -ArgumentList "-DBUILD_DEMO=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Debug -G Ninja -Bbuild/ -H." -NoNewWindow -PassThru
 
-# Only for visual studio
-#$process = Start-Process cmake -ArgumentList "-DBUILD_TESTS=ON -DBUILD_DEMO=ON -DBUILD_SHARED_LIBS=OFF -G `"Visual Studio 15 2017`" -Bbuild/ -H." -NoNewWindow -PassThru
+# Only for visual studio with with tests
+$process = Start-Process cmake -ArgumentList "-DBUILD_TESTS=ON -DBUILD_DEMO=ON -DBUILD_SHARED_LIBS=OFF -G `"Visual Studio 15 2017`" -Bbuild/ -H." -NoNewWindow -PassThru
+
 
 $process.WaitForExit()
-ninja -v -C build -j8 cfgtrace
-ninja -v -C build -j8 first_demo
-ninja -v -C build -j8 second_demo
-ninja -v -C build -j8 cfgtracetest
+#ninja -v -C build -j8 cfgtrace
+#ninja -v -C build -j8 first_demo
+#ninja -v -C build -j8 second_demo
+#ninja -v -C build -j8 cfgtracetest

@@ -8,6 +8,7 @@ class Node
 {
 private:
     size_t _start_address = 0;
+    size_t _iteration = 0;
 
     std::vector<assembly::instruction> block;
     bool is_done = false;
@@ -28,8 +29,10 @@ public:
     void mark_done() noexcept;
     size_t start_address() const noexcept;
     bool done() const noexcept;
-    void append_instruction(assembly::instruction instruction) noexcept;
-    void append_branch_instruction(assembly::instruction instruction) noexcept;
+    void append_instruction(assembly::instruction instruction,
+                            size_t iteration) noexcept;
+    void append_branch_instruction(assembly::instruction instruction,
+                                   size_t iteration) noexcept;
     std::string graphviz_definition() const;
     std::string graphviz_relation() const;
     void load_to_memory(std::byte *mem) const noexcept;
@@ -38,7 +41,8 @@ public:
     bool contains_address(size_t eip) const noexcept;
     size_t true_neighbour() const noexcept;
     size_t false_neighbour() const noexcept;
-    Node(size_t start_address) : _start_address(start_address)
+    Node(size_t start_address, size_t iteration)
+        : _start_address(start_address), _iteration(iteration)
     {
     }
     Node() = default;
