@@ -6,7 +6,13 @@ namespace definition
 {
 enum class FORMAT : uint8_t { GRAPHVIZ, GDL };
 
-struct definition {
+struct stringer {
+    virtual ~stringer() = default;
+
+    virtual std::string_view string() const = 0;
+};
+
+struct definition : public stringer {
     virtual ~definition() = default;
 
     virtual void execute() const = 0;

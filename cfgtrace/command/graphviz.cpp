@@ -41,4 +41,9 @@ void graphviz::execute() const
         throw ex(std::runtime_error, exception_message);
 }
 
+std::string_view graphviz::string() const
+{
+    return this->definitions;
+}
+
 }; // namespace command

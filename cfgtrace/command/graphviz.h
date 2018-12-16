@@ -11,6 +11,7 @@ struct graphviz : public definition::definition {
     ~graphviz() = default;
 
     void execute() const override;
+    std::string_view string() const override;
 
 private:
     std::string definitions;
