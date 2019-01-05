@@ -7,12 +7,21 @@
 
 namespace engine
 {
+/**
+ * engine type can interact with the engine shared memory page
+ * and retrive information used in the public facing API
+ * that the plugin it expose
+ */
 class engine
 {
 private:
     std::byte *memory = nullptr;
 
 public:
+    /**
+     * list of offset addresses that the engine
+     * writes differrent information to
+     */
     static constexpr int LOGNAME_OFFSET = 0x0000;
     static constexpr int PLUGINS_OFFSET = 0x1000;
     static constexpr int CONTEXT_OFFSET = 0x2000;
@@ -26,13 +35,31 @@ public:
     static constexpr int SHARED_CFG = 0x40000;
     static constexpr int BUFFER_SIZE = 0x100000;
 
+    /**
+     * return a new engine instance based on the handle provided
+     */
     engine(HANDLE file_mapping);
     engine() = default;
     ~engine();
 
-    PluginLayer *plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const noexcept;
+    /**
+     * plugin_interface returns the node of an plugin
+     * specified in by the pluginname inside layers list
+     */
+    PluginLayer *
+    plugin_interface(char *pluginname, size_t layer, PluginLayer **layers) const
+      noexcept;
+
+    /**
+     * log_name return the main log name that the engine logs to
+     */
     char *log_name() const noexcept;
+
+    /**
+     * plugin_path returns the plugin_path directory
+     */
     char *plugin_path() const noexcept;
+
     std::byte *context() const noexcept;
     size_t *flags() const;
     PluginReport **plugin_report() const;

@@ -189,7 +189,7 @@ PluginReport *DBTBranching(void *params, PluginLayer **layers)
       cp->instrlen, cp->next_addr, cp->side_addr);
 
     /**
-     *  Ff this is a call instruction skip it
+     *  if this is a call instruction skip it
      *  let the DBTBeforeExecute treat this case
      */
     if (instruction.is_call())
