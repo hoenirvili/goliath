@@ -3,8 +3,8 @@
 
 #include <catch2/catch.hpp>
 
-#include <cfgtrace.h>
-#include <cfgtrace/engine/engine.h>
+#include <goliath.h>
+#include <goliath/engine/engine.h>
 
 #include <memory>
 #include <stdexcept>

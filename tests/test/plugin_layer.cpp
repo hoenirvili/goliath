@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cfgtrace/api/types.h>
+#include <goliath/api/types.h>
 #include <stdexcept>
 #include <tuple>
 #include <vector>

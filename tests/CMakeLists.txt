@@ -2,29 +2,29 @@ enable_testing()
 
 find_package(Catch2 REQUIRED)
 
-add_executable(cfgtracetest
+add_executable(goliathtest
 	main.cpp
-	cfgtrace.cpp
+	goliath.cpp
     run.cpp
     machinery.cpp
     machinery.h
 )
 add_subdirectory(test)
 
-target_include_directories(cfgtracetest
-	PRIVATE ${CFGTRACE_ROOT_DIRECTORY})
+target_include_directories(goliathtest
+	PRIVATE ${GOLIATH_ROOT_DIRECTORY})
 
-target_link_libraries(cfgtracetest
-	PRIVATE cfgtrace
+target_link_libraries(goliathtest
+	PRIVATE goliath
     PRIVATE Catch2::Catch2
 )
 
-get_target_property(OUTPUT cfgtrace RUNTIME_OUTPUT_DIRECTORY)
+get_target_property(OUTPUT goliath RUNTIME_OUTPUT_DIRECTORY)
 
-set_target_properties(cfgtracetest
+set_target_properties(goliathtest
 	PROPERTIES
 		COMPILE_FEATURES cxx_std_17
 		RUNTIME_OUTPUT_DIRECTORY ${OUTPUT}
 )
 
-add_test(NAME cfgtracetest COMMAND cfgtracetest)
+add_test(NAME goliathtest COMMAND goliathtest)

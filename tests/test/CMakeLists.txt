@@ -1,18 +1,18 @@
-target_sources(cfgtracetest
+target_sources(goliathtest
     PRIVATE
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/catch_extra_matchers.h
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/custom_params.cpp
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/custom_params.h
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_output_streamer.cpp
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_output_streamer.h
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_layer.cpp
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_layer.h
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_report.cpp
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/plugin_report.h
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/virtual_memory.cpp
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/virtual_memory.h
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_graph.h
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_graph.cpp
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_definition.h
-        ${CFGTRACE_ROOT_DIRECTORY}/tests/test/fake_definition.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/catch_extra_matchers.h
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/custom_params.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/custom_params.h
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/fake_output_streamer.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/fake_output_streamer.h
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/plugin_layer.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/plugin_layer.h
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/plugin_report.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/plugin_report.h
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/virtual_memory.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/virtual_memory.h
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/fake_graph.h
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/fake_graph.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/fake_definition.h
+        ${GOLIATH_ROOT_DIRECTORY}/tests/test/fake_definition.cpp
 )

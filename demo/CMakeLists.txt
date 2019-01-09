@@ -1,19 +1,21 @@
-add_executable(first_demo ${CFGTRACE_ROOT_DIRECTORY}/demo/win_version.cpp)
+add_executable(first_demo ${GOLIATH_ROOT_DIRECTORY}/demo/win_version.cpp)
 set_target_properties(first_demo
 	PROPERTIES
 		ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
 		LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
 		RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
 		PDB_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
-		COMPILE_FEATURES cxx_std_17
+        COMPILE_FEATURES cxx_std_17
+        LINK_FLAGS_RELEASE "/MANIFEST:NO"
 )
 
-add_executable(second_demo ${CFGTRACE_ROOT_DIRECTORY}/demo/other.cpp)
+add_executable(second_demo ${GOLIATH_ROOT_DIRECTORY}/demo/other.cpp)
 set_target_properties(second_demo
 	PROPERTIES
 		ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
 		LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
 		RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
 		PDB_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
-		COMPILE_FEATURES cxx_std_17
+        COMPILE_FEATURES cxx_std_17
+        LINK_FLAGS_RELEASE "/MANIFEST:NO"
 )

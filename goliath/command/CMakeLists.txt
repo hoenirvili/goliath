@@ -1,0 +1,7 @@
+target_sources(goliath
+    PRIVATE
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/command/execute.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/command/execute.h
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/command/graphviz.h
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/command/graphviz.cpp
+)

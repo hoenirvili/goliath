@@ -1,6 +1,6 @@
 #include "custom_params.h"
 
-#include <cfgtrace/api/types.h>
+#include <goliath/api/types.h>
 
 #include <algorithm>
 

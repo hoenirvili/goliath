@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-project (CFGTrace
+project (Goliath
     VERSION 0.2
 	DESCRIPTION "Control flow graph generator plugin"
 	LANGUAGES CXX
-	HOMEPAGE_URL "https://github.com/hoenirvili/cfgtrace"
+	HOMEPAGE_URL "https://github.com/hoenirvili/goliath"
 )
 
 function(print_target_properties tgt)
@@ -35,7 +35,7 @@ function(print_target_properties tgt)
 	endforeach(prop)
 endfunction(print_target_properties)
 
-set(CFGTRACE_ROOT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Root filepath of the project")
+set(GOLIATH_ROOT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Root filepath of the project")
 set(TEST_EXPORT "TEST_EXPORT")
 
 option(BUILD_TESTS "Enable building unit tests" OFF)
@@ -45,32 +45,32 @@ if (BUILD_TESTS)
 	message(STATUS "Test macro is defined: ${TEST_EXPORT}")
 endif()
 
-message(STATUS "Root directory: ${CFGTRACE_ROOT_DIRECTORY}")
+message(STATUS "Root directory: ${GOLIATH_ROOT_DIRECTORY}")
 message(STATUS "Build test: ${BUILD_TESTS}")
 message(STATUS "Build demo: ${BUILD_DEMO}")
 message(STATUS "Build type:  ${CMAKE_BUILD_TYPE}")
 
 
-add_library(cfgtrace cfgtrace/cfgtrace.cpp include/cfgtrace.h)
-target_include_directories(cfgtrace
+add_library(goliath goliath/goliath.cpp include/goliath.h)
+target_include_directories(goliath
 	PUBLIC include
-	PRIVATE ${CFGTRACE_ROOT_DIRECTORY})
+	PRIVATE ${GOLIATH_ROOT_DIRECTORY})
 
-set_target_properties(cfgtrace
+set_target_properties(goliath
 	PROPERTIES SUFFIX ".aap"
-		OUTPUT_NAME "CFGTrace"
-		ARCHIVE_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
-		LIBRARY_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
-		RUNTIME_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
-		PDB_OUTPUT_DIRECTORY "${CFGTRACE_ROOT_DIRECTORY}/bin"
+		OUTPUT_NAME "Goliath"
+		ARCHIVE_OUTPUT_DIRECTORY "${GOLIATH_ROOT_DIRECTORY}/bin"
+		LIBRARY_OUTPUT_DIRECTORY "${GOLIATH_ROOT_DIRECTORY}/bin"
+		RUNTIME_OUTPUT_DIRECTORY "${GOLIATH_ROOT_DIRECTORY}/bin"
+		PDB_OUTPUT_DIRECTORY "${GOLIATH_ROOT_DIRECTORY}/bin"
 		COMPILE_FEATURES cxx_std_17
         COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS;$<$<BOOL:${BUILD_TESTS}>:${TEST_EXPORT}>"
-        LINK_OPTIONS "/MANIFEST:NO"
+        LINK_FLAGS_RELEASE "/MANIFEST:NO"
 )
 
-add_subdirectory(cfgtrace)
-print_target_properties(cfgtrace)
-add_library(cfgtrace ALIAS cfgtrace)
+add_subdirectory(goliath)
+print_target_properties(goliath)
+add_library(goliath ALIAS goliath)
 
 if (BUILD_TESTS)
 	add_subdirectory(tests)

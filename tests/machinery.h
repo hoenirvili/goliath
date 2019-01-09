@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cfgtrace/api/types.h>
+#include <goliath/api/types.h>
 
 #include "test/custom_params.h"
 #include "test/plugin_layer.h"

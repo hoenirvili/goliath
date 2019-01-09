@@ -1,6 +1,6 @@
 #include "virtual_memory.h"
 
-#include <cfgtrace/engine/engine.h>
+#include <goliath/engine/engine.h>
 
 #include <catch2/catch.hpp>
 #include <memory>
@@ -14,7 +14,8 @@ virtual_memory::virtual_memory()
      * creates a file mapping object of a specified size that is backed by
      * the system paging file instead of by a file in the file system
      */
-    this->handler = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, this->size, memsharedname);
+    this->handler = CreateFileMappingA(
+      INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, this->size, memsharedname);
     if (!this->handler)
         throw std::runtime_error("CreateFileMappingA");
 
@@ -22,7 +23,8 @@ virtual_memory::virtual_memory()
      * in oder to write to that memory region we need
      * to first create a view into that handler
      */
-    LPVOID view = MapViewOfFile(this->handler, FILE_MAP_ALL_ACCESS, 0, 0, this->size);
+    LPVOID view =
+      MapViewOfFile(this->handler, FILE_MAP_ALL_ACCESS, 0, 0, this->size);
     if (!view) {
         CloseHandle(this->handler);
         throw std::runtime_error("MapViewOfFile");

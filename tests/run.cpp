@@ -7,12 +7,12 @@
 #include "test/plugin_report.h"
 #include "test/virtual_memory.h"
 
-#include <cfgtrace.h>
-#include <cfgtrace/assembly/instruction.h>
-#include <cfgtrace/engine/engine.h>
-#include <cfgtrace/graph/control_flow.h>
-#include <cfgtrace/graph/graph.h>
-#include <cfgtrace/logger/logger.h>
+#include <goliath.h>
+#include <goliath/assembly/instruction.h>
+#include <goliath/engine/engine.h>
+#include <goliath/graph/control_flow.h>
+#include <goliath/graph/graph.h>
+#include <goliath/logger/logger.h>
 
 #include <catch2/catch.hpp>
 #include <memory>

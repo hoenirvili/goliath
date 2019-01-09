@@ -1,0 +1,9 @@
+target_sources(goliath
+    PRIVATE
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/graph/graph.h
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/graph/graph.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/graph/control_flow.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/graph/control_flow.h
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/graph/node.cpp
+        ${GOLIATH_ROOT_DIRECTORY}/goliath/graph/node.h
+)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cfgtrace/engine/engine.h>
+#include <goliath/engine/engine.h>
 
 #include <windows.h>
 

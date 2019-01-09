@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cfgtrace/assembly/instruction.h>
-#include <cfgtrace/definition/generate.h>
-#include <cfgtrace/graph/graph.h>
+#include <goliath/assembly/instruction.h>
+#include <goliath/definition/generate.h>
+#include <goliath/graph/graph.h>
 
 #include <cstddef>
 #include <functional>

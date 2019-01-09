@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cfgtrace/definition/generate.h>
 #include <functional>
+#include <goliath/definition/generate.h>
 #include <string_view>
 
 struct fake_definition : public definition::definition {
