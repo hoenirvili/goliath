@@ -6,7 +6,7 @@ branches:
 
 image: Visual Studio 2017
 
-clone_folder: c:\projects\cfgtrace
+clone_folder: c:\projects\goliath
 
 configuration:
   - Debug
@@ -48,20 +48,20 @@ build:
 
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x86 10.0.16299.0
-  - cd C:\projects\cfgtrace
+  - cd C:\projects\goliath
 
 build_script:
   - cmake -DBUILD_DEMO=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Debug -G Ninja -Bbuild/ -H.
-  - ninja -v -C build -j2 cfgtrace
+  - ninja -v -C build -j2 goliath
   - ninja -v -C build -j2 first_demo
   - ninja -v -C build -j2 second_demo
 
 test_script:
-  - ninja -v -C build -j2 cfgtracetest
+  - ninja -v -C build -j2 goliathtest
   - cd build/tests
   - ctest -VV -j2 -C Debug
 
 after_test:
-  - cd C:\projects\cfgtrace
-  - OpenCppCoverage.exe --sources cfgtrace --export_type cobertura -- .\bin\cfgtracetest.exe
-  - codecov -f "cfgtracetestCoverage.xml" -t %CODECOV_REPO_TOKEN%
+  - cd C:\projects\goliath
+  - OpenCppCoverage.exe --sources goliath --export_type cobertura -- .\bin\goliathtest.exe
+  - codecov -f "goliathtestCoverage.xml" -t %CODECOV_REPO_TOKEN%
