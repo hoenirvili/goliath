@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project (Goliath
-    VERSION 0.2
+    VERSION 0.1
 	DESCRIPTION "Control flow graph generator plugin"
 	LANGUAGES CXX
 	HOMEPAGE_URL "https://github.com/hoenirvili/goliath"
@@ -48,8 +48,7 @@ endif()
 message(STATUS "Root directory: ${GOLIATH_ROOT_DIRECTORY}")
 message(STATUS "Build test: ${BUILD_TESTS}")
 message(STATUS "Build demo: ${BUILD_DEMO}")
-message(STATUS "Build type:  ${CMAKE_BUILD_TYPE}")
-
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 add_library(goliath goliath/goliath.cpp include/goliath.h)
 target_include_directories(goliath

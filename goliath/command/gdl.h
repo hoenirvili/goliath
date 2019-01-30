@@ -7,24 +7,24 @@
 namespace command
 {
 	/**
-	 * graphviz type used to store all graphviz context information
+	 * gdl type used to store all gdl context information
 	 * for generating a graph
 	 */
-	struct graphviz : public definition::definition {
+	struct gdl : public definition::definition {
 		/**
 		 * create a new graphviz graph at a certain iteration based
 		 * on the definitions provided
 		 */
-		graphviz(std::string_view definitions, size_t iteration);
-		~graphviz() = default;
+		gdl(std::string_view definitions, size_t iteration);
+		~gdl() = default;
 
 		/**
-		 * execute compiles the graphviz graph into a png file
+		 * execute compiles the gdl graph into a gdl file
 		 */
 		void execute() const override;
 
 		/**
-		 * return the graphviz format definitions as a string
+		 * return the gdl format definitions as a string
 		 */
 		std::string_view string() const override;
 

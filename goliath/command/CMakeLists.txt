@@ -4,4 +4,6 @@ target_sources(goliath
         ${GOLIATH_ROOT_DIRECTORY}/goliath/command/execute.h
         ${GOLIATH_ROOT_DIRECTORY}/goliath/command/graphviz.h
         ${GOLIATH_ROOT_DIRECTORY}/goliath/command/graphviz.cpp
+	${GOLIATH_ROOT_DIRECTORY}/goliath/command/gdl.cpp
+	${GOLIATH_ROOT_DIRECTORY}/goliath/command/gdl.h
 )
