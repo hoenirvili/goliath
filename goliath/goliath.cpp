@@ -177,7 +177,7 @@ PluginReport *DBTFinish()
 	auto to = engine->cfg_serialize_memory_region();
 	memory::unloader(graph, to);
 
-	// todo(hoenir): in release mode there should be a flag or a notice by the
+	// TODO(hoenir): in release mode there should be a flag or a notice by the
 	// engine in order to save the last cfg state
 #ifndef NDEBUG // run only in debug mode
 	try {

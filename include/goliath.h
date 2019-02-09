@@ -5,9 +5,6 @@
 
 #define PUBLIC_API extern "C" __declspec(dllexport)
 
-// TODO(hoenir): for know this is the only thing implemented
-#define GDL_FORMAT
-
 #ifdef GRAPHVIZ_FORMAT
 #define GENERATION_FORMAT definition::FORMAT::GRAPHVIZ
 #endif

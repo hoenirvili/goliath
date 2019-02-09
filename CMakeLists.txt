@@ -6,35 +6,6 @@ project (Goliath
 	HOMEPAGE_URL "https://github.com/hoenirvili/goliath"
 )
 
-function(print_target_properties tgt)
-	if(NOT TARGET ${tgt})
-		message("There is no target named '${tgt}'")
-		return()
-	endif()
-	set(CMAKE_PROPERTY_LIST
-		OUTPUT_NAME
-		SUFFIX
-		SOURCE_DIR
-		BINARY_DIR
-		ARCHIVE_OUTPUT_DIRECTORY
-		LIBRARY_OUTPUT_DIRECTORY
-		RUNTIME_OUTPUT_DIRECTORY
-		PDB_OUTPUT_DIRECTORY
-		COMPILE_DEFINITIONS
-		COMPILE_OPTIONS
-		INCLUDE_DIRECTORIES
-		LINK_LIBRARIES
-		LINK_FLAGS)
-	message("Configuration for target ${tgt}")
-	foreach (prop ${CMAKE_PROPERTY_LIST})
-		get_property(propval TARGET ${tgt} PROPERTY ${prop} SET)
-		if (propval)
-			get_target_property(propval ${tgt} ${prop})
-			message (STATUS "${prop} = ${propval}")
-		endif()
-	endforeach(prop)
-endfunction(print_target_properties)
-
 set(GOLIATH_ROOT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Root filepath of the project")
 set(TEST_EXPORT "TEST_EXPORT")
 
@@ -45,10 +16,22 @@ if (BUILD_TESTS)
 	message(STATUS "Test macro is defined: ${TEST_EXPORT}")
 endif()
 
+option(GRAPHVIZ_FORMAT "Use graphviz as the format option" OFF)
+option(GDL_FORMAT "Use GDL as the format option" OFF)
+
+set(GENERATOR_TYPE_FORMAT "")
+if (GRAPHVIZ_FORMAT)
+    set(GENERATOR_TYPE_FORMAT "GRAPHVIZ_FORMAT")
+endif()
+if (GDL_FORMAT)
+    set(GENERATOR_TYPE_FORMAT "GDL_FORMAT")
+endif()
+
 message(STATUS "Root directory: ${GOLIATH_ROOT_DIRECTORY}")
 message(STATUS "Build test: ${BUILD_TESTS}")
 message(STATUS "Build demo: ${BUILD_DEMO}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Format generator type: ${GENERATOR_TYPE_FORMAT}")
 
 add_library(goliath goliath/goliath.cpp include/goliath.h)
 target_include_directories(goliath
@@ -63,7 +46,7 @@ set_target_properties(goliath
 		RUNTIME_OUTPUT_DIRECTORY "${GOLIATH_ROOT_DIRECTORY}/bin"
 		PDB_OUTPUT_DIRECTORY "${GOLIATH_ROOT_DIRECTORY}/bin"
 		COMPILE_FEATURES cxx_std_17
-        COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS;$<$<BOOL:${BUILD_TESTS}>:${TEST_EXPORT}>"
+        COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS;$<$<BOOL:${BUILD_TESTS}>:${TEST_EXPORT}>;${GENERATOR_TYPE_FORMAT}"
         LINK_FLAGS_RELEASE "/MANIFEST:NO"
 )
 
